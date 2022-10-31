@@ -1,0 +1,87 @@
+type CASystemIDList = {};
+
+const ChannelType = {
+  'Cable Digital TV': 'Cable Digital TV',
+  'Cable Analogue TV': 'Cable Analogue TV',
+  'Cable Digital Radio': 'Cable Digital Radio',
+};
+
+export type Channel = {
+  channelNumber: string;
+  majorNumber: number;
+  minorNumber: number;
+  chanCode: string;
+  channelName: string;
+  physicalNumber: number;
+  sourceIndex: number;
+  channelType: keyof typeof ChannelType;
+  channelTypeId: number;
+  channelMode: string;
+  channelModeId: number;
+  signalChannelId: string;
+  descrambled: boolean;
+  skipped: boolean;
+  locked: boolean;
+  fineTuned: boolean;
+  satelliteLcn: boolean;
+  shortCut: number;
+  scrambled: boolean;
+  serviceType: number;
+  display: number;
+  ONID: number;
+  TSID: number;
+  SVCID: number;
+  callSign: string;
+  ipChanServerUrl: string;
+  payChan: boolean;
+  IPChannelCode: string;
+  ipCallNumber: string;
+  otuFlag: boolean;
+  adFlag: number;
+  HDTV: boolean;
+  Invisible: boolean;
+  DTV: boolean;
+  ATV: boolean;
+  Data: boolean;
+  Radio: boolean;
+  Numeric: boolean;
+  PrimaryCh: boolean;
+  TV: boolean;
+  configurationId: number;
+  satelliteName: string;
+  Bandwidth: number;
+  Frequency: number;
+  specialService: boolean;
+  CASystemIDListCount: number;
+  channelGenreCode: string;
+  channelLogoSize: string;
+  imgUrl: string;
+  imgUrl2: string;
+  favoriteIdxA: number;
+  favoriteIdxB: number;
+  favoriteIdxC: number;
+  favoriteIdxD: number;
+  favoriteIdxE: number;
+  favoriteIdxF: number;
+  favoriteIdxG: number;
+  favoriteIdxH: number;
+  waterMarkUrl: string;
+  ipChanType: string;
+  ipChanInteractive: boolean;
+  ipChanCategory: string;
+  channelNameSortKey: string;
+  ipChanCpId: string;
+  playerService: string;
+  configured: boolean;
+  adultFlag: number;
+  isFreeviewPlay: number;
+  hasBackward: number;
+  numUnSel: boolean;
+  rfIpChannel: boolean;
+  groupIdList: number[];
+  lastUpdated: string;
+  channelId: string;
+  favoriteGroup: any[];
+  programId: string;
+  CASystemIDList: CASystemIDList;
+};
