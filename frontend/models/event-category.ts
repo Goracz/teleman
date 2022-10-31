@@ -1,0 +1,5 @@
+export enum EventCategory {
+  VOLUME_CHANGED,
+  CHANNEL_CHANGED,
+  POWER_STATE_CHANGED,
+}
