@@ -11,15 +11,24 @@ import {
   Button,
   Badge,
   Tooltip,
+  Card,
 } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { IconCheck, IconPlug, IconPlugOff, IconX } from '@tabler/icons';
+import {
+  IconCaretLeft,
+  IconCaretRight,
+  IconCheck,
+  IconPlug,
+  IconPlugOff,
+  IconVolume,
+  IconVolume2,
+  IconX,
+} from '@tabler/icons';
 import { NextPage } from 'next';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import EventSource from 'eventsource';
 import moment from 'moment';
-import { RingStatisticsDemo } from '../../components/Statistics/RingStatisticsDemo';
 import ApplicationLayout from '../../layouts/Application';
 import { Channel } from '../../models/channel';
 import { ChannelCategory } from '../../models/channel-category';
@@ -35,24 +44,21 @@ import {
 } from '../../hooks';
 import { ChannelHistory } from '../../models/channel-history';
 import { RingStatistics } from '../../components/Statistics/RingStatistics';
+import { RingStatisticsChannelCategory } from '../../components/Statistics/RingStatisticsChannelCategory';
 
 const DashboardPage: NextPage = () => {
-  const ringProgressData = [
-    {
-      label: 'Channels by category',
-      stats: '10',
-      progress: 43,
-      color: 'teal',
-      icon: 'up',
-    },
-  ];
-
   const [calculatedTvUptime, setCalculatedTvUptime] = React.useState<string>('-');
   const [calculatedChannelHistory, setCalculatedChannelHistory] = React.useState<
     {
       channelName: string;
       channelCategory: ChannelCategory;
       channelLogoUrl: string;
+      watchTime: number;
+    }[]
+  >();
+  const [calculatedChannelCategoryStats, setCalculatedChannelCategoryStats] = React.useState<
+    {
+      channelCategory: string;
       watchTime: number;
     }[]
   >();
@@ -98,7 +104,11 @@ const DashboardPage: NextPage = () => {
     isLoading: isLoadingChannelList,
     isError: isChannelsError,
   } = useChannels();
-  if (!isLoadingChannelList && !isChannelsError) {
+  if (
+    !isLoadingChannelList &&
+    !isChannelsError &&
+    (typeof isChannelsError !== 'undefined' || !isChannelsError)
+  ) {
     dispatch(appActions.setChannelList(channelList));
 
     dispatch(
@@ -123,6 +133,9 @@ const DashboardPage: NextPage = () => {
       )
     );
   }
+  // else if (typeof window !== 'undefined') {
+  //   router.replace('/error/missing-state-information');
+  // }
 
   const {
     data: softwareInfo,
@@ -172,52 +185,111 @@ const DashboardPage: NextPage = () => {
     }
   };
 
-  const formatUptime = (textToFormat: string): string => {
-    let formattedText = textToFormat;
-    formattedText = textToFormat.replace(':', 'h ').replace(':', 'm ');
+  const formatUptime = (textToFormat: string): string =>
+    textToFormat.replace(':', 'h ').replace(':', 'm ');
 
-    return formattedText;
-  };
+  const {
+    data: channelHistory,
+    isLoading: isLoadingChannelHistory,
+    isError: isChannelHistoryError,
+  } = useChannelHistory(new Date('2022-10-01'), new Date('2099-12-31'));
+  if (!isLoadingChannelHistory && !isChannelHistoryError) {
+    dispatch(appActions.setChannelHistory(channelHistory));
+  }
 
   useEffect(() => {
-    useChannelHistory(new Date('2022-10-01'), new Date('2022-10-31')).then((data) => {
-      const groupedData = data.reduce((r, a) => {
+    if (!channelHistory) return;
+    const filteredData = channelHistory.filter(
+      (item: ChannelHistory) => typeof item.end !== 'undefined' && item.end !== null
+    );
+    const groupedData = filteredData.reduce(
+      (r: { [x: string]: any }, a: { channelName: string | number }) => {
         // eslint-disable-next-line no-param-reassign
         r[a.channelName] = [...(r[a.channelName] || []), a];
         return r;
-      }, Object.create(null));
+      },
+      Object.create(null)
+    );
 
-      const watchTimeByChannel = Object.keys(groupedData).map((key) => {
-        const channelHistory = groupedData[key] as ChannelHistory[];
-        const { channelCategory, channelLogoUrl } = channelHistory[0];
-        const watchTime = channelHistory.reduce(
-          (a, b) => a + (moment.unix(b.end).diff(moment.unix(b.start)) || 0),
-          0
-        );
-        return {
-          channelName: key,
-          channelCategory,
-          channelLogoUrl,
-          watchTime,
-        };
-      });
-      setCalculatedChannelHistory(watchTimeByChannel);
+    const watchTimeByChannel = Object.keys(groupedData).map((key) => {
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      const channelHistory = groupedData[key] as ChannelHistory[];
+      const { channelCategory, channelLogoUrl } = channelHistory[0];
+      const watchTime = channelHistory.reduce((a, b) => a + (b.end - b.start), 0);
+      return {
+        channelName: key,
+        channelCategory,
+        channelLogoUrl,
+        watchTime,
+      };
     });
+    setCalculatedChannelHistory(watchTimeByChannel);
+    const channelsByCategory = filteredData.reduce(
+      (r: { [x: string]: any }, a: { channelCategory: string | number }) => {
+        // eslint-disable-next-line no-param-reassign
+        r[a.channelCategory] = [...(r[a.channelCategory] || []), a];
+        return r;
+      },
+      Object.create(null)
+    );
+    const watchTimeByCategory = Object.keys(channelsByCategory).map((key) => {
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      const channelHistory = channelsByCategory[key] as ChannelHistory[];
+      const watchTime = channelHistory.reduce((a, b) => a + (b.end - b.start), 0);
+      return {
+        channelCategory: key,
+        watchTime,
+      };
+    });
+    setCalculatedChannelCategoryStats(watchTimeByCategory);
+  }, [channelHistory]);
+
+  const setVolume = async (direction: 'up' | 'down'): Promise<void> => {
+    await fetch(`http://localhost:8080/api/v1/media/volume/${direction}`, {
+      method: 'POST',
+    });
+  };
+
+  const setChannel = async (direction: 'next' | 'previous'): Promise<void> => {
+    await fetch(`http://localhost:8080/api/v1/tv/channels/${direction}`, {
+      method: 'POST',
+    });
+  };
+
+  useEffect(() => {
+    fetch('http://localhost:8082/api/v1/channel-metadata')
+      .then((res) => res.json())
+      .then((data) => {
+        dispatch(appActions.setEgpData(data));
+      });
   }, []);
 
   useEffect(() => {
-    if (!tvUptime) return;
-    setCalculatedTvUptime(
-      formatUptime(moment(moment().diff(moment.unix(tvUptime.turnOnTime))).format('H:m:'))
-    );
+    if (tvUptime) {
+      if (tvUptime.turnOffTime) {
+        setCalculatedTvUptime(
+          formatUptime(
+            moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
+              'H:m:'
+            )
+          )
+        );
+      } else {
+        setCalculatedTvUptime(
+          formatUptime(moment(moment().diff(moment.unix(tvUptime.turnOnTime))).format('H:m:'))
+        );
+      }
+    }
   }, [tvUptime]);
 
   setInterval(() => {
     if (tvUptime) {
       if (tvUptime.turnOffTime) {
-        formatUptime(
-          moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
-            'H:m:'
+        setCalculatedTvUptime(
+          formatUptime(
+            moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
+              'H:m:'
+            )
           )
         );
       } else {
@@ -231,12 +303,13 @@ const DashboardPage: NextPage = () => {
   return (
     <ApplicationLayout>
       <Grid>
-        <Col lg={2}>
-          <Paper withBorder radius="md" px={30} pb={30}>
-            <Image src="https://www.lg.com/hu/images/televiziok/md07546714/gallery/lg-tv-OLED42C24LA-medium01.jpg" />
+        <Col lg={6} xl={3}>
+          <Paper withBorder style={{ minHeight: '93vh' }} radius="md" px={30} pb={30}>
+            <Image src="https://teleman.s3.eu-central-1.amazonaws.com/lg-tv-OLED42C24LA.png" />
             <Text weight="bold" size={20}>
               <Group spacing="xs">
-                LG C2{' '}
+                LG{' '}
+                {softwareInfo && softwareInfo.model_name === 'HE_DTV_W22O_AFABATAA' ? 'C2' : 'TV'}{' '}
                 <Badge
                   variant="gradient"
                   gradient={
@@ -268,13 +341,21 @@ const DashboardPage: NextPage = () => {
               <Group position="apart">
                 <Text weight={500}>TV Uptime</Text>
                 <Text>
-                  <Tooltip
-                    label={
-                      tvUptime && moment.unix(tvUptime.turnOnTime).format('YYYY. MM. DD. HH:mm:ss')
-                    }
-                  >
-                    <span>{calculatedTvUptime}</span>
-                  </Tooltip>
+                  {tvUptime && (
+                    <Tooltip
+                      label={
+                        !tvUptime.turnOffTime
+                          ? moment.unix(tvUptime.turnOnTime).format('YYYY. MM. DD. HH:mm:ss')
+                          : `${moment
+                              .unix(tvUptime.turnOnTime)
+                              .format('YYYY. MM. DD. HH:mm:ss')} - ${moment
+                              .unix(tvUptime.turnOffTime)
+                              .format('YYYY. MM. DD. HH:mm:ss')}`
+                      }
+                    >
+                      <span>{calculatedTvUptime}</span>
+                    </Tooltip>
+                  )}
                 </Text>
               </Group>
             </Text>
@@ -317,8 +398,12 @@ const DashboardPage: NextPage = () => {
             </Text>
             <Divider my="sm" />
             <Text>
-              <Group position="apart">
-                <Text weight={500}>Current Channel</Text>
+              <Group noWrap position="apart">
+                <Text weight={500} lineClamp={1}>
+                  <Tooltip label="Current Channel">
+                    <Text>Current Channel</Text>
+                  </Tooltip>
+                </Text>
                 <Text>
                   {!currentChannel && <Skeleton height={12} mt={6} width="20%" />}
 
@@ -342,6 +427,81 @@ const DashboardPage: NextPage = () => {
               </Group>
             </Text>
             <Space h="lg" />
+            <Grid align="center">
+              <Col span={6}>
+                <Text align="left">
+                  <Button
+                    onClick={() => setVolume('down')}
+                    disabled={
+                      !(
+                        !isLoadingPowerState &&
+                        !['Active Standby', 'Suspend'].includes(powerState.state)
+                      )
+                    }
+                    fullWidth
+                    leftIcon={<IconVolume2 size={20} />}
+                    variant="outline"
+                  >
+                    Volume Down
+                  </Button>
+                </Text>
+              </Col>
+              <Col span={6}>
+                <Text align="right">
+                  <Button
+                    onClick={() => setVolume('up')}
+                    disabled={
+                      !(
+                        !isLoadingPowerState &&
+                        !['Active Standby', 'Suspend'].includes(powerState.state)
+                      )
+                    }
+                    fullWidth
+                    leftIcon={<IconVolume size={20} />}
+                    variant="outline"
+                  >
+                    Volume Up
+                  </Button>
+                </Text>
+              </Col>
+              <Col span={6}>
+                <Text align="left">
+                  <Button
+                    onClick={() => setChannel('previous')}
+                    disabled={
+                      !(
+                        !isLoadingPowerState &&
+                        !['Active Standby', 'Suspend'].includes(powerState.state)
+                      )
+                    }
+                    fullWidth
+                    leftIcon={<IconCaretLeft size={26} />}
+                    variant="outline"
+                  >
+                    Previous Channel
+                  </Button>
+                </Text>
+              </Col>
+              <Col span={6}>
+                <Text align="right">
+                  <Button
+                    onClick={() => setChannel('next')}
+                    disabled={
+                      !(
+                        !isLoadingPowerState &&
+                        !['Active Standby', 'Suspend'].includes(powerState.state)
+                      )
+                    }
+                    fullWidth
+                    leftIcon={<IconCaretRight size={26} />}
+                    variant="outline"
+                  >
+                    Next Channel
+                  </Button>
+                </Text>
+              </Col>
+            </Grid>
+            <Space h="xl" />
             <Group>
               <Button
                 leftIcon={
@@ -372,12 +532,41 @@ const DashboardPage: NextPage = () => {
           </Paper>
         </Col>
 
-        <Col lg={5}>
-          {calculatedChannelHistory && <RingStatistics data={calculatedChannelHistory} />}
-        </Col>
+        <Col lg={6} xl={9}>
+          <Grid>
+            <Col lg={6}>
+              {calculatedChannelHistory && <RingStatistics data={calculatedChannelHistory} />}
+            </Col>
 
-        <Col lg={5}>
-          <RingStatisticsDemo data={ringProgressData as any} />
+            <Col lg={6}>
+              {calculatedChannelCategoryStats && (
+                <RingStatisticsChannelCategory data={calculatedChannelCategoryStats as any} />
+              )}
+            </Col>
+
+            <Col lg={12}>
+              <Paper withBorder style={{ minHeight: '27vh' }} radius="md" p="xs">
+                <Text mt={6} ml={12} weight={500}>
+                  Quick App Launch
+                </Text>
+                <Grid columns={4}>
+                  {[].map((application) => (
+                    <Col lg={1}>
+                      <Card>{application}</Card>
+                    </Col>
+                  ))}
+                </Grid>
+              </Paper>
+            </Col>
+
+            <Col lg={12}>
+              <Paper withBorder style={{ minHeight: '38.33vh' }} radius="md" p="xs">
+                <Text mt={6} ml={12} weight={500}>
+                  Uptime Overview
+                </Text>
+              </Paper>
+            </Col>
+          </Grid>
         </Col>
       </Grid>
     </ApplicationLayout>

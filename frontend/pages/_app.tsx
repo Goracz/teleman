@@ -75,28 +75,28 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
       <MantineProvider theme={{ colorScheme }} withGlobalStyles withNormalizeCSS>
         <NotificationsProvider>
           <Provider store={store}>
-            <Head>
-              <title>Teleman</title>
-              <meta
-                name="viewport"
-                content="minimum-scale=1, initial-scale=1, width=device-width"
-              />
-              <link rel="shortcut icon" href="/favicon.svg" />
-            </Head>
+            <EventsProvider>
+              <Head>
+                <title>Teleman</title>
+                <meta
+                  name="viewport"
+                  content="minimum-scale=1, initial-scale=1, width=device-width"
+                />
+                <link rel="shortcut icon" href="/favicon.svg" />
+              </Head>
 
-            <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-              <SpotlightProvider
-                shortcut={['mod + P', 'mod + K', '/']}
-                actions={actions}
-                searchIcon={<IconSearch size={18} />}
-                nothingFoundMessage="No actions found"
-              >
-                <EventsProvider>
+              <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+                <SpotlightProvider
+                  shortcut={['mod + P', 'mod + K', '/']}
+                  actions={actions}
+                  searchIcon={<IconSearch size={18} />}
+                  nothingFoundMessage="No actions found"
+                >
                   <NavigationProgress />
                   <Component {...pageProps} />
-                </EventsProvider>
-              </SpotlightProvider>
-            </ColorSchemeProvider>
+                </SpotlightProvider>
+              </ColorSchemeProvider>
+            </EventsProvider>
           </Provider>
         </NotificationsProvider>
       </MantineProvider>

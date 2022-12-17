@@ -39,3 +39,9 @@ storybook-static
 
 # IntelliJ IDEA
 .idea
+
+# Sentry
+.sentryclirc
+sentry.properties
+sentry.client.config.js
+sentry.server.config.js

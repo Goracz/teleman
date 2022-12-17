@@ -1,25 +1,12 @@
-import {
-  RingProgress,
-  Text,
-  Paper,
-  Center,
-  Group,
-  Table,
-  Badge,
-  Space,
-  Stack,
-  Image,
-} from '@mantine/core';
+import { RingProgress, Text, Paper, Center, Group, Table, Badge, Stack } from '@mantine/core';
 import moment from 'moment';
 import { NextPage } from 'next';
 import React from 'react';
-import { ChannelCategory, ChannelCategoryLegend } from '../../models/channel-category';
+import { ChannelCategoryLegend } from '../../models/channel-category';
 
 interface StatsRingProps {
   data: {
-    channelName: string;
-    channelCategory: ChannelCategory;
-    channelLogoUrl: string;
+    channelCategory: string;
     watchTime: number;
   }[];
 }
@@ -37,9 +24,9 @@ const pieColors = [
   '#f03a3e',
   '#a252e3',
   '#6b34e0',
-];
+].reverse();
 
-export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
+export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }) => {
   const sumOfWatchTime = data.reduce((acc, curr) => acc + curr.watchTime, 0);
   const finalData = data
     .sort((a, b) => b.watchTime - a.watchTime)
@@ -63,7 +50,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
   return (
     <Paper style={{ minHeight: '25vh' }} withBorder radius="md" p="xs">
       <Text mt={6} ml={12} weight={500}>
-        Channels Overview
+        Channel Category Overview
       </Text>
       <Group>
         <RingProgress
@@ -77,17 +64,15 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
               <>
                 <Stack spacing="xs">
                   <Group>
-                    <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
-                    <Text>{statEntry.channelName}</Text>
-                  </Group>
-                  <Space />
-                  <Group>
                     <Text>Watch Time</Text>
                     <Text>{formatTime(statEntry.watchTime)}</Text>
                   </Group>
                   <Group>
                     <Text>Category</Text>
-                    <Text>{ChannelCategoryLegend[statEntry.channelCategory]}</Text>
+                    <Group spacing="xs">
+                      <Badge style={{ backgroundColor: statEntry.color }} size="xs" radius="xl" />
+                      <Text>{ChannelCategoryLegend[statEntry.channelCategory]}</Text>
+                    </Group>
                   </Group>
                 </Stack>
               </>
@@ -100,7 +85,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
                   {finalData.length}
                 </Text>
                 <Text size="sm" weight={400}>
-                  Channels
+                  {finalData.length > 1 ? 'Categories' : 'Category'}
                 </Text>
               </Stack>
             </Center>
@@ -112,7 +97,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
             <thead>
               <tr>
                 <th />
-                <th>Channel</th>
+                <th>Category</th>
                 <th>Watch Time</th>
               </tr>
             </thead>
@@ -120,15 +105,12 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
               {finalData.map(
                 (statEntry, index) =>
                   index < 5 && (
-                    <tr key={statEntry.channelName}>
+                    <tr key={statEntry.channelCategory}>
                       <td>
                         <Badge style={{ backgroundColor: statEntry.color }} size="xs" radius="xl" />
                       </td>
                       <td>
-                        <Group>
-                          <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
-                          {statEntry.channelName}
-                        </Group>
+                        <Group>{ChannelCategoryLegend[statEntry.channelCategory]}</Group>
                       </td>
                       <td>{formatTime(statEntry.watchTime)}</td>
                     </tr>

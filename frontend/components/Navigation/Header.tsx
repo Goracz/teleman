@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { createStyles, Header, Container, Group, Burger, Paper, Transition } from '@mantine/core';
+import { createStyles, Header, Container, Burger, Paper, Transition } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { MantineLogo } from '@mantine/ds';
 import { DropdownWithIcon } from '../Dropdown/DropdownWithIcon';
 
 const HEADER_HEIGHT = 60;

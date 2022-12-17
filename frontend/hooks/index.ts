@@ -1,11 +1,20 @@
 import { useSelector } from 'react-redux';
 import useSWR from 'swr';
-import { ChannelHistory } from '../models/channel-history';
 import { AppSliceState } from '../store/app-slice';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-const postFetcher = (url: string, body: any) =>
-  fetch(url, { body, method: 'POST' }).then((r) => r.json());
+const channelHistoryFetcher = (url: string, start: Date, end: Date) =>
+  fetch(url, {
+    body: JSON.stringify({ start, end }),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  } as any)
+    .then((r) => r.json())
+    .catch(() => {
+      throw new Error('Error fetching channel history');
+    });
 
 const useChannels = () => {
   const channels = useSelector((state: { app: AppSliceState }) => state.app.channelList);
@@ -101,27 +110,62 @@ const useTvStateToggle = (desiredState: 'on' | 'off') => {
 };
 
 const useUptime = () => {
-  const { data, error } = useSWR('http://localhost:8081/api/v1/uptime', fetcher);
+  const uptime = useSelector((state: { app: AppSliceState }) => state.app.uptime);
+  const { data, error } = useSWR(uptime ? null : 'http://localhost:8081/api/v1/uptime', fetcher);
 
   return {
-    data,
-    isLoading: !error && !data,
-    isError: error,
+    data: uptime || data,
+    isLoading: uptime ? false : !error && !data,
+    isError: uptime ? false : error,
   };
 };
 
-const useChannelHistory = async (start: Date, end: Date): Promise<ChannelHistory[]> =>
-  fetch('http://localhost:8081/api/v1/channel-history/search', {
-    body: JSON.stringify({ start, end }),
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  } as any)
-    .then((r) => r.json())
-    .catch(() => {
-      throw new Error('Error fetching channel history');
-    });
+const useChannelHistory = (start: Date, end: Date) => {
+  const channelHistory = useSelector((state: { app: AppSliceState }) => state.app.channelHistory);
+  const isCached = channelHistory && channelHistory.length > 0;
+
+  const { data, error } = useSWR(
+    isCached ? null : ['http://localhost:8081/api/v1/channel-history/search', start, end],
+    channelHistoryFetcher
+  );
+
+  return {
+    data: isCached ? channelHistory : data,
+    isLoading: isCached ? false : !error && !data,
+    isError: isCached ? false : error,
+  };
+};
+
+const useEGP = () => {
+  const egp = useSelector((state: { app: AppSliceState }) => state.app.egpData);
+  const isCached = egp && egp.length > 0;
+
+  const { data, error } = useSWR(
+    isCached ? null : 'http://localhost:8082/api/v1/channel-metadata',
+    fetcher
+  );
+
+  return {
+    data: isCached ? egp : data,
+    isLoading: isCached ? false : !error && !data,
+    isError: isCached ? false : error,
+  };
+};
+
+const useAutomationRules = () => {
+  const automationRules = useSelector((state: { app: AppSliceState }) => state.app.automationRules);
+
+  const { data, error } = useSWR(
+    automationRules ? null : 'http://localhost:8083/api/v1/automations',
+    fetcher
+  );
+
+  return {
+    data: automationRules || data,
+    isLoading: automationRules ? false : !error && !data,
+    isError: automationRules ? false : error,
+  };
+};
 
 export {
   useChannels,
@@ -132,4 +176,6 @@ export {
   useTvStateToggle,
   useUptime,
   useChannelHistory,
+  useEGP,
+  useAutomationRules,
 };

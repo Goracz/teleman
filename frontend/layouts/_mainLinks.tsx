@@ -50,7 +50,12 @@ const data = [
   { icon: <IconDashboard size={16} />, color: 'blue', label: 'Dashboard', link: '/dashboard' },
   { icon: <IconPlayerSkipForward size={16} />, color: 'teal', label: 'TV Control' },
   { icon: <IconDeviceTv size={16} />, color: 'violet', label: 'TV Channels', link: '/channels' },
-  { icon: <IconSettingsAutomation size={16} />, color: 'cyan', label: 'Automations' },
+  {
+    icon: <IconSettingsAutomation size={16} />,
+    color: 'cyan',
+    label: 'Automations',
+    link: '/automations',
+  },
   { icon: <IconSettings size={16} />, color: 'grape', label: 'Account Settings' },
   { icon: <IconTool size={16} />, color: 'red', label: 'Tenant Settings' },
 ];
