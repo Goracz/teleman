@@ -6,10 +6,9 @@ import com.goracz.lgwebosstatsservice.exception.KafkaConsumeFailException;
 import com.goracz.lgwebosstatsservice.model.response.PowerState;
 import com.goracz.lgwebosstatsservice.model.response.PowerStateResponse;
 import com.goracz.lgwebosstatsservice.repository.ReactiveUptimeRepository;
+import com.goracz.lgwebosstatsservice.service.CacheManager;
 import com.goracz.lgwebosstatsservice.service.UptimeService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.springframework.data.redis.core.ReactiveValueOperations;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,12 +22,12 @@ public class UptimeServiceImpl implements UptimeService {
     private static final int CACHE_WRITE_TRIES = 3;
     private static final String LATEST_UPTIME_LOG_CACHE_KEY = "uptime-log:latest";
     private final ReactiveUptimeRepository uptimeRepository;
-    private final ReactiveValueOperations<String, UptimeLog> uptimeLogReactiveValueOps;
+    private final CacheManager<String, UptimeLog> uptimeLogCacheManager;
 
     public UptimeServiceImpl(ReactiveUptimeRepository uptimeRepository,
-                             ReactiveRedisTemplate<String, UptimeLog> uptimeLogReactiveRedisTemplate) {
+                             CacheManager<String, UptimeLog> uptimeLogCacheManager) {
         this.uptimeRepository = uptimeRepository;
-        this.uptimeLogReactiveValueOps = uptimeLogReactiveRedisTemplate.opsForValue();
+        this.uptimeLogCacheManager = uptimeLogCacheManager;
     }
 
     @Override
@@ -58,8 +57,8 @@ public class UptimeServiceImpl implements UptimeService {
                                                             .build())
                                                     .flatMap(this.uptimeRepository::save)
                                                     .map(savedUptimeLog -> {
-                                                        this.uptimeLogReactiveValueOps
-                                                                .set(LATEST_UPTIME_LOG_CACHE_KEY, savedUptimeLog)
+                                                        this.uptimeLogCacheManager
+                                                                .write(LATEST_UPTIME_LOG_CACHE_KEY, savedUptimeLog)
                                                                 .retry(CACHE_WRITE_TRIES)
                                                                 .subscribeOn(Schedulers.boundedElastic())
                                                                 .subscribe();
@@ -71,7 +70,7 @@ public class UptimeServiceImpl implements UptimeService {
                                         } else if (powerStateResponse.getState().equals(PowerState.SUSPEND)) {
                                             // The power state has changed to OFF, so the latest uptime log should be
                                             // updated with the turn-off time.
-                                            this.uptimeLogReactiveValueOps.get(LATEST_UPTIME_LOG_CACHE_KEY)
+                                            this.uptimeLogCacheManager.read(LATEST_UPTIME_LOG_CACHE_KEY)
                                                     .retry(3)
                                                     .switchIfEmpty(this.uptimeRepository.findFirstByOrderByTurnOnTimeDesc())
                                                     .map(latestUptimeLog -> {
@@ -80,8 +79,8 @@ public class UptimeServiceImpl implements UptimeService {
                                                     })
                                                     .flatMap(this.uptimeRepository::save)
                                                     .map(savedUptimeLog -> {
-                                                        this.uptimeLogReactiveValueOps
-                                                                .set(LATEST_UPTIME_LOG_CACHE_KEY, savedUptimeLog)
+                                                        this.uptimeLogCacheManager
+                                                                .write(LATEST_UPTIME_LOG_CACHE_KEY, savedUptimeLog)
                                                                 .retry(CACHE_WRITE_TRIES)
                                                                 .subscribeOn(Schedulers.boundedElastic())
                                                                 .subscribe();

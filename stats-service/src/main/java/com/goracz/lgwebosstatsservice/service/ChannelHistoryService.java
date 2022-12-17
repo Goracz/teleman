@@ -28,4 +28,6 @@ public interface ChannelHistoryService {
     Mono<Void> delete(String channelHistoryId);
 
     void onChannelChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException;
+
+    void onPowerStateChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException;
 }
