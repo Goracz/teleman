@@ -19,7 +19,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/tv/channels")
 @RequiredArgsConstructor
 public class TvChannelsController {
-
     private final TvControlService tvControlService;
 
     @GetMapping
@@ -32,9 +31,18 @@ public class TvChannelsController {
         return ResponseEntity.ok(this.tvControlService.getCurrentChannel());
     }
 
+    @PostMapping("/next")
+    public ResponseEntity<Mono<Void>> goToNextChannel() {
+        return ResponseEntity.ok(this.tvControlService.goToNextChannel());
+    }
+
+    @PostMapping("/previous")
+    public ResponseEntity<Mono<Void>> goToPreviousChannel() {
+        return ResponseEntity.ok(this.tvControlService.goToPreviousChannel());
+    }
+
     @PostMapping
     public ResponseEntity<Mono<Void>> setChannel(@RequestBody SetChannelRequest setChannelRequest) {
         return ResponseEntity.ok(this.tvControlService.setChannel(setChannelRequest.getChannelId()));
     }
-
 }

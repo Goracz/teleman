@@ -18,7 +18,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/media/volume")
 @RequiredArgsConstructor
 public class MediaVolumeController {
-
     private final MediaControlService mediaControlService;
 
     @GetMapping
@@ -26,9 +25,18 @@ public class MediaVolumeController {
         return ResponseEntity.ok(this.mediaControlService.getVolume());
     }
 
+    @PostMapping("/up")
+    public ResponseEntity<Mono<Void>> increaseVolume() {
+        return ResponseEntity.ok(this.mediaControlService.increaseVolume());
+    }
+
+    @PostMapping("/down")
+    public ResponseEntity<Mono<Void>> decreaseVolume() {
+        return ResponseEntity.ok(this.mediaControlService.decreaseVolume());
+    }
+
     @PostMapping
     public ResponseEntity<Mono<Object>> setVolume(@RequestBody SetVolumeDto setVolumeDto) {
         return ResponseEntity.ok(this.mediaControlService.setVolume(setVolumeDto));
     }
-
 }

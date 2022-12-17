@@ -1,5 +1,9 @@
 package com.goracz.lgwebosbackend.model;
 
+/**
+ * Channel categories
+ * @implNote Used to categorize channels in statistics
+ */
 public enum ChannelCategory {
     NEWS_AND_PUBLIC_SERVICE_AND_CULTURAL,
     SPORTS,

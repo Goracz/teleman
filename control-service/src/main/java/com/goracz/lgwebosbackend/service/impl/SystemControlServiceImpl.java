@@ -1,5 +1,6 @@
 package com.goracz.lgwebosbackend.service.impl;
 
+import com.goracz.lgwebosbackend.service.CacheManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
@@ -17,6 +18,7 @@ import com.goracz.lgwebosbackend.service.EventService;
 import com.goracz.lgwebosbackend.service.SystemControlService;
 
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 @Service
@@ -42,68 +44,31 @@ public class SystemControlServiceImpl implements SystemControlService {
 
     private final WebClient webClient;
 
-    private final ReactiveRedisTemplate<String, SoftwareInformationResponse> redisTemplate;
+    private final CacheManager<String, SoftwareInformationResponse> softwareInfoCacheManager;
 
-    private final ReactiveValueOperations<String, SoftwareInformationResponse> reactiveValueOps;
+    private final CacheManager<String, PowerStateResponse> powerStateCacheManager;
 
-    private final ReactiveRedisTemplate<String, PowerStateResponse> powerStateRedisTemplate;
-
-    private final ReactiveValueOperations<String, PowerStateResponse> powerStateReactiveValueOps;
-
-    public SystemControlServiceImpl(EventService<EventMessage<PowerStateResponse>> eventService, WebClient webClient,
-            ReactiveRedisTemplate<String, SoftwareInformationResponse> redisTemplate,
-            ReactiveRedisTemplate<String, PowerStateResponse> powerStateRedisTemplate) {
+    public SystemControlServiceImpl(EventService<EventMessage<PowerStateResponse>> eventService,
+                                    WebClient webClient,
+                                    CacheManager<String, SoftwareInformationResponse> softwareInfoCacheManager,
+                                    CacheManager<String, PowerStateResponse> powerStateCacheManager) {
         this.eventService = eventService;
         this.webClient = webClient;
-        this.redisTemplate = redisTemplate;
-        this.reactiveValueOps = this.redisTemplate.opsForValue();
-        this.powerStateRedisTemplate = powerStateRedisTemplate;
-        this.powerStateReactiveValueOps = this.powerStateRedisTemplate.opsForValue();
+        this.softwareInfoCacheManager = softwareInfoCacheManager;
+        this.powerStateCacheManager = powerStateCacheManager;
     }
 
     @Override
     public Mono<SoftwareInformationResponse> getSoftwareInformation() {
-        return this.reactiveValueOps.get(SOFTWARE_INFORMATION_CACHE_KEY)
-                .switchIfEmpty(
-                        this.webClient
-                                .get()
-                                .uri("/system/info")
-                                .retrieve()
-                                .bodyToMono(SoftwareInformationResponse.class))
-                                .retry(INTERFACE_REQUEST_TRIES)
-                                .log()
-                .map(response -> {
-                    this.reactiveValueOps
-                            .set(SOFTWARE_INFORMATION_CACHE_KEY, response)
-                            .retry(CACHE_WRITE_TRIES)
-                            .log()
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .subscribe();
-
-                    return response;
-                });
+        return this.getSoftwareInformationFromCache()
+                .switchIfEmpty(this.getSoftwareInformationFromTv())
+                .flatMap(this::writeSoftwareInformationToCache);
     }
 
     public Mono<PowerStateResponse> getPowerState() {
-        return this.powerStateReactiveValueOps.get(POWER_STATE_CACHE_KEY)
-                .switchIfEmpty(
-                        this.webClient
-                                .get()
-                                .uri("/system/power/state")
-                                .retrieve()
-                                .bodyToMono(PowerStateResponse.class))
-                                .retry(INTERFACE_REQUEST_TRIES)
-                                .log()
-                .map(response -> {
-                    this.powerStateReactiveValueOps
-                            .set(POWER_STATE_CACHE_KEY, response)
-                            .retry(CACHE_WRITE_TRIES)
-                            .log()
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .subscribe();
-
-                    return response;
-                });
+        return this.getPowerStateFromCache()
+                .switchIfEmpty(this.getPowerStateFromTv())
+                .flatMap(this::writePowerStateToCache);
     }
 
     @Override
@@ -129,30 +94,71 @@ public class SystemControlServiceImpl implements SystemControlService {
     }
 
     @KafkaListener(topics = "power-state-change")
-    private void onPowerStateChange(ConsumerRecord<String, String> message) {
+    private void onPowerStateChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
-            Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), PowerStateResponse.class))
-                    .map(response -> {
-                        this.powerStateReactiveValueOps
-                                .set(POWER_STATE_CACHE_KEY, response)
-                                .retry(CACHE_WRITE_TRIES)
-                                .log()
-                                .subscribeOn(Schedulers.boundedElastic())
-                                .subscribe();
-                        return response;
-                    })
-                    .map(response ->
-                            Mono.fromCallable(() -> new EventMessage<>(EventCategory.POWER_STATE_CHANGED, response))
-                                    .map(eventMessage -> this.eventService.getEventStream().tryEmitNext(eventMessage))
-                                    .log()
-                                    .subscribeOn(Schedulers.boundedElastic())
-                                    .subscribe())
-                    .log()
-                    .subscribeOn(Schedulers.boundedElastic())
+            this.handlePowerStateChange(message)
                     .subscribe();
         } catch (Exception exception) {
             throw new KafkaConsumeFailException(exception.getMessage());
         }
     }
 
+    private Mono<SoftwareInformationResponse> getSoftwareInformationFromTv() {
+        return this.webClient
+                .get()
+                .uri("/system/info")
+                .retrieve()
+                .bodyToMono(SoftwareInformationResponse.class)
+                .retry(INTERFACE_REQUEST_TRIES)
+                .log();
+    }
+
+    private Mono<SoftwareInformationResponse> getSoftwareInformationFromCache() {
+        return this.softwareInfoCacheManager.read(SOFTWARE_INFORMATION_CACHE_KEY);
+    }
+
+    private Mono<SoftwareInformationResponse> writeSoftwareInformationToCache(
+            SoftwareInformationResponse softwareInformation) {
+        return this.softwareInfoCacheManager
+                .write(SOFTWARE_INFORMATION_CACHE_KEY, softwareInformation)
+                .retry(CACHE_WRITE_TRIES)
+                .log();
+    }
+
+    private Mono<PowerStateResponse> getPowerStateFromCache() {
+        return this.powerStateCacheManager.read(POWER_STATE_CACHE_KEY);
+    }
+
+    private Mono<PowerStateResponse> getPowerStateFromTv() {
+        return this.webClient
+                .get()
+                .uri("/system/power/state")
+                .retrieve()
+                .bodyToMono(PowerStateResponse.class)
+                .retry(INTERFACE_REQUEST_TRIES)
+                .log();
+    }
+
+    private Mono<Sinks.EmitResult> handlePowerStateChange(ConsumerRecord<String, String> message) {
+        return this.getPowerStateFromMqMessage(message)
+                .flatMap(this::writePowerStateToCache)
+                .flatMap(this::notifyListenersAboutNewPowerState);
+    }
+
+    private Mono<PowerStateResponse> getPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
+        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), PowerStateResponse.class));
+    }
+
+    private Mono<PowerStateResponse> writePowerStateToCache(PowerStateResponse powerState) {
+        return this.powerStateCacheManager
+                .write(POWER_STATE_CACHE_KEY, powerState)
+                .retry(CACHE_WRITE_TRIES)
+                .log();
+    }
+
+    private Mono<Sinks.EmitResult> notifyListenersAboutNewPowerState(PowerStateResponse powerState) {
+        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.POWER_STATE_CHANGED, powerState))
+                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()))
+                .log();
+    }
 }

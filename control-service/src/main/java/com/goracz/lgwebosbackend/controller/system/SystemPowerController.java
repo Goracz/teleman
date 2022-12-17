@@ -16,7 +16,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/system/power")
 @RequiredArgsConstructor
 public class SystemPowerController {
-
     private final SystemControlService systemControlService;
 
     @GetMapping
@@ -33,5 +32,4 @@ public class SystemPowerController {
     public ResponseEntity<Mono<Void>> turnOn() {
         return ResponseEntity.ok(this.systemControlService.turnOn());
     }
-
 }

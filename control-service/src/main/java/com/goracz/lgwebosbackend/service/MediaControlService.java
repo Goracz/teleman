@@ -7,6 +7,9 @@ import com.goracz.lgwebosbackend.model.response.GetVolumeResponse;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import reactor.core.publisher.Mono;
 
+/**
+ * Interface for TV media controls
+ */
 public interface MediaControlService {
     /**
      * Gets the TV's current volume.
@@ -16,6 +19,16 @@ public interface MediaControlService {
     Mono<GetVolumeResponse> getVolume();
 
     /**
+     * Decreases the TV's volume by 1.
+     */
+    Mono<Void> increaseVolume();
+
+    /**
+     * Increases the TV's volume by 1.
+     */
+    Mono<Void> decreaseVolume();
+
+    /**
      * Sets the TV's volume.
      * 
      * @param setVolumeDto DTO with the volume to set.
@@ -23,5 +36,10 @@ public interface MediaControlService {
      */
     Mono<Object> setVolume(SetVolumeDto setVolumeDto);
 
+    /**
+     * Listens for volume change events and handles them
+     * @param message Message received through MQ
+     * @throws KafkaConsumeFailException If the message couldn't be processed
+     */
     void onVolumeChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException;
 }

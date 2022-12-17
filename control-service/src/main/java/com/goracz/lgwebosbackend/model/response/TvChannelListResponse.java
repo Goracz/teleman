@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,4 +26,8 @@ public class TvChannelListResponse {
     @JsonProperty("channelList")
     private ArrayList<Channel> channelList;
     private boolean subscribed;
+
+    public static TvChannelListResponse fromListOfChannels(List<Channel> channels) {
+        return TvChannelListResponse.builder().channelList(new ArrayList<>(channels)).build();
+    }
 }

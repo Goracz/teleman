@@ -5,6 +5,9 @@ import com.goracz.lgwebosbackend.model.response.SoftwareInformationResponse;
 
 import reactor.core.publisher.Mono;
 
+/**
+ * Interface for controlling the TV's system
+ */
 public interface SystemControlService {
     /**
      * Gets the software's metadata that is currently running on the TV.

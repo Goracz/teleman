@@ -16,7 +16,6 @@ import reactor.core.publisher.Flux;
 @RequestMapping("/api/v1/events")
 @RequiredArgsConstructor
 public class EventController {
-
     private final EventService<EventMessage<?>> eventService;
 
     @GetMapping(value = "stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -27,5 +26,4 @@ public class EventController {
                 .cast(EventMessage.class)
                 .map(event -> ServerSentEvent.builder(event).build());
     }
-
 }

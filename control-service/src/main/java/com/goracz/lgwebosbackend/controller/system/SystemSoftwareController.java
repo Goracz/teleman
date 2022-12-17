@@ -15,12 +15,10 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/system")
 @RequiredArgsConstructor
 public class SystemSoftwareController {
-
     private final SystemControlService systemControlService;
 
     @GetMapping("software")
     public ResponseEntity<Mono<SoftwareInformationResponse>> getSoftwareInformation() {
         return ResponseEntity.ok(this.systemControlService.getSoftwareInformation());
     }
-
 }

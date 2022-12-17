@@ -7,22 +7,19 @@ import com.goracz.lgwebosbackend.model.EventMessage;
 import com.goracz.lgwebosbackend.model.request.SetChannelRequest;
 import com.goracz.lgwebosbackend.model.response.CurrentTvChannelResponse;
 import com.goracz.lgwebosbackend.model.response.TvChannelListResponse;
+import com.goracz.lgwebosbackend.service.CacheManager;
 import com.goracz.lgwebosbackend.service.EventService;
 import com.goracz.lgwebosbackend.service.TvControlService;
 import com.goracz.lgwebosbackend.service.WebChannelMetadataService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.springframework.data.redis.core.ReactiveValueOperations;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Service
 public class TvControlServiceImpl implements TvControlService {
-
     /**
      * The number of tries to write the given API response to cache
      * in case of failure of the initial try.
@@ -34,78 +31,108 @@ public class TvControlServiceImpl implements TvControlService {
      */
     private static final int HTTP_RETRY_TRIES = 3;
 
+    /**
+     * Cache key that stores all available channels
+     */
     private static final String TV_CHANNEL_LIST_CACHE_KEY = "tv:channel:list";
-    private static final String TV_CHANNEL_CURRENT_KEY = "tv:channel:current";
 
-    private static final String TV_CHANNEL_HISTORY_KEY = "tv:channel:history";
+    private static final String TV_CHANNEL_CURRENT_KEY = "tv:channel:current";
 
     private final EventService<EventMessage<CurrentTvChannelResponse>> eventService;
     private final WebClient webClient;
     private final WebChannelMetadataService channelMetadataService;
-    private final ReactiveValueOperations<String, TvChannelListResponse> reactiveValueOps;
-    private final ReactiveValueOperations<String, CurrentTvChannelResponse> currentTvChannelResponseReactiveValueOps;
+    private final CacheManager<String, TvChannelListResponse> channelListCacheManager;
+    private final CacheManager<String, CurrentTvChannelResponse> currentChannelCacheManager;
 
     public TvControlServiceImpl(EventService<EventMessage<CurrentTvChannelResponse>> eventService, WebClient webClient,
             WebChannelMetadataService channelMetadataService,
-            ReactiveRedisTemplate<String, TvChannelListResponse> redisTemplate,
-            ReactiveRedisTemplate<String, CurrentTvChannelResponse> currentTvChannelResponseRedisTemplate
+            CacheManager<String, TvChannelListResponse> channelListCacheManager,
+            CacheManager<String, CurrentTvChannelResponse> currentChannelCacheManager
     ) {
         this.eventService = eventService;
         this.webClient = webClient;
         this.channelMetadataService = channelMetadataService;
-        this.reactiveValueOps = redisTemplate.opsForValue();
-        this.currentTvChannelResponseReactiveValueOps = currentTvChannelResponseRedisTemplate.opsForValue();
+        this.channelListCacheManager = channelListCacheManager;
+        this.currentChannelCacheManager = currentChannelCacheManager;
     }
 
     @Override
     public Mono<TvChannelListResponse> getChannelList() {
-        return this.reactiveValueOps.get(TV_CHANNEL_LIST_CACHE_KEY)
-                .switchIfEmpty(
-                        this.webClient
-                                .get()
-                                .uri("/tv/channels")
-                                .retrieve()
-                                .bodyToMono(TvChannelListResponse.class))
-                                .log()
-                .flatMap(response -> {
-                    Mono.fromCallable(response::getChannelList)
-                            .flatMap(channelList ->
-                                Flux.fromIterable(channelList)
-                                        .flatMap(channel -> this.channelMetadataService.getChannelMetadataByChannelName(channel.getChannelName()))
-                                        .collectList()
-                                        .flatMap(channelMetadataList -> {
-                                            for (int i = 0; i < channelMetadataList.size(); i++) {
-                                                response.getChannelList().get(i).setImgUrl(channelMetadataList.get(i).getChannelLogoUrl());
-                                            }
-                                            return Mono.just(response);
-                                        })).subscribe();
-                    return Mono.just(response);
-                })
-                .flatMap(response -> this.reactiveValueOps.set(TV_CHANNEL_LIST_CACHE_KEY, response)
-                        .retry(CACHE_WRITE_TRIES)
-                        .thenReturn(response));
+        return this.getChannelListFromCache()
+                .switchIfEmpty(this.getChannelListFromTv())
+                .flatMap(response -> this.channelMetadataService.populate(response.getChannelList())
+                        .collectList()
+                        .map(TvChannelListResponse::fromListOfChannels)
+                        .flatMap(this::writeChannelListToCache));
+    }
+
+    private Mono<TvChannelListResponse> getChannelListFromCache() {
+        return this.channelListCacheManager.read(TV_CHANNEL_LIST_CACHE_KEY);
+    }
+
+    private Mono<TvChannelListResponse> getChannelListFromTv() {
+        return this.webClient
+                .get()
+                .uri("/tv/channels")
+                .retrieve()
+                .bodyToMono(TvChannelListResponse.class)
+                .log();
+    }
+
+    private Mono<TvChannelListResponse> writeChannelListToCache(TvChannelListResponse populatedChannels) {
+        return this.channelListCacheManager
+                .write(TV_CHANNEL_LIST_CACHE_KEY, populatedChannels)
+                .retry(CACHE_WRITE_TRIES)
+                .thenReturn(populatedChannels);
     }
 
     @Override
     public Mono<CurrentTvChannelResponse> getCurrentChannel() {
-        return this.currentTvChannelResponseReactiveValueOps.get(TV_CHANNEL_CURRENT_KEY)
-                .switchIfEmpty(
-                        this.webClient
-                                .get()
-                                .uri("/tv/channels/current")
-                                .retrieve()
-                                .bodyToMono(CurrentTvChannelResponse.class))
-                                .log()
-                .map(response -> {
-                    this.currentTvChannelResponseReactiveValueOps
-                            .set(TV_CHANNEL_CURRENT_KEY, response)
-                            .retry(CACHE_WRITE_TRIES)
-                            .log()
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .subscribe();
+        return this.getCurrentChannelFromCache()
+                .switchIfEmpty(this.getCurrentChannelFromTv())
+                .flatMap(this::writeCurrentChannelToCache);
+    }
 
-                    return response;
-                });
+    private Mono<CurrentTvChannelResponse> getCurrentChannelFromCache() {
+        return this.currentChannelCacheManager
+                .read(TV_CHANNEL_CURRENT_KEY);
+    }
+
+    private Mono<CurrentTvChannelResponse> getCurrentChannelFromTv() {
+        return this.webClient
+                .get()
+                .uri("/tv/channels/current")
+                .retrieve()
+                .bodyToMono(CurrentTvChannelResponse.class);
+    }
+
+    private Mono<CurrentTvChannelResponse> writeCurrentChannelToCache(CurrentTvChannelResponse currentChannel) {
+        return this.currentChannelCacheManager
+                .write(TV_CHANNEL_CURRENT_KEY, currentChannel)
+                .retry(CACHE_WRITE_TRIES)
+                .publishOn(Schedulers.boundedElastic());
+    }
+
+    @Override
+    public Mono<Void> goToNextChannel() {
+        return this.webClient
+                .post()
+                .uri("/tv/channels/next")
+                .retrieve()
+                .bodyToMono(Void.class)
+                .retry(HTTP_RETRY_TRIES)
+                .log();
+    }
+
+    @Override
+    public Mono<Void> goToPreviousChannel() {
+        return this.webClient
+                .post()
+                .uri("/tv/channels/previous")
+                .retrieve()
+                .bodyToMono(Void.class)
+                .retry(HTTP_RETRY_TRIES)
+                .log();
     }
 
     @Override
@@ -123,29 +150,29 @@ public class TvControlServiceImpl implements TvControlService {
     @KafkaListener(topics = "channel-change")
     private void onChannelChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
-            Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), CurrentTvChannelResponse.class))
-                    .map(response -> {
-                        this.currentTvChannelResponseReactiveValueOps
-                                .set(TV_CHANNEL_CURRENT_KEY, response)
-                                .retry(CACHE_WRITE_TRIES)
-                                .log()
-                                .subscribeOn(Schedulers.boundedElastic())
-                                .subscribe();
-
-                        return response;
-                    })
-                    .map(response ->
-                            Mono.fromCallable(() -> new EventMessage<>(EventCategory.CHANNEL_CHANGED, response))
-                                    .map(eventMessage -> this.eventService.getEventStream().tryEmitNext(eventMessage))
-                                    .subscribeOn(Schedulers.boundedElastic())
-                                    .subscribe())
-                    .log()
+            this.handleChannelChange(message)
                     .subscribeOn(Schedulers.boundedElastic())
                     .subscribe();
         } catch (Exception exception) {
             throw new KafkaConsumeFailException(exception.getMessage());
         }
-
     }
 
+    private Mono<Void> handleChannelChange(ConsumerRecord<String, String> message) {
+        return this.getCurrentTvChannelFromMqMessage(message)
+                .flatMap(this::writeCurrentChannelToCache)
+                .flatMap(this::notifyListenersAboutChannelChange);
+    }
+
+    private Mono<CurrentTvChannelResponse> getCurrentTvChannelFromMqMessage(
+            ConsumerRecord<String, String> message) {
+        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), CurrentTvChannelResponse.class));
+    }
+
+    private Mono<Void> notifyListenersAboutChannelChange(CurrentTvChannelResponse currentChannel) {
+        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.CHANNEL_CHANGED, currentChannel))
+                .map(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()))
+                .then()
+                .publishOn(Schedulers.boundedElastic());
+    }
 }
