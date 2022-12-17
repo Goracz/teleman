@@ -45,6 +45,8 @@ nbdist/
 nbactions.xml
 nb-configuration.xml
 
+# VS Code
+.vscode
 
 # OS
 .DS_Store
