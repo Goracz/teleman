@@ -14,6 +14,7 @@ import playback from "./routes/media/playback";
 import output from "./routes/media/output";
 
 import config from "./environments/environment.local";
+import apps from "./routes/app/apps";
 
 // Kafka Stuff
 const kafka: Kafka = new Kafka({
@@ -76,6 +77,15 @@ const onPowerStateChange = async (_: any, res: any) => {
   });
 };
 
+const onForegroundAppChange = async (_: any, res: any) => {
+  await initKafka();
+  console.log(`Foreground app changed to: ${JSON.stringify(res)}.`);
+  await producer.send({
+    topic: "foreground-app-change",
+    messages: [{ value: JSON.stringify(res) }],
+  });
+};
+
 connection.on("error", (err: any) => {
   console.log(err);
   reconnect();
@@ -89,6 +99,10 @@ connection.on("connect", () => {
   connection.subscribe(
     "ssap://com.webos.service.tvpower/power/getPowerState",
     onPowerStateChange
+  );
+  connection.subscribe(
+    "ssap://com.webos.applicationManager/getForegroundAppInfo",
+    onForegroundAppChange
   );
 });
 
@@ -113,6 +127,9 @@ app.use("/api/v1/system/info", info);
 app.use("/api/v1/media/volume", volume);
 app.use("/api/v1/media/playback", playback);
 app.use("/api/v1/media/output", output);
+
+// App Controls
+app.use("/api/v1/app", apps);
 
 app.listen(port, () => {
   console.log(`⚡️[server]: Server is running at https://localhost:${port}`);
