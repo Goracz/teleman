@@ -5,7 +5,6 @@ import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
 import com.goracz.statsservice.model.WebOSApplication;
 import com.goracz.statsservice.model.request.ChannelHistoryRequest;
-import com.goracz.lgwebosstatsservice.model.response.*;
 import com.goracz.statsservice.model.response.*;
 import com.goracz.statsservice.repository.ReactiveSortingChannelHistoryRepository;
 import com.goracz.statsservice.service.CacheManager;

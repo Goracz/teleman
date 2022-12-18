@@ -25,4 +25,12 @@ public class PowerStateResponse implements Serializable {
     private PowerStateProcessing processing;
     @JsonProperty("state")
     private PowerState state;
+
+    public boolean hasTvTurnedOn() {
+        return this.getState().equals(PowerState.ACTIVE) && this.isSubscribed();
+    }
+
+    public boolean hasTvTurnedOff() {
+        return this.getState().equals(PowerState.SUSPEND);
+    }
 }
