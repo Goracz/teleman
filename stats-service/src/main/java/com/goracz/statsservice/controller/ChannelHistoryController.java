@@ -3,6 +3,7 @@ package com.goracz.statsservice.controller;
 import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.model.request.ChannelHistoryRequest;
 import com.goracz.statsservice.service.ChannelHistoryService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,7 @@ public class ChannelHistoryController {
     private final ChannelHistoryService channelHistoryService;
 
     @PostMapping("search")
+    @Operation(summary = "Search for channel histories in a date time range")
     public ResponseEntity<Flux<ChannelHistory>> getByTimeRange(
             @RequestBody ChannelHistoryRequest channelHistoryRequest) {
         return ResponseEntity.ok(this.channelHistoryService.getByTimeRange(channelHistoryRequest));
