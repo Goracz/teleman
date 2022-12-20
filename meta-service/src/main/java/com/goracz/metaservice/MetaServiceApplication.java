@@ -55,18 +55,4 @@ public class MetaServiceApplication {
 	public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory() {
 		return new LettuceConnectionFactory("127.0.0.1", 6379);
 	}
-
-	@Bean
-    public ReactiveRedisTemplate<String, ChannelMetadata> reactiveChannelMetadataRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
-        final StringRedisSerializer keySerializer = new StringRedisSerializer();
-        final Jackson2JsonRedisSerializer<ChannelMetadata> valueSerializer = new Jackson2JsonRedisSerializer<>(
-				ChannelMetadata.class);
-        final RedisSerializationContext.RedisSerializationContextBuilder<String, ChannelMetadata> builder = RedisSerializationContext
-                .newSerializationContext(keySerializer);
-        final RedisSerializationContext<String, ChannelMetadata> context = builder.value(valueSerializer)
-                .build();
-
-        return new ReactiveRedisTemplate<>(factory, context);
-    }
 }

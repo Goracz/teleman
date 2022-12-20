@@ -9,7 +9,7 @@ public interface ChannelMetadataService {
     Flux<ChannelMetadata> getAll();
     Mono<ChannelMetadata> getById(String id);
     Mono<ChannelMetadata> getByChannelName(String channelName);
-    Mono<Void> delete(ChannelMetadata channelMetadata);
-    Mono<Void> deleteById(String id);
-    Mono<Void> deleteByChannelName(String channelName);
+    Mono<ChannelMetadata> delete(ChannelMetadata channelMetadata);
+    Mono<ChannelMetadata> deleteById(String id);
+    Mono<ChannelMetadata> deleteByChannelName(String channelName);
 }

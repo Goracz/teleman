@@ -1,40 +1,39 @@
 package com.goracz.metaservice.service.impl;
 
+import com.goracz.metaservice.component.RedisCacheProvider;
 import com.goracz.metaservice.entity.ChannelMetadata;
 import com.goracz.metaservice.repository.ReactiveSortingChannelMetadataRepository;
 import com.goracz.metaservice.service.ChannelMetadataService;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.springframework.data.redis.core.ReactiveValueOperations;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 @Service
 public class ChannelMetadataServiceImpl implements ChannelMetadataService {
     private static final int CACHE_WRITE_TRIES = 3;
 
-    private final ReactiveValueOperations<String, ChannelMetadata> channelMetadataReactiveValueOps;
     private final ReactiveSortingChannelMetadataRepository channelMetadataRepository;
+    private final RedisCacheProvider cacheProvider;
 
-    public ChannelMetadataServiceImpl(ReactiveRedisTemplate<String, ChannelMetadata> channelMetadataReactiveRedisTemplate,
-                                      ReactiveSortingChannelMetadataRepository channelMetadataRepository) {
-        this.channelMetadataReactiveValueOps = channelMetadataReactiveRedisTemplate.opsForValue();
+    public ChannelMetadataServiceImpl(ReactiveSortingChannelMetadataRepository channelMetadataRepository,
+                                      RedisCacheProvider cacheProvider) {
         this.channelMetadataRepository = channelMetadataRepository;
+        this.cacheProvider = cacheProvider;
     }
 
     @Override
     public Mono<ChannelMetadata> add(ChannelMetadata channelMetadata) {
-        return this.channelMetadataRepository.save(channelMetadata)
-                .map(savedChannelMetadata -> {
-                    this.channelMetadataReactiveValueOps
-                            .set(savedChannelMetadata.getChannelName(), savedChannelMetadata)
-                            .retry(CACHE_WRITE_TRIES)
-                            .log()
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .subscribe();
-                    return savedChannelMetadata;
-                })
+        return this.channelMetadataRepository
+                .save(channelMetadata)
+                .flatMap(this::writeToCache);
+    }
+
+    private Mono<ChannelMetadata> writeToCache(ChannelMetadata metadata) {
+        return this.cacheProvider
+                .getChannelMetadataCache()
+                .set(metadata.getChannelName(), metadata)
+                .map(result -> metadata)
+                .retry(CACHE_WRITE_TRIES)
                 .log();
     }
 
@@ -57,65 +56,49 @@ public class ChannelMetadataServiceImpl implements ChannelMetadataService {
 
     @Override
     public Mono<ChannelMetadata> getByChannelName(String channelName) {
-        return this.channelMetadataReactiveValueOps.get(channelName)
+        return this.cacheProvider
+                .getChannelMetadataCache()
+                .get(channelName)
                 .switchIfEmpty(this.channelMetadataRepository.findByChannelName(channelName))
                 .switchIfEmpty(this.channelMetadataRepository.findByChannelNameLike(channelName)
-                        .map(channelMetadata -> {
-                            this.channelMetadataReactiveValueOps
-                                    .set(channelMetadata.getChannelName(), channelMetadata)
-                                    .retry(CACHE_WRITE_TRIES)
-                                    .log()
-                                    .subscribeOn(Schedulers.boundedElastic())
-                                    .subscribe();
-                            return channelMetadata;
-                        }));
+                .flatMap(this::writeToCache));
     }
 
     @Override
-    public Mono<Void> delete(ChannelMetadata channelMetadata) {
-        return this.channelMetadataRepository.delete(channelMetadata).mapNotNull(aVoid -> {
-            this.channelMetadataReactiveValueOps
-                    .delete(channelMetadata.getChannelName())
-                    .retry(CACHE_WRITE_TRIES)
-                    .log()
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .subscribe();
-            return aVoid;
-        });
+    public Mono<ChannelMetadata> delete(ChannelMetadata channelMetadata) {
+        return this.channelMetadataRepository
+                .delete(channelMetadata)
+                .map(result -> channelMetadata)
+                .flatMap(this::deleteFromCache);
+    }
+
+    private Mono<ChannelMetadata> deleteFromCache(ChannelMetadata metadata) {
+        return this.cacheProvider
+                .getChannelMetadataCache()
+                .delete(metadata.getChannelName())
+                .map(result -> metadata)
+                .retry(CACHE_WRITE_TRIES)
+                .log();
     }
 
     @Override
-    public Mono<Void> deleteById(String id) {
+    public Mono<ChannelMetadata> deleteById(String id) {
         return this.channelMetadataRepository.findById(id)
-                .map(channelMetadata -> {
-                    this.channelMetadataRepository
-                            .deleteById(id)
-                            .log()
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .subscribe();
-                    return channelMetadata;
-                })
-                .mapNotNull(channelMetadata -> {
-                    this.channelMetadataReactiveValueOps
-                            .delete(channelMetadata.getChannelName())
-                            .retry(CACHE_WRITE_TRIES)
-                            .log()
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .subscribe();
-                    return null;
-                });
+                .flatMap(this::deleteFromDatabase)
+                .flatMap(this::deleteFromCache);
+    }
+
+    private Mono<ChannelMetadata> deleteFromDatabase(ChannelMetadata metadata) {
+        return this.channelMetadataRepository
+                .delete(metadata)
+                .map(result -> metadata)
+                .log();
     }
 
     @Override
-    public Mono<Void> deleteByChannelName(String channelName) {
-        return this.channelMetadataRepository.deleteByChannelName(channelName).mapNotNull(aVoid -> {
-            this.channelMetadataReactiveValueOps
-                    .delete(channelName)
-                    .retry(CACHE_WRITE_TRIES)
-                    .log()
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .subscribe();
-            return aVoid;
-        });
+    public Mono<ChannelMetadata> deleteByChannelName(String channelName) {
+        return this.channelMetadataRepository
+                .deleteByChannelName(channelName)
+                .flatMap(this::deleteFromCache);
     }
 }

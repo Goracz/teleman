@@ -9,5 +9,5 @@ import reactor.core.publisher.Mono;
 public interface ReactiveSortingChannelMetadataRepository extends ReactiveMongoRepository<ChannelMetadata, String> {
     Mono<ChannelMetadata> findByChannelName(String channelName);
     Mono<ChannelMetadata> findByChannelNameLike(String channelName);
-    Mono<Void> deleteByChannelName(String channelName);
+    Mono<ChannelMetadata> deleteByChannelName(String channelName);
 }
