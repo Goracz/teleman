@@ -1,13 +1,13 @@
 package com.goracz.statsservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.goracz.statsservice.component.RedisCacheProvider;
 import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
 import com.goracz.statsservice.model.WebOSApplication;
 import com.goracz.statsservice.model.request.ChannelHistoryRequest;
 import com.goracz.statsservice.model.response.*;
 import com.goracz.statsservice.repository.ReactiveSortingChannelHistoryRepository;
-import com.goracz.statsservice.service.CacheManager;
 import com.goracz.statsservice.service.ChannelHistoryService;
 import com.goracz.statsservice.service.EventService;
 import com.goracz.statsservice.service.WebChannelMetadataService;
@@ -30,17 +30,16 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     private final EventService<EventMessage<ChannelHistory>> eventService;
     private final ReactiveSortingChannelHistoryRepository channelHistoryRepository;
     private final WebChannelMetadataService webChannelMetadataService;
-    private final CacheManager<String, ChannelHistory> channelHistoryCacheManager;
+    private final RedisCacheProvider cacheProvider;
 
     public ChannelHistoryServiceImpl(EventService<EventMessage<ChannelHistory>> eventService,
                                      ReactiveSortingChannelHistoryRepository channelHistoryRepository,
                                      WebChannelMetadataService webChannelMetadataService,
-                                     CacheManager<String, ChannelHistory> channelHistoryCacheManager
-    ) {
+                                     RedisCacheProvider cacheProvider) {
         this.eventService = eventService;
         this.channelHistoryRepository = channelHistoryRepository;
         this.webChannelMetadataService = webChannelMetadataService;
-        this.channelHistoryCacheManager = channelHistoryCacheManager;
+        this.cacheProvider = cacheProvider;
     }
 
     @Override
@@ -137,7 +136,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     }
 
     private Mono<ChannelHistory> readLastChannelHistoryEntryFromCache() {
-        return this.channelHistoryCacheManager.read(TV_CHANNEL_HISTORY_KEY);
+        return this.cacheProvider.getChannelHistoryCache().get(TV_CHANNEL_HISTORY_KEY);
     }
 
     private Mono<ChannelHistory> readLastChannelHistoryEntryFromDatabase() {
@@ -253,7 +252,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     }
 
     private Mono<ChannelHistory> readLatestChannelHistoryFromCache() {
-        return this.channelHistoryCacheManager.read(TV_CHANNEL_HISTORY_KEY);
+        return this.cacheProvider.getChannelHistoryCache().get(TV_CHANNEL_HISTORY_KEY);
     }
 
     private Mono<ChannelHistory> readLatestChannelHistoryFromDatabase() {
@@ -275,7 +274,10 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
      * @return Channel history object that has been passed as an argument
      */
     private Mono<ChannelHistory> writeChannelHistoryToCache(ChannelHistory channelHistory) {
-        return this.channelHistoryCacheManager.write(TV_CHANNEL_HISTORY_KEY, channelHistory);
+        return this.cacheProvider
+                .getChannelHistoryCache()
+                .set(TV_CHANNEL_HISTORY_KEY, channelHistory)
+                .map(result -> channelHistory);
     }
 
     private Mono<ChannelHistory> notifyListeners(ChannelHistory channelHistory) {

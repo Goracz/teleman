@@ -1,11 +1,11 @@
 package com.goracz.statsservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.goracz.statsservice.component.RedisCacheProvider;
 import com.goracz.statsservice.entity.UptimeLog;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
 import com.goracz.statsservice.model.response.PowerStateResponse;
 import com.goracz.statsservice.repository.ReactiveUptimeRepository;
-import com.goracz.statsservice.service.CacheManager;
 import com.goracz.statsservice.service.UptimeService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,12 +19,12 @@ public class UptimeServiceImpl implements UptimeService {
     private static final int CACHE_WRITE_TRIES = 3;
     private static final String LATEST_UPTIME_LOG_CACHE_KEY = "uptime-log:latest";
     private final ReactiveUptimeRepository uptimeRepository;
-    private final CacheManager<String, UptimeLog> uptimeLogCacheManager;
+    private final RedisCacheProvider cacheProvider;
 
     public UptimeServiceImpl(ReactiveUptimeRepository uptimeRepository,
-                             CacheManager<String, UptimeLog> uptimeLogCacheManager) {
+                             RedisCacheProvider cacheProvider) {
         this.uptimeRepository = uptimeRepository;
-        this.uptimeLogCacheManager = uptimeLogCacheManager;
+        this.cacheProvider = cacheProvider;
     }
 
     @Override
@@ -73,13 +73,17 @@ public class UptimeServiceImpl implements UptimeService {
     }
 
     private Mono<UptimeLog> writeToCache(UptimeLog uptimeLog) {
-        return this.uptimeLogCacheManager
-                .write(LATEST_UPTIME_LOG_CACHE_KEY, uptimeLog)
+        return this.cacheProvider
+                .getUptimeLogCache()
+                .set(LATEST_UPTIME_LOG_CACHE_KEY, uptimeLog)
+                .map(result -> uptimeLog)
                 .retry(CACHE_WRITE_TRIES);
     }
 
     private Mono<UptimeLog> readLastFromCache() {
-        return this.uptimeLogCacheManager.read(LATEST_UPTIME_LOG_CACHE_KEY);
+        return this.cacheProvider
+                .getUptimeLogCache()
+                .get(LATEST_UPTIME_LOG_CACHE_KEY);
     }
 
     private Mono<UptimeLog> readLastFromDatabase() {
