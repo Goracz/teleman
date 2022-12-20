@@ -65,8 +65,8 @@ public class AutomationServiceApplication {
 		final StringRedisSerializer keySerializer = new StringRedisSerializer();
 		final Jackson2JsonRedisSerializer<AutomationRules> valueSerializer = new Jackson2JsonRedisSerializer<>(
 				AutomationRules.class);
-		final RedisSerializationContext.RedisSerializationContextBuilder<String, AutomationRules> builder = RedisSerializationContext
-				.newSerializationContext(keySerializer);
+		final RedisSerializationContext.RedisSerializationContextBuilder<String, AutomationRules> builder
+				= RedisSerializationContext.newSerializationContext(keySerializer);
 		final RedisSerializationContext<String, AutomationRules> context = builder.value(valueSerializer).build();
 
 		return new ReactiveRedisTemplate<>(factory, context);
