@@ -29,6 +29,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import EventSource from 'eventsource';
 import moment from 'moment';
+import { useRouter } from 'next/router';
 import ApplicationLayout from '../../layouts/Application';
 import { Channel } from '../../models/channel';
 import { ChannelCategory } from '../../models/channel-category';
@@ -63,6 +64,7 @@ const DashboardPage: NextPage = () => {
     }[]
   >();
 
+  const router = useRouter();
   const dispatch = useDispatch();
 
   const connectionStatus = useSelector(
@@ -107,10 +109,9 @@ const DashboardPage: NextPage = () => {
   if (
     !isLoadingChannelList &&
     !isChannelsError &&
-    (typeof isChannelsError !== 'undefined' || !isChannelsError)
+    (typeof isChannelsError !== 'undefined' || !isChannelsError) &&
+    channelList
   ) {
-    dispatch(appActions.setChannelList(channelList));
-
     dispatch(
       appActions.setDigitalTvChannelCount(
         channelList.channelList.filter(
@@ -132,10 +133,9 @@ const DashboardPage: NextPage = () => {
         ).length
       )
     );
+  } else if (typeof window !== 'undefined') {
+      router.replace('/error/missing-state-information');
   }
-  // else if (typeof window !== 'undefined') {
-  //   router.replace('/error/missing-state-information');
-  // }
 
   const {
     data: softwareInfo,

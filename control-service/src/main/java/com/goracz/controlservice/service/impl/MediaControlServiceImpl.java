@@ -1,14 +1,14 @@
 package com.goracz.controlservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.goracz.controlservice.service.CacheManager;
-import com.goracz.controlservice.service.EventService;
-import com.goracz.controlservice.service.MediaControlService;
+import com.goracz.controlservice.component.RedisCacheProvider;
 import com.goracz.controlservice.dto.media.volume.SetVolumeDto;
 import com.goracz.controlservice.exception.KafkaConsumeFailException;
 import com.goracz.controlservice.model.EventCategory;
 import com.goracz.controlservice.model.EventMessage;
 import com.goracz.controlservice.model.response.GetVolumeResponse;
+import com.goracz.controlservice.service.EventService;
+import com.goracz.controlservice.service.MediaControlService;
 import lombok.Getter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -23,17 +23,17 @@ public class MediaControlServiceImpl implements MediaControlService {
 
     private final EventService<EventMessage<GetVolumeResponse>> eventService;
     private final WebClient webClient;
-    private final CacheManager<String, GetVolumeResponse> cacheManager;
+    private final RedisCacheProvider cacheProvider;
     @Getter
     private final Sinks.Many<GetVolumeResponse> volumeStream = Sinks.many().multicast().onBackpressureBuffer();
 
     public MediaControlServiceImpl(
             EventService<EventMessage<GetVolumeResponse>> eventService,
             WebClient webClient,
-            CacheManager<String, GetVolumeResponse> cacheManager) {
+            RedisCacheProvider cacheProvider) {
         this.eventService = eventService;
         this.webClient = webClient;
-        this.cacheManager = cacheManager;
+        this.cacheProvider = cacheProvider;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class MediaControlServiceImpl implements MediaControlService {
     }
 
     private Mono<GetVolumeResponse> readVolumeFromCache() {
-        return this.cacheManager.read(MEDIA_VOLUME_CACHE_KEY);
+        return this.cacheProvider.getVolumeResponseCache().get(MEDIA_VOLUME_CACHE_KEY);
     }
 
     private Mono<GetVolumeResponse> getVolumeFromTv() {
@@ -56,7 +56,10 @@ public class MediaControlServiceImpl implements MediaControlService {
     }
 
     private Mono<GetVolumeResponse> writeVolumeToCache(GetVolumeResponse volume) {
-        return this.cacheManager.write(MEDIA_VOLUME_CACHE_KEY, volume);
+        return this.cacheProvider
+                .getVolumeResponseCache()
+                .set(MEDIA_VOLUME_CACHE_KEY, volume)
+                .map(response -> volume);
     }
 
     @Override

@@ -1,20 +1,18 @@
 package com.goracz.controlservice.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.goracz.controlservice.component.RedisCacheProvider;
+import com.goracz.controlservice.exception.KafkaConsumeFailException;
+import com.goracz.controlservice.model.EventCategory;
+import com.goracz.controlservice.model.EventMessage;
 import com.goracz.controlservice.model.response.PowerStateResponse;
 import com.goracz.controlservice.model.response.SoftwareInformationResponse;
-import com.goracz.controlservice.service.CacheManager;
 import com.goracz.controlservice.service.EventService;
 import com.goracz.controlservice.service.SystemControlService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.goracz.controlservice.exception.KafkaConsumeFailException;
-import com.goracz.controlservice.model.EventCategory;
-import com.goracz.controlservice.model.EventMessage;
-
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
@@ -40,19 +38,15 @@ public class SystemControlServiceImpl implements SystemControlService {
     private final EventService<EventMessage<PowerStateResponse>> eventService;
 
     private final WebClient webClient;
+    private final RedisCacheProvider cacheProvider;
 
-    private final CacheManager<String, SoftwareInformationResponse> softwareInfoCacheManager;
-
-    private final CacheManager<String, PowerStateResponse> powerStateCacheManager;
 
     public SystemControlServiceImpl(EventService<EventMessage<PowerStateResponse>> eventService,
                                     WebClient webClient,
-                                    CacheManager<String, SoftwareInformationResponse> softwareInfoCacheManager,
-                                    CacheManager<String, PowerStateResponse> powerStateCacheManager) {
+                                    RedisCacheProvider cacheProvider) {
         this.eventService = eventService;
         this.webClient = webClient;
-        this.softwareInfoCacheManager = softwareInfoCacheManager;
-        this.powerStateCacheManager = powerStateCacheManager;
+        this.cacheProvider = cacheProvider;
     }
 
     @Override
@@ -111,19 +105,21 @@ public class SystemControlServiceImpl implements SystemControlService {
     }
 
     private Mono<SoftwareInformationResponse> getSoftwareInformationFromCache() {
-        return this.softwareInfoCacheManager.read(SOFTWARE_INFORMATION_CACHE_KEY);
+        return this.cacheProvider.getSoftwareInformationResponseCache().get(SOFTWARE_INFORMATION_CACHE_KEY);
     }
 
     private Mono<SoftwareInformationResponse> writeSoftwareInformationToCache(
             SoftwareInformationResponse softwareInformation) {
-        return this.softwareInfoCacheManager
-                .write(SOFTWARE_INFORMATION_CACHE_KEY, softwareInformation)
+        return this.cacheProvider
+                .getSoftwareInformationResponseCache()
+                .set(SOFTWARE_INFORMATION_CACHE_KEY, softwareInformation)
+                .map(response -> softwareInformation)
                 .retry(CACHE_WRITE_TRIES)
                 .log();
     }
 
     private Mono<PowerStateResponse> getPowerStateFromCache() {
-        return this.powerStateCacheManager.read(POWER_STATE_CACHE_KEY);
+        return this.cacheProvider.getPowerStateResponseCache().get(POWER_STATE_CACHE_KEY);
     }
 
     private Mono<PowerStateResponse> getPowerStateFromTv() {
@@ -147,8 +143,9 @@ public class SystemControlServiceImpl implements SystemControlService {
     }
 
     private Mono<PowerStateResponse> writePowerStateToCache(PowerStateResponse powerState) {
-        return this.powerStateCacheManager
-                .write(POWER_STATE_CACHE_KEY, powerState)
+        return this.cacheProvider.getPowerStateResponseCache()
+                .set(POWER_STATE_CACHE_KEY, powerState)
+                .map(response -> powerState)
                 .retry(CACHE_WRITE_TRIES)
                 .log();
     }

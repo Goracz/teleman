@@ -1,14 +1,15 @@
-import { createStyles, Container, Title, Text, Button, SimpleGrid } from '@mantine/core';
+import { Button, Container, createStyles, SimpleGrid, Space, Text, Title, Tooltip } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { IconCheck, IconX } from '@tabler/icons';
 import Lottie from 'lottie-react';
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import ApplicationLayout from '../../layouts/Application';
 import tvAnimation from '../../public/lottie/tv.json';
-import { AppSliceState } from '../../store/app-slice';
+import { appActions } from '../../store/app-slice';
+import { useSystemPower } from '../../hooks';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -51,7 +52,16 @@ const onlinePowerStates = ['Active', 'Active Standby'];
 const TurnTvOnPage: NextPage = () => {
   const { classes } = useStyles();
   const router = useRouter();
-  const powerState = useSelector((state: { app: AppSliceState }) => state.app.powerState);
+  const dispatch = useDispatch();
+
+  const {
+    data: powerState,
+    isLoading: isLoadingPowerState,
+    isError: isPowerStateError,
+  } = useSystemPower();
+  if (!isLoadingPowerState && !isPowerStateError) {
+    dispatch(appActions.setPowerState(powerState));
+  }
 
   let isLoadingTvStateToggle = false;
   let isTvStateToggleError;
@@ -105,17 +115,27 @@ const TurnTvOnPage: NextPage = () => {
               function. Please turn on your TV in order to hydrate the application with the required
               data.
             </Text>
-            <Button
-              loading={isLoadingTvStateToggle}
-              disabled={!powerState}
-              variant="outline"
-              size="md"
-              mt="xl"
-              onClick={handleToggleTvState}
-              className={classes.control}
+            <Space h="md" />
+            <Text color="dimmed" size="sm">
+              Tip: This usually happens when you try to use the application for the first time,
+              or when you restart the components of the application.
+            </Text>
+            <Tooltip label={!powerState
+                ? 'There is no connection to the TV - it cannot be turned on from the application'
+                : 'The application has an indirect connection to the TV - click to turn it on'}
             >
-              Try turning on via Teleman
-            </Button>
+              <Button
+                loading={isLoadingTvStateToggle}
+                disabled={!powerState}
+                variant="outline"
+                size="md"
+                mt="xl"
+                onClick={handleToggleTvState}
+                className={classes.control}
+              >
+                Try turning on via Teleman
+              </Button>
+            </Tooltip>
           </div>
           <Lottie animationData={tvAnimation} loop className={classes.desktopImage} />
         </SimpleGrid>

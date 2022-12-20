@@ -1,16 +1,16 @@
 package com.goracz.controlservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.goracz.controlservice.model.response.CurrentTvChannelResponse;
-import com.goracz.controlservice.service.CacheManager;
-import com.goracz.controlservice.service.EventService;
-import com.goracz.controlservice.service.TvControlService;
-import com.goracz.controlservice.service.WebChannelMetadataService;
+import com.goracz.controlservice.component.RedisCacheProvider;
 import com.goracz.controlservice.exception.KafkaConsumeFailException;
 import com.goracz.controlservice.model.EventCategory;
 import com.goracz.controlservice.model.EventMessage;
 import com.goracz.controlservice.model.request.SetChannelRequest;
+import com.goracz.controlservice.model.response.CurrentTvChannelResponse;
 import com.goracz.controlservice.model.response.TvChannelListResponse;
+import com.goracz.controlservice.service.EventService;
+import com.goracz.controlservice.service.TvControlService;
+import com.goracz.controlservice.service.WebChannelMetadataService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -41,19 +41,16 @@ public class TvControlServiceImpl implements TvControlService {
     private final EventService<EventMessage<CurrentTvChannelResponse>> eventService;
     private final WebClient webClient;
     private final WebChannelMetadataService channelMetadataService;
-    private final CacheManager<String, TvChannelListResponse> channelListCacheManager;
-    private final CacheManager<String, CurrentTvChannelResponse> currentChannelCacheManager;
+    private final RedisCacheProvider cacheProvider;
 
-    public TvControlServiceImpl(EventService<EventMessage<CurrentTvChannelResponse>> eventService, WebClient webClient,
+    public TvControlServiceImpl(EventService<EventMessage<CurrentTvChannelResponse>> eventService,
+            WebClient webClient,
             WebChannelMetadataService channelMetadataService,
-            CacheManager<String, TvChannelListResponse> channelListCacheManager,
-            CacheManager<String, CurrentTvChannelResponse> currentChannelCacheManager
-    ) {
+            RedisCacheProvider cacheProvider) {
         this.eventService = eventService;
         this.webClient = webClient;
         this.channelMetadataService = channelMetadataService;
-        this.channelListCacheManager = channelListCacheManager;
-        this.currentChannelCacheManager = currentChannelCacheManager;
+        this.cacheProvider = cacheProvider;
     }
 
     @Override
@@ -67,7 +64,7 @@ public class TvControlServiceImpl implements TvControlService {
     }
 
     private Mono<TvChannelListResponse> getChannelListFromCache() {
-        return this.channelListCacheManager.read(TV_CHANNEL_LIST_CACHE_KEY);
+        return this.cacheProvider.getTvChannelListResponseCache().get(TV_CHANNEL_LIST_CACHE_KEY);
     }
 
     private Mono<TvChannelListResponse> getChannelListFromTv() {
@@ -80,8 +77,9 @@ public class TvControlServiceImpl implements TvControlService {
     }
 
     private Mono<TvChannelListResponse> writeChannelListToCache(TvChannelListResponse populatedChannels) {
-        return this.channelListCacheManager
-                .write(TV_CHANNEL_LIST_CACHE_KEY, populatedChannels)
+        return this.cacheProvider.getTvChannelListResponseCache()
+                .set(TV_CHANNEL_LIST_CACHE_KEY, populatedChannels)
+                .map(response -> populatedChannels)
                 .retry(CACHE_WRITE_TRIES)
                 .thenReturn(populatedChannels);
     }
@@ -94,8 +92,8 @@ public class TvControlServiceImpl implements TvControlService {
     }
 
     private Mono<CurrentTvChannelResponse> getCurrentChannelFromCache() {
-        return this.currentChannelCacheManager
-                .read(TV_CHANNEL_CURRENT_KEY);
+        return this.cacheProvider.getCurrentTvChannelCache()
+                .get(TV_CHANNEL_CURRENT_KEY);
     }
 
     private Mono<CurrentTvChannelResponse> getCurrentChannelFromTv() {
@@ -107,8 +105,9 @@ public class TvControlServiceImpl implements TvControlService {
     }
 
     private Mono<CurrentTvChannelResponse> writeCurrentChannelToCache(CurrentTvChannelResponse currentChannel) {
-        return this.currentChannelCacheManager
-                .write(TV_CHANNEL_CURRENT_KEY, currentChannel)
+        return this.cacheProvider.getCurrentTvChannelCache()
+                .set(TV_CHANNEL_CURRENT_KEY, currentChannel)
+                .map(response -> currentChannel)
                 .retry(CACHE_WRITE_TRIES)
                 .publishOn(Schedulers.boundedElastic());
     }
