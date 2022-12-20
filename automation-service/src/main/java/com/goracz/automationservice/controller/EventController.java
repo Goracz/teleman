@@ -2,6 +2,7 @@ package com.goracz.automationservice.controller;
 
 import com.goracz.automationservice.model.response.EventMessage;
 import com.goracz.automationservice.service.EventService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
@@ -17,6 +18,7 @@ public class EventController {
     private final EventService<EventMessage<?>> eventService;
 
     @GetMapping(value = "stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "Get event stream")
     public Flux<ServerSentEvent<EventMessage>> getEventStream() {
         return this.eventService
                 .getEventStream()
