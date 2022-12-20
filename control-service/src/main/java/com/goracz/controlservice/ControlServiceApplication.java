@@ -31,19 +31,6 @@ public class ControlServiceApplication {
         return new LettuceConnectionFactory("127.0.0.1", 6379);
     }
 
-    @Bean
-    public ReactiveRedisTemplate<Object, Object> reactiveRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
-        final StringRedisSerializer keySerializer = new StringRedisSerializer();
-        final Jackson2JsonRedisSerializer<Object> valueSerializer = new Jackson2JsonRedisSerializer<>(
-                Object.class);
-        final RedisSerializationContext.RedisSerializationContextBuilder<Object, Object> builder =
-                RedisSerializationContext.newSerializationContext(keySerializer);
-        final RedisSerializationContext<Object, Object> context = builder.value(valueSerializer).build();
-
-        return new ReactiveRedisTemplate<>(factory, context);
-    }
-
     /**
      * Provides Web Client
      * @return Web client instance

@@ -28,7 +28,6 @@ public class RedisCacheProvider {
         this.powerStateResponseCache = this.reactivePowerStateResponseRedisTemplate(factory).opsForValue();
     }
 
-    @Bean
     private ReactiveRedisTemplate<String, GetVolumeResponse> reactiveVolumeResponseRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
@@ -41,7 +40,6 @@ public class RedisCacheProvider {
         return new ReactiveRedisTemplate<>(factory, context);
     }
     
-    @Bean
     private ReactiveRedisTemplate<String, TvChannelListResponse> reactiveTvChannelListResponseRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
@@ -54,7 +52,6 @@ public class RedisCacheProvider {
         return new ReactiveRedisTemplate<>(factory, context);
     }
 
-    @Bean
     private ReactiveRedisTemplate<String, CurrentTvChannelResponse> reactiveCurrentTvChannelResponseRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
@@ -68,7 +65,6 @@ public class RedisCacheProvider {
         return new ReactiveRedisTemplate<>(factory, context);
     }
 
-    @Bean
     private ReactiveRedisTemplate<String, SoftwareInformationResponse> reactiveSoftwareInformationResponseRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
@@ -82,7 +78,6 @@ public class RedisCacheProvider {
         return new ReactiveRedisTemplate<>(factory, context);
     }
 
-    @Bean
     private ReactiveRedisTemplate<String, PowerStateResponse> reactivePowerStateResponseRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();

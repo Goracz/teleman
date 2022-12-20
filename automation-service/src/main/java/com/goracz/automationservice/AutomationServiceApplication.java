@@ -58,17 +58,4 @@ public class AutomationServiceApplication {
 	public WebClient webClient() {
 		return WebClient.builder().build();
 	}
-
-	@Bean
-	public ReactiveRedisTemplate<String, AutomationRules> reactiveAutomationRuleRedisTemplate(
-			ReactiveRedisConnectionFactory factory) {
-		final StringRedisSerializer keySerializer = new StringRedisSerializer();
-		final Jackson2JsonRedisSerializer<AutomationRules> valueSerializer = new Jackson2JsonRedisSerializer<>(
-				AutomationRules.class);
-		final RedisSerializationContext.RedisSerializationContextBuilder<String, AutomationRules> builder
-				= RedisSerializationContext.newSerializationContext(keySerializer);
-		final RedisSerializationContext<String, AutomationRules> context = builder.value(valueSerializer).build();
-
-		return new ReactiveRedisTemplate<>(factory, context);
-	}
 }
