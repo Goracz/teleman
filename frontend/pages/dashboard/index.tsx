@@ -311,11 +311,11 @@ const DashboardPage: NextPage = () => {
     if (!channelHistory) return;
     const statistics = [];
     const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 12);
-    console.log(yesterday);
+    const dayWithGoodStats = new Date('2022-12-13');
+    // yesterday.setDate(yesterday.getDate() - 12);
+    console.log(dayWithGoodStats);
 
-    const result = calculateHowManyMinutesWatchedInAGivenHour(channelHistory, yesterday);
+    const result = calculateHowManyMinutesWatchedInAGivenHour(channelHistory, dayWithGoodStats);
     const formattedResult = result.map((item, index) => {
       return {
         hour: index,
