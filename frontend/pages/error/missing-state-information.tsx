@@ -1,4 +1,13 @@
-import { Button, Container, createStyles, SimpleGrid, Space, Text, Title, Tooltip } from '@mantine/core';
+import {
+  Button,
+  Container,
+  createStyles,
+  SimpleGrid,
+  Space,
+  Text,
+  Title,
+  Tooltip,
+} from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { IconCheck, IconX } from '@tabler/icons';
 import Lottie from 'lottie-react';
@@ -116,13 +125,21 @@ const TurnTvOnPage: NextPage = () => {
               data.
             </Text>
             <Space h="md" />
-            <Text color="dimmed" size="sm">
-              Tip: This usually happens when you try to use the application for the first time,
-              or when you restart the components of the application.
+            <Text color="dimmed" size="md">
+              Reason: Reason of why the user has been redirected to this page (what kind of state
+              information is missing)...
             </Text>
-            <Tooltip label={!powerState
-                ? 'There is no connection to the TV - it cannot be turned on from the application'
-                : 'The application has an indirect connection to the TV - click to turn it on'}
+            <Space h="md" />
+            <Text color="dimmed" size="sm">
+              Tip: This usually happens when you try to use the application for the first time, or
+              when you restart the components of the application.
+            </Text>
+            <Tooltip
+              label={
+                !powerState
+                  ? 'There is no connection to the TV - it cannot be turned on from the application'
+                  : 'The application has an indirect connection to the TV - click to turn it on'
+              }
             >
               <Button
                 loading={isLoadingTvStateToggle}
