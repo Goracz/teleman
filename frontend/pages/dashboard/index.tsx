@@ -387,7 +387,13 @@ const DashboardPage: NextPage = () => {
     <ApplicationLayout>
       <Grid>
         <Col lg={6} xl={3}>
-          <Paper withBorder style={{ minHeight: '93vh' }} radius="md" px={30} pb={30}>
+          <Paper
+            withBorder
+            style={{ minHeight: '93vh', height: '100%' }}
+            radius="md"
+            px={30}
+            pb={30}
+          >
             <Image src="https://teleman.s3.eu-central-1.amazonaws.com/lg-tv-OLED42C24LA.png" />
             <Text weight="bold" size={20}>
               <Group spacing="xs">

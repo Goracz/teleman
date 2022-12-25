@@ -48,7 +48,7 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
   };
 
   return (
-    <Paper style={{ minHeight: '25vh' }} withBorder radius="md" p="xs">
+    <Paper style={{ minHeight: '25vh', height: '100%' }} withBorder radius="md" p="xs">
       <Text mt={6} ml={12} weight={500}>
         Channel Category Overview
       </Text>
