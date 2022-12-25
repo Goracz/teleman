@@ -9,11 +9,13 @@ import {
   Space,
   Stack,
   Image,
+  Tooltip,
 } from '@mantine/core';
 import moment from 'moment';
 import { NextPage } from 'next';
 import React from 'react';
 import { ChannelCategory, ChannelCategoryLegend } from '../../models/channel-category';
+import { useViewportSize } from '@mantine/hooks';
 
 interface StatsRingProps {
   data: {
@@ -40,6 +42,8 @@ const pieColors = [
 ];
 
 export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
+  const { height, width } = useViewportSize();
+
   const sumOfWatchTime = data.reduce((acc, curr) => acc + curr.watchTime, 0);
   const finalData = data
     .sort((a, b) => b.watchTime - a.watchTime)
@@ -67,9 +71,9 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
       </Text>
       <Group>
         <RingProgress
-          size={220}
+          size={height * 0.2}
           roundCaps
-          thickness={18}
+          thickness={height * 0.016}
           sections={finalData.map((statEntry) => ({
             value: statEntry.watchTimePercentage,
             color: statEntry.color,
@@ -117,22 +121,48 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
               </tr>
             </thead>
             <tbody>
-              {finalData.map(
-                (statEntry, index) =>
-                  index < 5 && (
-                    <tr key={statEntry.channelName}>
-                      <td>
-                        <Badge style={{ backgroundColor: statEntry.color }} size="xs" radius="xl" />
-                      </td>
-                      <td>
-                        <Group>
-                          <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
-                          {statEntry.channelName}
-                        </Group>
-                      </td>
-                      <td>{formatTime(statEntry.watchTime)}</td>
-                    </tr>
-                  )
+              {finalData.map((statEntry, index) =>
+                height > 1650
+                  ? index < 5
+                  : index < 3 && (
+                      <tr key={statEntry.channelName}>
+                        <td>
+                          <Badge
+                            style={{ backgroundColor: statEntry.color }}
+                            size="xs"
+                            radius="xl"
+                          />
+                        </td>
+                        <td>
+                          <Group style={{ maxWidth: width > 1200 ? width * 0.06 : height * 0.3 }}>
+                            <Tooltip label={statEntry.channelName}>
+                              <Group
+                                noWrap
+                                style={{
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'clip',
+                                }}
+                              >
+                                <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
+                                <Text
+                                  style={{
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'clip',
+                                  }}
+                                >
+                                  {statEntry.channelName}
+                                </Text>
+                              </Group>
+                            </Tooltip>
+                          </Group>
+                        </td>
+                        <td>
+                          <Text lineClamp={1}>{formatTime(statEntry.watchTime)}</Text>
+                        </td>
+                      </tr>
+                    )
               )}
             </tbody>
           </Table>

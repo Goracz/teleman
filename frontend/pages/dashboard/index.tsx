@@ -518,76 +518,84 @@ const DashboardPage: NextPage = () => {
             <Space h="lg" />
             <Grid align="center">
               <Col span={6}>
-                <Text align="left">
-                  <Button
-                    onClick={() => setVolume('down')}
-                    disabled={
-                      !(
-                        !isLoadingPowerState &&
-                        !['Active Standby', 'Suspend'].includes(powerState.state)
-                      )
-                    }
-                    fullWidth
-                    leftIcon={<IconVolume2 size={20} />}
-                    variant="outline"
-                  >
-                    Volume Down
-                  </Button>
-                </Text>
+                <Tooltip label="Volume Down">
+                  <Text align="left">
+                    <Button
+                      onClick={() => setVolume('down')}
+                      disabled={
+                        !(
+                          !isLoadingPowerState &&
+                          !['Active Standby', 'Suspend'].includes(powerState.state)
+                        )
+                      }
+                      fullWidth
+                      leftIcon={<IconVolume2 size={20} />}
+                      variant="outline"
+                    >
+                      Volume Down
+                    </Button>
+                  </Text>
+                </Tooltip>
               </Col>
               <Col span={6}>
-                <Text align="right">
-                  <Button
-                    onClick={() => setVolume('up')}
-                    disabled={
-                      !(
-                        !isLoadingPowerState &&
-                        !['Active Standby', 'Suspend'].includes(powerState.state)
-                      )
-                    }
-                    fullWidth
-                    leftIcon={<IconVolume size={20} />}
-                    variant="outline"
-                  >
-                    Volume Up
-                  </Button>
-                </Text>
+                <Tooltip label="Volume Up">
+                  <Text align="right">
+                    <Button
+                      onClick={() => setVolume('up')}
+                      disabled={
+                        !(
+                          !isLoadingPowerState &&
+                          !['Active Standby', 'Suspend'].includes(powerState.state)
+                        )
+                      }
+                      fullWidth
+                      leftIcon={<IconVolume size={20} />}
+                      variant="outline"
+                    >
+                      Volume Up
+                    </Button>
+                  </Text>
+                </Tooltip>
               </Col>
               <Col span={6}>
-                <Text align="left">
-                  <Button
-                    onClick={() => setChannel('previous')}
-                    disabled={
-                      !(
-                        !isLoadingPowerState &&
-                        !['Active Standby', 'Suspend'].includes(powerState.state)
-                      )
-                    }
-                    fullWidth
-                    leftIcon={<IconCaretLeft size={26} />}
-                    variant="outline"
-                  >
-                    Previous Channel
-                  </Button>
-                </Text>
+                <Tooltip label="Previous Channel">
+                  <Text align="left">
+                    <Button
+                      onClick={() => setChannel('previous')}
+                      disabled={
+                        !(
+                          !isLoadingPowerState &&
+                          !['Active Standby', 'Suspend'].includes(powerState.state)
+                        )
+                      }
+                      fullWidth
+                      leftIcon={<IconCaretLeft size={26} />}
+                      variant="outline"
+                    >
+                      Previous Channel
+                    </Button>
+                  </Text>
+                </Tooltip>
               </Col>
               <Col span={6}>
-                <Text align="right">
-                  <Button
-                    onClick={() => setChannel('next')}
-                    disabled={
-                      !(
-                        !isLoadingPowerState &&
-                        !['Active Standby', 'Suspend'].includes(powerState.state)
-                      )
-                    }
-                    fullWidth
-                    leftIcon={<IconCaretRight size={26} />}
-                    variant="outline"
-                  >
-                    Next Channel
-                  </Button>
-                </Text>
+                <Tooltip label="Next Channel">
+                  <Text align="right">
+                    <Button
+                      onClick={() => setChannel('next')}
+                      disabled={
+                        !(
+                          !isLoadingPowerState &&
+                          !['Active Standby', 'Suspend'].includes(powerState.state)
+                        )
+                      }
+                      fullWidth
+                      leftIcon={<IconCaretRight size={26} />}
+                      variant="outline"
+                    >
+                      Next Channel
+                    </Button>
+                  </Text>
+                </Tooltip>
               </Col>
             </Grid>
             <Space h="xl" />
