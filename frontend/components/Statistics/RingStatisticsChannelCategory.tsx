@@ -84,7 +84,13 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
                     <Text>Category</Text>
                     <Group spacing="xs">
                       <Badge style={{ backgroundColor: statEntry.color }} size="xs" radius="xl" />
-                      <Text>{ChannelCategoryLegend[statEntry.channelCategory]}</Text>
+                      <Text>
+                        {
+                          ChannelCategoryLegend[
+                            statEntry.channelCategory as keyof typeof ChannelCategoryLegend
+                          ]
+                        }
+                      </Text>
                     </Group>
                   </Group>
                 </Stack>
@@ -129,9 +135,19 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
                         </td>
                         <td>
                           <Group style={{ maxWidth: width > 1200 ? width * 0.06 : height * 0.3 }}>
-                            <Tooltip label={ChannelCategoryLegend[statEntry.channelCategory]}>
+                            <Tooltip
+                              label={
+                                ChannelCategoryLegend[
+                                  statEntry.channelCategory as keyof typeof ChannelCategoryLegend
+                                ]
+                              }
+                            >
                               <Text lineClamp={1}>
-                                {ChannelCategoryLegend[statEntry.channelCategory]}
+                                {
+                                  ChannelCategoryLegend[
+                                    statEntry.channelCategory as keyof typeof ChannelCategoryLegend
+                                  ]
+                                }
                               </Text>
                             </Tooltip>
                           </Group>
