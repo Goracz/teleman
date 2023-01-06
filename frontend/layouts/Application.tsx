@@ -66,7 +66,7 @@ const ApplicationLayout: NextPage<any> = ({ children }) => {
                 </Text>
               </Group>
               <Code sx={{ fontWeight: 700 }} mt={6}>
-                v2022.11.30.dev
+                v2022.12.26.dev
               </Code>
               <Text ml={0} weight="bold">
                 {pageName}

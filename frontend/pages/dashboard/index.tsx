@@ -14,6 +14,7 @@ import {
   Card,
   useMantineTheme,
   useMantineColorScheme,
+  Accordion,
 } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import {
@@ -387,13 +388,7 @@ const DashboardPage: NextPage = () => {
     <ApplicationLayout>
       <Grid>
         <Col lg={6} xl={3}>
-          <Paper
-            withBorder
-            style={{ minHeight: '93vh', height: '100%' }}
-            radius="md"
-            px={30}
-            pb={30}
-          >
+          <Paper withBorder style={{ height: '100%' }} radius="md" px={30} pb={30}>
             <Image src="https://teleman.s3.eu-central-1.amazonaws.com/lg-tv-OLED42C24LA.png" />
             <Text weight="bold" size={20}>
               <Group spacing="xs">
@@ -642,18 +637,25 @@ const DashboardPage: NextPage = () => {
             </Col>
 
             <Col lg={12}>
-              <Paper withBorder style={{ minHeight: '27vh' }} radius="md" p="xs">
-                <Text mt={6} ml={12} weight={500}>
-                  Quick App Launch
-                </Text>
-                <Grid columns={4}>
-                  {[].map((application) => (
-                    <Col lg={1}>
-                      <Card>{application}</Card>
-                    </Col>
-                  ))}
-                </Grid>
-              </Paper>
+              <Accordion
+                variant="separated"
+                defaultValue="content"
+                style={{ maxHeight: '27vh' }}
+                radius="md"
+              >
+                <Accordion.Item value="content">
+                  <Accordion.Control>Quick App Launch</Accordion.Control>
+                  <Accordion.Panel>
+                    <Grid columns={4}>
+                      {[].map((application) => (
+                        <Col lg={1}>
+                          <Card>{application}</Card>
+                        </Col>
+                      ))}
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
             </Col>
 
             <Col lg={12}>
