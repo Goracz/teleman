@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 import { connection } from "../..";
+import {WebOSEndpoints} from "../../constants/webos-endpoints";
+import {logger} from "../../utils/logger";
 
 const router: Router = Router();
 
@@ -9,7 +11,7 @@ router.get("/", async (_: Request, res: Response) => {
 
     response = await new Promise((resolve, reject) => {
       connection.subscribe(
-        "ssap://com.webos.service.update/getCurrentSWInformation",
+        WebOSEndpoints.CURRENT_SOFTWARE_INFORMATION,
         (err, res) => {
           if (!err) resolve(res);
           else reject(err);
@@ -19,7 +21,7 @@ router.get("/", async (_: Request, res: Response) => {
 
     res.json(response);
   } catch (err: any) {
-    console.error(`Could not turn on TV: ${err.message}`);
+    logger.error(`Could not turn on TV: ${err.message}`);
 
     return res.status(500).json({
       response: {
