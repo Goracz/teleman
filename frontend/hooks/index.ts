@@ -136,12 +136,12 @@ const useChannelHistory = (start: Date, end: Date) => {
   };
 };
 
-const useEGP = () => {
+const useEGP = (countryCode: string) => {
   const egp = useSelector((state: { app: AppSliceState }) => state.app.egpData);
   const isCached = egp && egp.length > 0;
 
   const { data, error } = useSWR(
-    isCached ? null : 'http://localhost:8082/api/v1/channel-metadata',
+    isCached ? null : `http://localhost:8082/api/v1/channel-metadata?countryCode=${countryCode}`,
     fetcher
   );
 

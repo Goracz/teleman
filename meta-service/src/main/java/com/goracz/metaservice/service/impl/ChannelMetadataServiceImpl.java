@@ -2,23 +2,27 @@ package com.goracz.metaservice.service.impl;
 
 import com.goracz.metaservice.component.RedisCacheProvider;
 import com.goracz.metaservice.entity.ChannelMetadata;
+import com.goracz.metaservice.model.Channel;
+import com.goracz.metaservice.model.response.PopulateChannelsResponse;
 import com.goracz.metaservice.repository.ReactiveSortingChannelMetadataRepository;
 import com.goracz.metaservice.service.ChannelMetadataService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
+import java.time.Duration;
+import java.util.Collection;
 
 @Service
 public class ChannelMetadataServiceImpl implements ChannelMetadataService {
-    private static final int CACHE_WRITE_TRIES = 3;
-
-    private final ReactiveSortingChannelMetadataRepository channelMetadataRepository;
     private final RedisCacheProvider cacheProvider;
+    private final ReactiveSortingChannelMetadataRepository channelMetadataRepository;
 
-    public ChannelMetadataServiceImpl(ReactiveSortingChannelMetadataRepository channelMetadataRepository,
-                                      RedisCacheProvider cacheProvider) {
-        this.channelMetadataRepository = channelMetadataRepository;
+    public ChannelMetadataServiceImpl(RedisCacheProvider cacheProvider,
+                                      ReactiveSortingChannelMetadataRepository channelMetadataRepository) {
         this.cacheProvider = cacheProvider;
+        this.channelMetadataRepository = channelMetadataRepository;
     }
 
     @Override
@@ -28,15 +32,9 @@ public class ChannelMetadataServiceImpl implements ChannelMetadataService {
                 .flatMap(this::writeToCache);
     }
 
-    private Mono<ChannelMetadata> writeToCache(ChannelMetadata metadata) {
-        return this.cacheProvider
-                .getChannelMetadataCache()
-                .set(metadata.getChannelName(), metadata)
-                .map(result -> metadata)
-                .retry(CACHE_WRITE_TRIES)
-                .log();
-    }
-
+    /**
+     * @implNote This method always returns data directly from the database and does never use Redis.
+     */
     @Override
     public Flux<ChannelMetadata> getAll() {
         return this.channelMetadataRepository
@@ -59,9 +57,22 @@ public class ChannelMetadataServiceImpl implements ChannelMetadataService {
         return this.cacheProvider
                 .getChannelMetadataCache()
                 .get(channelName)
-                .switchIfEmpty(this.channelMetadataRepository.findByChannelName(channelName))
-                .switchIfEmpty(this.channelMetadataRepository.findByChannelNameLike(channelName)
-                .flatMap(this::writeToCache));
+                .switchIfEmpty(this.searchInDatabase(channelName))
+                .switchIfEmpty(ChannelMetadata.withChannelName(channelName))
+                .flatMap(this::writeToCache);
+    }
+
+    private Mono<ChannelMetadata> searchInDatabase(String channelName) {
+        return this.channelMetadataRepository
+                .findByChannelName(channelName)
+                .switchIfEmpty(this.channelMetadataRepository.findByChannelNameLike(channelName));
+    }
+
+    private Mono<ChannelMetadata> writeToCache(ChannelMetadata metadata) {
+        return this.cacheProvider
+                .getChannelMetadataCache()
+                .set(metadata.getChannelName(), metadata)
+                .map(result -> metadata);
     }
 
     @Override
@@ -69,36 +80,61 @@ public class ChannelMetadataServiceImpl implements ChannelMetadataService {
         return this.channelMetadataRepository
                 .delete(channelMetadata)
                 .map(result -> channelMetadata)
-                .flatMap(this::deleteFromCache);
-    }
-
-    private Mono<ChannelMetadata> deleteFromCache(ChannelMetadata metadata) {
-        return this.cacheProvider
-                .getChannelMetadataCache()
-                .delete(metadata.getChannelName())
-                .map(result -> metadata)
-                .retry(CACHE_WRITE_TRIES)
-                .log();
+                .flatMap(this::removeFromCache);
     }
 
     @Override
     public Mono<ChannelMetadata> deleteById(String id) {
-        return this.channelMetadataRepository.findById(id)
+        return this.channelMetadataRepository
+                .findById(id)
                 .flatMap(this::deleteFromDatabase)
-                .flatMap(this::deleteFromCache);
+                .flatMap(this::removeFromCache);
+    }
+
+    private Mono<ChannelMetadata> removeFromCache(ChannelMetadata metadata) {
+        return this.cacheProvider
+                .getChannelMetadataCache()
+                .getAndDelete(metadata.getChannelName());
     }
 
     private Mono<ChannelMetadata> deleteFromDatabase(ChannelMetadata metadata) {
         return this.channelMetadataRepository
                 .delete(metadata)
-                .map(result -> metadata)
-                .log();
+                .map(result -> metadata);
     }
 
     @Override
     public Mono<ChannelMetadata> deleteByChannelName(String channelName) {
         return this.channelMetadataRepository
                 .deleteByChannelName(channelName)
-                .flatMap(this::deleteFromCache);
+                .map(result -> channelName)
+                .flatMap(this::removeFromCache);
+    }
+
+    private Mono<ChannelMetadata> removeFromCache(String channelName) {
+        return this.cacheProvider
+                .getChannelMetadataCache()
+                .getAndDelete(channelName);
+    }
+
+    @Override
+    public Mono<PopulateChannelsResponse> populate(Collection<Channel> channels) {
+        return Flux.fromIterable(channels)
+                .flatMap(channel -> {
+                    this.cacheProvider
+                            .getChannelMetadataCache()
+                            .get(channel.getChannelName())
+                            .switchIfEmpty(this.searchInDatabase(channel.getChannelName()))
+                            .flatMap(this::writeToCache)
+                            .flatMap(channel::populateChannelLogo)
+                            .subscribeOn(Schedulers.parallel())
+                            .subscribe();
+                    return Mono.just(channel);
+                    // If elements are not delayed, some objects won't have their meta-data assigned to them
+                }).delayElements(Duration.ofMillis(1))
+                .collectList()
+                .flatMap(populatedChannels -> Mono.just(PopulateChannelsResponse.builder()
+                        .channels(populatedChannels)
+                        .build()));
     }
 }

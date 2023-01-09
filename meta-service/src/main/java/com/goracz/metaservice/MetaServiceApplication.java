@@ -17,7 +17,13 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
+
+import java.time.Duration;
 
 @SpringBootApplication
 public class MetaServiceApplication {
@@ -27,7 +33,18 @@ public class MetaServiceApplication {
 
 	@Bean
 	public WebClient webClient() {
-		return WebClient.builder().build();
+		final int maxBufferSize = 16 * 1024 * 1024;
+
+		final ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
+				.codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(maxBufferSize))
+				.build();
+		final HttpClient client = HttpClient.create(ConnectionProvider.builder("teleman-http-client")
+				.maxIdleTime(Duration.ofSeconds(30))
+				.build());
+		return WebClient.builder()
+				.clientConnector(new ReactorClientHttpConnector(client))
+				.exchangeStrategies(exchangeStrategies)
+				.build();
 	}
 
 	@Bean

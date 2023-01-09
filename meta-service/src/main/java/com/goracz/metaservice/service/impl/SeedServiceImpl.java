@@ -12,17 +12,20 @@ import java.util.List;
 
 @Service
 public class SeedServiceImpl implements SeedService {
-
     private final ReactiveSortingChannelMetadataRepository channelMetadataRepository;
 
     public SeedServiceImpl(ReactiveSortingChannelMetadataRepository channelMetadataRepository) {
         this.channelMetadataRepository = channelMetadataRepository;
-        this.seedChannelMetadata().log().subscribeOn(Schedulers.boundedElastic()).subscribe();
+        this.seedChannelMetadata()
+                .log()
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 
     @Override
     public Mono<Void> seedChannelMetadata() {
-        this.channelMetadataRepository.deleteAll()
+        this.channelMetadataRepository
+                .deleteAll()
                 .log()
                 .subscribeOn(Schedulers.boundedElastic())
                 .subscribe();
@@ -980,7 +983,10 @@ public class SeedServiceImpl implements SeedService {
                         .channelCategory(ChannelCategory.RADIO)
                         .channelLogoUrl("https://upload.wikimedia.org/wikipedia/hu/thumb/c/ce/MR3-BARTOK.png/1200px-MR3-BARTOK.png")
                         .build()
-        )).log().subscribeOn(Schedulers.boundedElastic()).subscribe();
+        ))
+                .log()
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
 
         return Mono.empty();
     }

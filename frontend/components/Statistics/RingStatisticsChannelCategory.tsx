@@ -1,8 +1,19 @@
-import { RingProgress, Text, Paper, Center, Group, Table, Badge, Stack } from '@mantine/core';
+import {
+  RingProgress,
+  Text,
+  Paper,
+  Center,
+  Group,
+  Table,
+  Badge,
+  Stack,
+  Tooltip,
+} from '@mantine/core';
 import moment from 'moment';
 import { NextPage } from 'next';
 import React from 'react';
 import { ChannelCategoryLegend } from '../../models/channel-category';
+import { useViewportSize } from '@mantine/hooks';
 
 interface StatsRingProps {
   data: {
@@ -27,6 +38,8 @@ const pieColors = [
 ].reverse();
 
 export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }) => {
+  const { height, width } = useViewportSize();
+
   const sumOfWatchTime = data.reduce((acc, curr) => acc + curr.watchTime, 0);
   const finalData = data
     .sort((a, b) => b.watchTime - a.watchTime)
@@ -48,15 +61,15 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
   };
 
   return (
-    <Paper style={{ minHeight: '25vh' }} withBorder radius="md" p="xs">
+    <Paper style={{ minHeight: '25vh', height: '100%' }} withBorder radius="md" p="xs">
       <Text mt={6} ml={12} weight={500}>
         Channel Category Overview
       </Text>
       <Group>
         <RingProgress
-          size={220}
+          size={height * 0.2}
           roundCaps
-          thickness={18}
+          thickness={height * 0.016}
           sections={finalData.map((statEntry) => ({
             value: statEntry.watchTimePercentage,
             color: statEntry.color,
@@ -71,7 +84,13 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
                     <Text>Category</Text>
                     <Group spacing="xs">
                       <Badge style={{ backgroundColor: statEntry.color }} size="xs" radius="xl" />
-                      <Text>{ChannelCategoryLegend[statEntry.channelCategory]}</Text>
+                      <Text>
+                        {
+                          ChannelCategoryLegend[
+                            statEntry.channelCategory as keyof typeof ChannelCategoryLegend
+                          ]
+                        }
+                      </Text>
                     </Group>
                   </Group>
                 </Stack>
@@ -102,19 +121,42 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
               </tr>
             </thead>
             <tbody>
-              {finalData.map(
-                (statEntry, index) =>
-                  index < 5 && (
-                    <tr key={statEntry.channelCategory}>
-                      <td>
-                        <Badge style={{ backgroundColor: statEntry.color }} size="xs" radius="xl" />
-                      </td>
-                      <td>
-                        <Group>{ChannelCategoryLegend[statEntry.channelCategory]}</Group>
-                      </td>
-                      <td>{formatTime(statEntry.watchTime)}</td>
-                    </tr>
-                  )
+              {finalData.map((statEntry, index) =>
+                height > 1650
+                  ? index < 5
+                  : index < 3 && (
+                      <tr key={statEntry.channelCategory}>
+                        <td>
+                          <Badge
+                            style={{ backgroundColor: statEntry.color }}
+                            size="xs"
+                            radius="xl"
+                          />
+                        </td>
+                        <td>
+                          <Group style={{ maxWidth: width > 1200 ? width * 0.06 : height * 0.3 }}>
+                            <Tooltip
+                              label={
+                                ChannelCategoryLegend[
+                                  statEntry.channelCategory as keyof typeof ChannelCategoryLegend
+                                ]
+                              }
+                            >
+                              <Text lineClamp={1}>
+                                {
+                                  ChannelCategoryLegend[
+                                    statEntry.channelCategory as keyof typeof ChannelCategoryLegend
+                                  ]
+                                }
+                              </Text>
+                            </Tooltip>
+                          </Group>
+                        </td>
+                        <td>
+                          <Text lineClamp={1}>{formatTime(statEntry.watchTime)}</Text>
+                        </td>
+                      </tr>
+                    )
               )}
             </tbody>
           </Table>
