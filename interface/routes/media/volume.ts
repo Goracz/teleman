@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 import { connection } from "../..";
+import {WebOSEndpoints} from "../../constants/webos-endpoints";
+import {logger} from "../../utils/logger";
 
 const router: Router = Router();
 
@@ -7,7 +9,7 @@ router.get("/", async (req: Request, res: Response) => {
   let response;
 
   response = await new Promise((resolve, reject) => {
-    connection.subscribe("ssap://audio/getVolume", (err, res) => {
+    connection.subscribe(WebOSEndpoints.GET_VOLUME, (err, res) => {
       if (!err) resolve(res);
       else reject(err);
     });
@@ -22,7 +24,7 @@ router.post("/", async (req: Request, res: Response) => {
 
   response = await new Promise((resolve, reject) => {
     connection.request(
-      "ssap://audio/setVolume",
+      WebOSEndpoints.SET_VOLUME,
       { volume: desiredVolume },
       (err, res) => {
         if (!err) resolve(res);
@@ -39,7 +41,7 @@ router.post("/up", async (req: Request, res: Response) => {
     let response;
 
     response = await new Promise((resolve, reject) => {
-      connection.subscribe("ssap://audio/volumeUp", (err, res) => {
+      connection.subscribe(WebOSEndpoints.VOLUME_UP, (err, res) => {
         if (!err) resolve(res);
         else reject(err);
       });
@@ -49,7 +51,7 @@ router.post("/up", async (req: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not turn up volume: ${err.message}`);
+    logger.error(`Could not turn up volume: ${err.message}`);
 
     return res.status(500).json({
       response: {
@@ -64,7 +66,7 @@ router.post("/down", async (req: Request, res: Response) => {
     let response;
 
     response = await new Promise((resolve, reject) => {
-      connection.subscribe("ssap://audio/volumeDown", (err, res) => {
+      connection.subscribe(WebOSEndpoints.VOLUME_DOWN, (err, res) => {
         if (!err) resolve(res);
         else reject(err);
       });
@@ -74,7 +76,7 @@ router.post("/down", async (req: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not turn down volume: ${err.message}`);
+    logger.error(`Could not turn down volume: ${err.message}`);
 
     return res.status(500).json({
       response: {
@@ -91,7 +93,7 @@ router.post("/mute", async (req: Request, res: Response) => {
 
     response = await new Promise((resolve, reject) => {
       connection.request(
-        "ssap://audio/setMute",
+        WebOSEndpoints.SET_MUTE,
         { mute: desiredState },
         (err, res) => {
           if (!err) resolve(res);
@@ -104,7 +106,7 @@ router.post("/mute", async (req: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not (un)mute volume: ${err.message}`);
+    logger.error(`Could not (un)mute volume: ${err.message}`);
 
     return res.status(500).json({
       response: {

@@ -4,6 +4,8 @@ import arp from "@network-utils/arp-lookup";
 
 import { connection, ipAddress, reconnect } from "../..";
 import config from "../../environments/environment.local";
+import {logger} from "../../utils/logger";
+import {WebOSEndpoints} from "../../constants/webos-endpoints";
 
 const router: Router = Router();
 
@@ -21,7 +23,7 @@ router.post("/on", async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    console.error(`Could not turn on TV: ${err.message}`);
+    logger.error(`Could not turn on TV: ${err.message}`);
 
     return res.status(500).json({
       response: {
@@ -36,7 +38,7 @@ router.post("/off", async (req: Request, res: Response) => {
     let response;
 
     response = await new Promise((resolve, reject) => {
-      connection.subscribe("ssap://system/turnOff", (err, res) => {
+      connection.subscribe(WebOSEndpoints.TURN_OFF_SYSTEM, (err, res) => {
         if (!err) resolve(res);
         else reject(err);
       });
@@ -46,7 +48,7 @@ router.post("/off", async (req: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not turn off TV: ${err.message}`);
+    logger.error(`Could not turn off TV: ${err.message}`);
 
     return res.status(500).json({
       response: {
@@ -62,7 +64,7 @@ router.get("/state", async (req: Request, res: Response) => {
 
     response = await new Promise((resolve, reject) => {
       connection.subscribe(
-        "ssap://com.webos.service.tvpower/power/getPowerState",
+        WebOSEndpoints.POWER_STATE,
         (err, res) => {
           if (!err) resolve(res);
           else reject(err);
@@ -74,7 +76,7 @@ router.get("/state", async (req: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    // console.error(`Could not get TV state: ${err.message}`);
+    logger.error(`Could not get TV state: ${err.message}`);
 
     return res.status(200).json({
       response: {

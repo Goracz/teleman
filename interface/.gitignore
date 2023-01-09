@@ -1,3 +1,4 @@
 dist
 node_modules
 environments/environment.local.ts
+*.log
