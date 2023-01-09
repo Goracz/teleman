@@ -15,6 +15,13 @@ const tvMacAddress: string = "";
  * Required - Apache Kafka broker's address (IP:PORT)
  */
 const brokers: string[] = [];
+/**
+ * Optional - Your LogDNA configuration
+ */
+const logDnaIngestionKey = {
+  ingestionKey: "",
+  host: "",
+};
 
 export default {
   tvIpAddress,

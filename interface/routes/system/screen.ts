@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 import { connection } from "../..";
+import {WebOSEndpoints} from "../../constants/webos-endpoints";
+import {logger} from "../../utils/logger";
 
 const router: Router = Router();
 
@@ -9,7 +11,7 @@ router.post("/on", async (_: Request, res: Response) => {
 
     response = await new Promise((resolve, reject) => {
       connection.subscribe(
-        "ssap://com.webos.service.tvpower/power/turnOnScreen",
+        WebOSEndpoints.TURN_ON_SCREEN,
         { standByMode: "active" },
         (err, res) => {
           if (!err) resolve(res);
@@ -22,7 +24,7 @@ router.post("/on", async (_: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not turn on TV: ${err.message}`);
+    logger.error(`Could not turn on TV: ${err.message}`);
 
     return res.status(500).json({
       response: {
@@ -38,7 +40,7 @@ router.post("/off", async (_: Request, res: Response) => {
 
     response = await new Promise((resolve, reject) => {
       connection.subscribe(
-        "ssap://com.webos.service.tvpower/power/turnOffScreen",
+        WebOSEndpoints.TURN_OFF_SCREEN,
         { standByMode: "active" },
         (err, res) => {
           if (!err) resolve(res);
@@ -51,7 +53,7 @@ router.post("/off", async (_: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not turn on TV: ${err.message}`);
+    logger.error(`Could not turn on TV: ${err.message}`);
 
     return res.status(500).json({
       response: {

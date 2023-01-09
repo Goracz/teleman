@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 import { connection } from "../..";
+import {WebOSEndpoints} from "../../constants/webos-endpoints";
+import {logger} from "../../utils/logger";
 
 const router: Router = Router();
 
@@ -8,7 +10,7 @@ router.get("/", async (_: Request, res: Response) => {
     let response;
 
     response = await new Promise((resolve, reject) => {
-      connection.subscribe("ssap://audio/getSoundOutput", (err, res) => {
+      connection.subscribe(WebOSEndpoints.GET_SOUND_OUTPUT, (err, res) => {
         if (!err) resolve(res);
         else reject(err);
       });
@@ -18,7 +20,7 @@ router.get("/", async (_: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not get current sound output: ${err.message}`);
+    logger.error(`Could not get current sound output: ${err.message}`);
 
     return res.status(500).json({
       response: {
@@ -34,7 +36,7 @@ router.post("/", async (req: Request, res: Response) => {
 
     response = await new Promise((resolve, reject) => {
       connection.subscribe(
-        "ssap://audio/setSoundOutput",
+        WebOSEndpoints.SET_SOUND_OUTPUT,
         { output: req.body.output },
         (err, res) => {
           if (!err) resolve(res);
@@ -47,7 +49,7 @@ router.post("/", async (req: Request, res: Response) => {
       response,
     });
   } catch (err: any) {
-    console.error(`Could not set sound output: ${err.message}`);
+    logger.error(`Could not set sound output: ${err.message}`);
 
     return res.status(500).json({
       response: {
