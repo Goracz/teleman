@@ -30,6 +30,17 @@ public class UptimeServiceImpl implements UptimeService {
     @Override
     @Transactional(readOnly = true)
     public Mono<UptimeLog> getLatestUptimeLog() {
+        return this.readLatestUptimeLogFromCache()
+                .switchIfEmpty(this.readLatestUptimeLogFromDatabase());
+    }
+
+    private Mono<UptimeLog> readLatestUptimeLogFromCache() {
+        return this.cacheProvider
+                .getUptimeLogCache()
+                .get(LATEST_UPTIME_LOG_CACHE_KEY);
+    }
+
+    private Mono<UptimeLog> readLatestUptimeLogFromDatabase() {
         return this.uptimeRepository.findFirstByOrderByTurnOnTimeDesc();
     }
 
@@ -46,23 +57,23 @@ public class UptimeServiceImpl implements UptimeService {
     private Mono<PowerStateResponse> handlePowerStateChange(ConsumerRecord<String, String> message) {
         return this.readPowerStateFromMqMessage(message)
                 .doOnNext(powerStateResponse -> {
-                    if (powerStateResponse.hasTvTurnedOn()) {
+                    if (powerStateResponse.hasTvTurnedOn() && !this.systemRecoveredFromError(powerStateResponse)) {
                         // The power state has changed to ON, so we need to create a new UptimeLog
                         // with the current time as the turn on time
-                        Mono.fromCallable(UptimeLog::withCurrentTime)
-                                .flatMap(this.uptimeRepository::save)
-                                .flatMap(this::writeToCache)
-                                .subscribeOn(Schedulers.boundedElastic())
+                        this.writeNewUptimeLogEntry()
+                                .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     } else if (powerStateResponse.hasTvTurnedOff()) {
                         // The power state has changed to OFF, so the latest uptime log should be
                         // updated with the turn-off time.
-                        this.readLastFromCache()
-                                .switchIfEmpty(this.readLastFromDatabase())
-                                .map(UptimeLog::setTurnOffToNow)
-                                .flatMap(this.uptimeRepository::save)
-                                .map(this::writeToCache)
-                                .subscribeOn(Schedulers.boundedElastic())
+                        this.updateLatestUptimeLogEntry()
+                                .subscribeOn(Schedulers.parallel())
+                                .subscribe();
+                    } else if (powerStateResponse.hasTvTurnedOn() && this.systemRecoveredFromError(powerStateResponse)) {
+                        // The power state has changed to ON while the system thinks it is already ON.
+                        this.updateLatestUptimeLogEntry()
+                                .map(result -> this.writeNewUptimeLogEntry())
+                                .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     }
                 });
@@ -88,5 +99,25 @@ public class UptimeServiceImpl implements UptimeService {
 
     private Mono<UptimeLog> readLastFromDatabase() {
         return this.uptimeRepository.findFirstByOrderByTurnOnTimeDesc();
+    }
+
+    private boolean systemRecoveredFromError(PowerStateResponse powerStateResponse) {
+        return Boolean.TRUE.equals(this.getLatestUptimeLog()
+                .map(latestUptimeLogEntry -> latestUptimeLogEntry.getTurnOffTime() == null
+                        && powerStateResponse.hasTvTurnedOn()).block());
+    }
+
+    private Mono<UptimeLog> writeNewUptimeLogEntry() {
+        return Mono.fromCallable(UptimeLog::withCurrentTime)
+                .flatMap(this.uptimeRepository::save)
+                .flatMap(this::writeToCache);
+    }
+
+    private Mono<UptimeLog> updateLatestUptimeLogEntry() {
+        return this.readLastFromCache()
+                .switchIfEmpty(this.readLastFromDatabase())
+                .map(UptimeLog::setTurnOffToNow)
+                .flatMap(this.uptimeRepository::save)
+                .flatMap(this::writeToCache);
     }
 }

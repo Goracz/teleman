@@ -1,4 +1,4 @@
-import { AppShell, Code, Group, Header, Navbar, Tooltip, ThemeIcon, Text } from '@mantine/core';
+import { AppShell, Code, Group, Header, Navbar, Tooltip, ThemeIcon, Text, Button } from '@mantine/core';
 import { NextPage } from 'next';
 import { IconPlug, IconPlugOff } from '@tabler/icons';
 import React, { useEffect, useState } from 'react';
@@ -11,15 +11,14 @@ import { MainLinks } from './_mainLinks';
 import { User } from './_user';
 import { ColorSchemeToggleButton } from '../components/ColorSchemeToggleButton/ColorSchemeToggleButton';
 import { AppSliceState } from '../store/app-slice';
-import { PowerState } from '../models/power-state-change';
 
 const onlinePowerStates = ['Active', 'Active Standby'];
 const offlinePowerStates = ['Suspend'];
 
 const ApplicationLayout: NextPage<any> = ({ children }) => {
-  // const connectionStatus = useSelector(
-  //   (state: { app: AppSliceState }) => state.app.connectionStatus
-  // );
+  const connectionStatus = useSelector(
+    (state: { app: AppSliceState }) => state.app.connectionStatus
+  );
   const powerState = useSelector((state: { app: AppSliceState }) => state.app.powerState);
 
   const router = useRouter();
@@ -37,16 +36,18 @@ const ApplicationLayout: NextPage<any> = ({ children }) => {
       case '/automations':
         setPageName('Automations');
         break;
+      case '/debug':
+        setPageName('Debug');
     }
   }, [router.pathname]);
 
   return (
     <AppShell
-      padding="md"
-      fixed={false}
+      padding="lg"
+      fixed
       navbar={
-        <Navbar width={{ base: 300 }} p="xs">
-          <Navbar.Section grow mt="xs">
+        <Navbar width={{ base: 300 }} p="lg">
+          <Navbar.Section grow>
             <MainLinks />
           </Navbar.Section>
           <Navbar.Section>
@@ -56,7 +57,7 @@ const ApplicationLayout: NextPage<any> = ({ children }) => {
         </Navbar>
       }
       header={
-        <Header height={60}>
+        <Header height={70} px="xs">
           <Group sx={{ height: '100%' }} px={20} position="apart">
             <Group spacing="xl">
               <Group spacing="xs">
@@ -66,35 +67,51 @@ const ApplicationLayout: NextPage<any> = ({ children }) => {
                 </Text>
               </Group>
               <Code sx={{ fontWeight: 700 }} mt={6}>
-                v2022.12.26.dev
+                v2023.01.09.dev
               </Code>
               <Text ml={0} weight="bold">
                 {pageName}
               </Text>
             </Group>
             <Group spacing="xl">
-              {powerState && onlinePowerStates.includes(powerState.state) && (
-                <Tooltip label="You have a direct connection">
-                  <ThemeIcon radius="lg" color="teal" variant="light" size={34}>
-                    <IconPlug color="teal" size={20} />
-                  </ThemeIcon>
-                </Tooltip>
+              {powerState &&
+                connectionStatus !== 2 &&
+                onlinePowerStates.includes(powerState.state) && (
+                    <Button
+                      compact
+                      leftIcon={<IconPlug />}
+                      variant="gradient"
+                      gradient={{ from: 'teal', to: 'lime', deg: 105 }}
+                      radius="xl"
+                    >
+                      Directly Connected
+                    </Button>
+                )}
+              {powerState &&
+                connectionStatus !== 2 &&
+                offlinePowerStates.includes(powerState.state) && (
+                  <Button
+                    compact
+                    leftIcon={<IconPlug />}
+                    variant="gradient"
+                    gradient={{ from: 'indigo', to: 'cyan' }}
+                    radius="xl"
+                  >
+                    Connected
+                  </Button>
+                )}
+              {connectionStatus && connectionStatus === 2 && (
+                  <Button
+                    compact
+                    leftIcon={<IconPlugOff />}
+                    variant="gradient"
+                    gradient={{ from: 'orange', to: 'red' }}
+                    radius="xl"
+                  >
+                    Disconnected
+                  </Button>
               )}
-              {powerState && offlinePowerStates.includes(powerState.state) && (
-                <Tooltip label="You have a connection">
-                  <ThemeIcon radius="lg" color="blue" variant="light" size={34}>
-                    <IconPlug color="blue" size={20} />
-                  </ThemeIcon>
-                </Tooltip>
-              )}
-              {powerState && powerState.state === PowerState.Offline && (
-                <Tooltip label="You don't have a connection">
-                  <ThemeIcon radius="lg" color="red" variant="light" size={34}>
-                    <IconPlugOff color="red" size={20} />
-                  </ThemeIcon>
-                </Tooltip>
-              )}
-              <DropdownWithIcon />
+              {false && <DropdownWithIcon />}
             </Group>
           </Group>
         </Header>

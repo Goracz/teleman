@@ -343,7 +343,7 @@ const AutomationsPage: NextPage = () => {
         )}
         <Grid columns={2}>
           <Col lg={1}>
-            <Button variant="light" fullWidth onClick={handleAddAutomationAction}>
+            <Button variant="light" fullWidth radius="xl" onClick={handleAddAutomationAction}>
               Add Automation Action
             </Button>
           </Col>
@@ -353,6 +353,7 @@ const AutomationsPage: NextPage = () => {
               loading={isLoadingAutomationRuleSubmission}
               disabled={!form.isValid()}
               fullWidth
+              radius="xl"
             >
               Submit Automation Rule
             </Button>
@@ -395,7 +396,7 @@ const AutomationsPage: NextPage = () => {
         <>
           <Grid columns={1} mb={20}>
             <Col>
-              <Button onClick={() => setDrawerOpened(true)} variant="outline">
+              <Button onClick={() => setDrawerOpened(true)} variant="primary" radius="xl">
                 Add new Automation Rule
               </Button>
             </Col>

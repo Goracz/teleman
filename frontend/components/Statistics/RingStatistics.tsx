@@ -1,7 +1,7 @@
 import {
   RingProgress,
   Text,
-  Paper,
+  Card,
   Center,
   Group,
   Table,
@@ -11,11 +11,12 @@ import {
   Image,
   Tooltip,
 } from '@mantine/core';
+import { IconDeviceTv } from '@tabler/icons';
 import moment from 'moment';
 import { NextPage } from 'next';
 import React from 'react';
-import { ChannelCategory, ChannelCategoryLegend } from '../../models/channel-category';
 import { useViewportSize } from '@mantine/hooks';
+import { ChannelCategory, ChannelCategoryLegend } from '../../models/channel-category';
 
 interface StatsRingProps {
   data: {
@@ -65,7 +66,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
   };
 
   return (
-    <Paper style={{ minHeight: '25vh', height: '100%' }} withBorder radius="md" p="xs">
+    <Card style={{ minHeight: '25vh', height: '100%' }} shadow="xl" radius="xl" p="sm">
       <Text mt={6} ml={12} weight={500}>
         Channels Overview
       </Text>
@@ -116,8 +117,12 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
             <thead>
               <tr>
                 <th />
-                <th>Channel</th>
-                <th>Watch Time</th>
+                <th>
+                  <Text weight={600}>Channel</Text>
+                </th>
+                <th>
+                  <Text weight={600}>Watch Time</Text>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -135,24 +140,17 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
                         </td>
                         <td>
                           <Group style={{ maxWidth: width > 1200 ? width * 0.06 : height * 0.3 }}>
-                            <Tooltip label={statEntry.channelName}>
+                            <Tooltip label={statEntry ? (statEntry.channelName !== 'null' ? statEntry.channelName : 'N/A') : ''}>
                               <Group
                                 noWrap
-                                style={{
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'clip',
-                                }}
                               >
-                                <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
+                                {statEntry.channelLogoUrl ? (
+                                    <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
+                                ) : <IconDeviceTv width="1vw" height="2vh" />}
                                 <Text
-                                  style={{
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'clip',
-                                  }}
+                                  lineClamp={1}
                                 >
-                                  {statEntry.channelName}
+                                  {statEntry ? (statEntry.channelName !== 'null' ? statEntry.channelName : 'N/A') : ''}
                                 </Text>
                               </Group>
                             </Tooltip>
@@ -168,6 +166,6 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
           </Table>
         </div>
       </Group>
-    </Paper>
+    </Card>
   );
 };

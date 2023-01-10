@@ -1,7 +1,9 @@
 package com.goracz.statsservice.entity;
 
+import com.goracz.statsservice.model.WebOSApplication;
 import com.goracz.statsservice.model.response.ChannelMetadataResponse;
 import com.goracz.statsservice.model.response.CurrentTvChannelResponse;
+import com.goracz.statsservice.model.response.ForegroundAppChangeResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,6 +42,11 @@ public class ChannelHistory implements Serializable, Persistable<String> {
      * Category of the channel
      */
     private ChannelCategory channelCategory;
+
+    /**
+     * Application that was running on the TV
+     */
+    private WebOSApplication application;
 
     /**
      * URI to the channel's logo
@@ -101,6 +108,14 @@ public class ChannelHistory implements Serializable, Persistable<String> {
                 .channelCategory(metadata.getChannelCategory())
                 .start(ZonedDateTime.now())
                 .build();
+    }
+
+    public static Mono<ChannelHistory> fromForegroundApplication(ForegroundAppChangeResponse foregroundAppChangeResponse) {
+        return Mono.fromCallable(() -> ChannelHistory
+                .builder()
+                .application(foregroundAppChangeResponse.getAppId())
+                .start(ZonedDateTime.now())
+                .build());
     }
 
     public static ChannelHistory withMetadata(ChannelHistory channelHistory, ChannelMetadataResponse metadata) {

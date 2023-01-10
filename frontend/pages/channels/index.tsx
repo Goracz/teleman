@@ -1,4 +1,4 @@
-import { Paper, Space, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
+import { Modal, Paper, Space, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
 import { NextPage } from 'next';
 import {
   Channel,
@@ -17,7 +17,7 @@ import {
   useEpg,
   useProgram,
 } from 'planby';
-import React, { useMemo } from 'react';
+import React, { MouseEventHandler, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import ApplicationLayout from '../../layouts/Application';
 import { AppSliceState } from '../../store/app-slice';
@@ -27,7 +27,7 @@ interface ChannelItemProps {
   channel: Channel;
 }
 
-const ProgramItem = ({ program, ...rest }: ProgramItem) => {
+const ProgramItem = ({ onClick, program, ...rest }: ProgramItem & { onClick: Function }) => {
   const { styles, formatTime, isLive, isMinWidth } = useProgram({ program, ...rest });
 
   const { data } = program;
@@ -37,35 +37,39 @@ const ProgramItem = ({ program, ...rest }: ProgramItem) => {
   const tillTime = formatTime(till);
 
   return (
-    <Tooltip label={title}>
-      <ProgramBox width={styles.width} style={styles.position}>
-        <ProgramContent width={styles.width} isLive={isLive}>
-          <ProgramFlex>
-            {isLive && isMinWidth && <></>}
-            <ProgramStack>
-              <ProgramTitle>{title}</ProgramTitle>
-              <ProgramText>
-                {sinceTime} - {tillTime}
-              </ProgramText>
-            </ProgramStack>
-          </ProgramFlex>
-        </ProgramContent>
-      </ProgramBox>
-    </Tooltip>
+      <Tooltip label={<><Text>{title}</Text><Text>{sinceTime} - {tillTime}</Text></>}>
+        <ProgramBox
+          onClick={onClick as MouseEventHandler}
+          width={styles.width}
+          style={styles.position}
+        >
+          <ProgramContent width={styles.width} isLive={isLive}>
+            <ProgramFlex>
+              {isLive && isMinWidth && <></>}
+              <ProgramStack>
+                <ProgramTitle>{title}</ProgramTitle>
+                <ProgramText>
+                  {sinceTime} - {tillTime}
+                </ProgramText>
+              </ProgramStack>
+            </ProgramFlex>
+          </ProgramContent>
+        </ProgramBox>
+      </Tooltip>
   );
 };
 
 const ChannelItem = ({ channel, onClick }: ChannelItemProps) => {
   const { position, logo } = channel;
   return (
-    <Tooltip label={channel.channelName}>
+      <Tooltip label={channel.name}>
       <ChannelBox onClick={onClick} {...position}>
         {logo && (
           <ChannelLogo onClick={() => console.log('channel', channel)} src={logo} alt="Logo" />
         )}
-        {!logo && <Text p="xl">{channel.channelName}</Text>}
+        {!logo && <Text p="xl"><Text>{channel.name}</Text></Text>}
       </ChannelBox>
-    </Tooltip>
+      </Tooltip>
   );
 };
 
@@ -155,40 +159,120 @@ const lightTheme: Theme = {
   },
 };
 
-const findEPGData = (channel: any, epgData: { channels: any[]; programs: any[] }): any => {
-  const epgChannelMeta = epgData.channels.find((epgChannel: any) => {
-    if (
-      epgChannel.name.toLowerCase().startsWith(
-        channel.channelName
-          .toLowerCase()
-          .replace('ö', 'o')
-          .replace('ü', 'u')
-          .replace('ó', 'o')
-          .replace('ő', 'o')
-          .replace('ú', 'u')
-          .replace('é', 'e')
-          .replace('á', 'a')
-          .replace('ű', 'u')
-          .replace('í', 'i')
-          .slice(0, Math.max(channel.channelName.length - 1, 1))
-      )
-    ) {
-      return true;
-    }
-    return false;
-  });
-  return {
-    // program: epgProgramMeta ? formatProgram(epgChannelMeta) : null,
-    ...channel,
-    ...epgChannelMeta,
-  };
-};
+// const findEPGData = (channel: any, epgData: { channels: any[]; programs: any[] }): any => {
+//   const epgChannelMeta = epgData.channels.find(
+//       (epgChannel: any) => epgChannel.name
+//           .toLowerCase()
+//           .slice(0, 4) === channel.channelName.toLowerCase().slice(0, 4)
+//   );
+//   return {
+//     // program: epgProgramMeta ? formatProgram(epgChannelMeta) : null,
+//     ...channel,
+//     ...epgChannelMeta,
+//   };
+// };
 
 const ChannelsPage: NextPage = () => {
   const channelList = useSelector((state: { app: AppSliceState }) => state.app.channelList);
   const egp = useSelector((state: { app: AppSliceState }) => state.app.egpData);
+  // const softwareInfo = useSelector((state: { app: AppSliceState }) => state.app.softwareInfo);
+
+  // const dispatch = useDispatch();
+
+  // const {
+  //   data: epgData,
+  //   isLoading: isLoadingEpgData,
+  //   isError: isEpgDataError,
+  // } = useEGP(softwareInfo ? (softwareInfo as any).country.toLowerCase() : 'hu');
+  // if (!isLoadingEpgData && !isEpgDataError) {
+  //   dispatch(appActions.setEgpData(epgData));
+  // }
 
   const { colorScheme } = useMantineColorScheme();
+
+  const [programModalOpen, setProgramModalOpen] = React.useState(false);
+  const [selectedProgram, setSelectedProgram] = React.useState<ProgramItem | null>(null);
+
+  // const egpData = egp.programs.map((program: any) => ({
+  //   ...program,
+  //   channelUuid: egp.channels.find((channel: any) => channel.id === program.channel).channelUuid,
+  //   since: new Date(program.start),
+  //   till: new Date(program.stop),
+  //   title: program.titles[0].value,
+  //   description: program.descriptions.length > 0 ? program.descriptions[0].value : '',
+  // }));
+  // console.log(egpData);
+  //
+  // // TODO! It is VERY important to improve this filtering logic as soon as possible.
+  // const channelsData = useMemo(
+  //   () =>
+  //     (channelList as any).channelList
+  //       .map((channel: any) => findEPGData(channel, egp))
+  //       .sort((a: any, b: any) => b.logo && !a.logo)
+  //       .sort((a: any, b: any) => a.name > b.name),
+  //   []
+  // );
+  // console.log(channelsData);
+
+  // const egpData = channelsData
+  //   .filter((channel: any) => channel.program)
+  //   .map((channel: any) => channel.program);
+  //
+  // console.log(channelsData);
+  const channelsData = useMemo(
+    () =>
+      egp.channels
+        .map((channel: any) => ({
+          ...channel,
+          uuid: channel.id,
+        }))
+        .filter((channel: any) =>
+          (channelList as any).channelList.find((existingChannel: any) => {
+            if (
+              channel.name.toLowerCase().startsWith(
+                existingChannel.channelName
+                  .toLowerCase()
+                  .replace('ö', 'o')
+                  .replace('ü', 'u')
+                  .replace('ó', 'o')
+                  .replace('ő', 'o')
+                  .replace('ú', 'u')
+                  .replace('é', 'e')
+                  .replace('á', 'a')
+                  .replace('ű', 'u')
+                  .replace('í', 'i')
+                  .slice(0, Math.max(existingChannel.channelName.length - 1, 1))
+              ) ||
+              existingChannel.channelName
+                .toLowerCase()
+                .replace('ö', 'o')
+                .replace('ü', 'u')
+                .replace('ó', 'o')
+                .replace('ő', 'o')
+                .replace('ú', 'u')
+                .replace('é', 'e')
+                .replace('á', 'a')
+                .replace('ű', 'u')
+                .replace('í', 'i')
+                .startsWith(
+                  channel.name.toLowerCase().slice(0, Math.max(channel.name.length - 1, 1))
+                )
+            ) {
+              return true;
+            }
+            console.log(
+              `Did not match: ${channel.name.toLowerCase()} and ${existingChannel.channelName.toLowerCase()}`
+            );
+            return false;
+          })
+        ),
+    []
+  );
+  // const egpData = channelsData
+  //   .filter((channel: any) => channel.program)
+  //   .map((channel: any) => channel.program);
+  // console.log(egpData);
+  // console.log(channelsData);
 
   const egpData = egp.programs.map((program: any) => ({
     ...program,
@@ -198,73 +282,6 @@ const ChannelsPage: NextPage = () => {
     title: program.titles[0].value,
     description: program.descriptions.length > 0 ? program.descriptions[0].value : '',
   }));
-
-  // TODO! It is VERY important to improve this filtering logic as soon as possible.
-  const channelsData = useMemo(
-    () =>
-      (channelList as any).channelList
-        .map((channel: any) => findEPGData(channel, egp))
-        .sort((a: any, b: any) => b.logo && !a.logo)
-        .sort((a: any, b: any) => a.name > b.name),
-    []
-  );
-
-  // const egpData = channelsData
-  //   .filter((channel: any) => channel.program)
-  //   .map((channel: any) => channel.program);
-
-  // console.log(channelsData);
-  // const channelsData = useMemo(
-  //   () =>
-  //     egp.channels
-  //       .map((channel: any) => ({
-  //         ...channel,
-  //         uuid: channel.id,
-  //       }))
-  //       .filter((channel: any) =>
-  //         (channelList as any).channelList.find((existingChannel: any) => {
-  //           if (
-  //             channel.name.toLowerCase().startsWith(
-  //               existingChannel.channelName
-  //                 .toLowerCase()
-  //                 .replace('ö', 'o')
-  //                 .replace('ü', 'u')
-  //                 .replace('ó', 'o')
-  //                 .replace('ő', 'o')
-  //                 .replace('ú', 'u')
-  //                 .replace('é', 'e')
-  //                 .replace('á', 'a')
-  //                 .replace('ű', 'u')
-  //                 .replace('í', 'i')
-  //                 .slice(0, Math.max(existingChannel.channelName.length - 1, 1))
-  //             ) ||
-  //             existingChannel.channelName
-  //               .toLowerCase()
-  //               .replace('ö', 'o')
-  //               .replace('ü', 'u')
-  //               .replace('ó', 'o')
-  //               .replace('ő', 'o')
-  //               .replace('ú', 'u')
-  //               .replace('é', 'e')
-  //               .replace('á', 'a')
-  //               .replace('ű', 'u')
-  //               .replace('í', 'i')
-  //               .startsWith(
-  //                 channel.name.toLowerCase().slice(0, Math.max(channel.name.length - 1, 1))
-  //               )
-  //           ) {
-  //             return true;
-  //           }
-  //           console.log(
-  //             `Did not match: ${channel.name.toLowerCase()} and ${existingChannel.channelName.toLowerCase()}`
-  //           );
-  //           return false;
-  //         })
-  //       ),
-  //   []
-  // );
-  // console.log(egpData);
-  // console.log(channelsData);
 
   const { getEpgProps, getLayoutProps } = useEpg({
     theme: colorScheme === 'dark' ? darkTheme : lightTheme,
@@ -285,6 +302,12 @@ const ChannelsPage: NextPage = () => {
     });
   };
 
+  const handleProgramClick = (program: ProgramItem | null) => {
+    console.log(program);
+    setSelectedProgram(program);
+    setProgramModalOpen(true);
+  };
+
   return (
     <ApplicationLayout>
       {/* <MultiSelect
@@ -300,6 +323,19 @@ const ChannelsPage: NextPage = () => {
             item.description.toLowerCase().includes(value.toLowerCase().trim()))
         }
       /> */}
+      <Modal
+        opened={programModalOpen}
+        onClose={() => setProgramModalOpen(false)}
+        title="Program details"
+      >
+        {selectedProgram && (
+          <>
+            <Text>{(selectedProgram as any).data.title}</Text>
+            <Text>{selectedProgram as any}.data.description</Text>
+          </>
+        )}
+      </Modal>
+
       <Space h="md" />
       <Paper style={{ maxWidth: '87vw' }}>
         <Epg {...getEpgProps()}>
@@ -313,7 +349,12 @@ const ChannelsPage: NextPage = () => {
               />
             )}
             renderProgram={({ program, ...rest }) =>
-              program && <ProgramItem key={program.data.id} program={program} {...rest} />
+              program && <ProgramItem
+                onClick={() => handleProgramClick(program as any)}
+                key={program.data.id}
+                program={program}
+                {...rest}
+              />
             }
           />
         </Epg>
