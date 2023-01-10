@@ -1,4 +1,4 @@
-package com.goracz.lgwebostvmetaservice;
+package com.goracz.metaservice.service.impl;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

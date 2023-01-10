@@ -53,7 +53,7 @@ export const AutomationCard = ({
   };
 
   return (
-    <Paper withBorder radius="md" className={classes.card}>
+    <Paper radius="md" shadow="sm" className={classes.card}>
       <Group>
         {actions.find((action) => action.type === ('TURN_ON' as any)) && (
           <Tooltip label="Turn TV On">
@@ -139,10 +139,10 @@ export const AutomationCard = ({
       </Text>
       <Space h="xl" />
       <Group>
-        <Button variant="light" color="blue" size="xs">
+        <Button variant="light" color="blue" size="xs" radius="xl">
           Modify
         </Button>
-        <Button onClick={handleDeleteRule} variant="light" color="red" size="xs">
+        <Button onClick={handleDeleteRule} variant="light" color="red" size="xs" radius="xl">
           Delete
         </Button>
       </Group>

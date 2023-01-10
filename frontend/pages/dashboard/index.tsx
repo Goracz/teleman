@@ -7,12 +7,11 @@ import {
   Space,
   Group,
   Divider,
-  Paper,
+  Transition,
   Button,
   Badge,
   Tooltip,
   Card,
-  useMantineTheme,
   useMantineColorScheme,
   Accordion,
 } from '@mantine/core';
@@ -33,6 +32,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import EventSource from 'eventsource';
 import moment from 'moment';
 import { useRouter } from 'next/router';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+} from 'recharts';
 import ApplicationLayout from '../../layouts/Application';
 import { Channel } from '../../models/channel';
 import { ChannelCategory } from '../../models/channel-category';
@@ -50,15 +58,6 @@ import {
 import { ChannelHistory } from '../../models/channel-history';
 import { RingStatistics } from '../../components/Statistics/RingStatistics';
 import { RingStatisticsChannelCategory } from '../../components/Statistics/RingStatisticsChannelCategory';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip as ChartTooltip,
-} from 'recharts';
 
 // Calculates that on a given day, how many minutes was the TV watched by every hour in 24 hours
 const calculateHowManyMinutesWatchedInAGivenHour = (
@@ -72,13 +71,27 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
   const hours = new Array(24).fill(0);
 
   dayChannelHistories.forEach((channelHistory) => {
-    const hour = moment.unix(channelHistory.start).hour();
-    hours[hour] = hours[hour] + channelHistory.start;
+    const startHour = moment.unix(channelHistory.start).hour();
+    const endHour = moment.unix(channelHistory.end).hour();
+    for (let i = startHour; i <= endHour; i += 1) {
+      console.log(`Start: ${startHour}, End: ${endHour}, i: ${i}`);
+      let duration: number;
+
+      if (
+          moment.unix(channelHistory.end).hour() > moment.unix(channelHistory.start).hour() &&
+          i < endHour
+      ) {
+        duration = 60;
+      } else {
+        duration = moment.unix(channelHistory.end).minute()
+            - moment.unix(channelHistory.start).minute();
+      }
+
+      hours[i] += duration;
+    }
   });
 
-  const result = hours.map((hour) => moment.unix(hour).minutes());
-  console.log(result);
-  return result;
+  return hours;
 };
 
 const getHourLabel = (hour: number): string => {
@@ -100,7 +113,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <span>
           <strong>{`${getHourLabel(label)} - ${getHourLabel(label + 1)}`}</strong>
         </span>
-        <span>{`Watched for ${payload[0].value} minutes`}</span>
+        <span>{`Up for ${payload[0].value} minutes`}</span>
       </Card>
     );
   }
@@ -121,13 +134,13 @@ const DashboardPage: NextPage = () => {
   const [calculatedChannelCategoryStats, setCalculatedChannelCategoryStats] = React.useState<
     {
       channelCategory: string;
+      application: string;
       watchTime: number;
     }[]
   >();
   const [calculatedHourlyChannelView, setCalculatedHourlyChannelView] = React.useState<any>();
 
   const colorScheme = useMantineColorScheme();
-  const router = useRouter();
   const dispatch = useDispatch();
 
   const connectionStatus = useSelector(
@@ -250,7 +263,9 @@ const DashboardPage: NextPage = () => {
   };
 
   const formatUptime = (textToFormat: string): string =>
-    textToFormat.replace(':', 'h ').replace(':', 'm ');
+    textToFormat === 'Invalid date'
+        ? '-'
+        : textToFormat.replace(':', 'h ').replace(':', 'm ');
 
   const {
     data: channelHistory,
@@ -305,24 +320,18 @@ const DashboardPage: NextPage = () => {
         watchTime,
       };
     });
-    setCalculatedChannelCategoryStats(watchTimeByCategory);
+    setCalculatedChannelCategoryStats(watchTimeByCategory as any);
   }, [channelHistory]);
 
   useEffect(() => {
     if (!channelHistory) return;
-    const statistics = [];
     const today = new Date();
-    const dayWithGoodStats = new Date('2022-12-13');
-    // yesterday.setDate(yesterday.getDate() - 12);
-    console.log(dayWithGoodStats);
 
-    const result = calculateHowManyMinutesWatchedInAGivenHour(channelHistory, dayWithGoodStats);
-    const formattedResult = result.map((item, index) => {
-      return {
+    const result = calculateHowManyMinutesWatchedInAGivenHour(channelHistory, today);
+    const formattedResult = result.map((item, index) => ({
         hour: index,
         minutes: item,
-      };
-    });
+      }));
 
     setCalculatedHourlyChannelView(formattedResult);
   }, [channelHistory]);
@@ -339,28 +348,19 @@ const DashboardPage: NextPage = () => {
     });
   };
 
-  const {
-    data: epgData,
-    isLoading: isLoadingEpgData,
-    isError: isEpgDataError,
-  } = useEGP(softwareInfo ? softwareInfo.country.toLowerCase() : 'hu');
-  if (!isLoadingEpgData && !isEpgDataError) {
-    dispatch(appActions.setEgpData(epgData));
-  }
-
   useEffect(() => {
     if (tvUptime) {
       if (tvUptime.turnOffTime) {
         setCalculatedTvUptime(
-          formatUptime(
-            moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
-              'H:m:'
+            formatUptime(
+                moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
+                    'H:m:'
+                )
             )
-          )
         );
       } else {
         setCalculatedTvUptime(
-          formatUptime(moment(moment().diff(moment.unix(tvUptime.turnOnTime))).format('H:m:'))
+            formatUptime(moment(moment().diff(moment.unix(tvUptime.turnOnTime)) - 1000 * 60 * 60).format('H:m:'))
         );
       }
     }
@@ -378,20 +378,29 @@ const DashboardPage: NextPage = () => {
         );
       } else {
         setCalculatedTvUptime(
-          formatUptime(moment(moment().diff(moment.unix(tvUptime.turnOnTime))).format('H:m:'))
+          formatUptime(moment(moment().diff(moment.unix(tvUptime.turnOnTime)) - 1000 * 60 * 60).format('H:m:'))
         );
       }
     }
   }, 1000 * 60);
 
+  const {
+    data: epgData,
+    isLoading: isLoadingEpgData,
+    isError: isEpgDataError,
+  } = useEGP(softwareInfo ? (softwareInfo as any).country.toLowerCase() : 'hu');
+  if (!isLoadingEpgData && !isEpgDataError) {
+    dispatch(appActions.setEgpData(epgData));
+  }
+
   return (
     <ApplicationLayout>
       <Grid>
         <Col lg={6} xl={3}>
-          <Paper withBorder style={{ height: '100%' }} radius="md" px={30} pb={30}>
+          <Card style={{ height: '100%' }} shadow="xl" radius="xl" px={30} pb={30}>
             <Image src="https://teleman.s3.eu-central-1.amazonaws.com/lg-tv-OLED42C24LA.png" />
             <Text weight="bold" size={20}>
-              <Group spacing="xs">
+              <Group spacing="sm">
                 LG{' '}
                 {softwareInfo && softwareInfo.model_name === 'HE_DTV_W22O_AFABATAA' ? 'C2' : 'TV'}{' '}
                 <Badge
@@ -409,11 +418,19 @@ const DashboardPage: NextPage = () => {
                 </Badge>
               </Group>
             </Text>
+            <Space h="xs" />
             <Text weight="normal">
               {isLoadingSoftwareInfo && <Skeleton height={12} mt={6} width="40%" />}
               {!isLoadingSoftwareInfo && softwareInfo && (softwareInfo as any).product_name}
             </Text>
             <Space h="md" />
+            <Text>
+              <Group position="apart">
+                <Text weight={500}>MAC Address</Text>
+                <Text>{softwareInfo && softwareInfo.device_id}</Text>
+              </Group>
+            </Text>
+            <Space h="sm" />
             <Text>
               <Group position="apart">
                 <Text weight={500}>LAN IP</Text>
@@ -443,7 +460,7 @@ const DashboardPage: NextPage = () => {
                 </Text>
               </Group>
             </Text>
-            <Space h="xs" />
+            <Space h="sm" />
             <Text>
               <Group position="apart">
                 <Text weight={500}>System Uptime</Text>
@@ -460,7 +477,7 @@ const DashboardPage: NextPage = () => {
                 </Text>
               </Group>
             </Text>
-            <Space h="xs" />
+            <Space h="sm" />
             <Text>
               <Group position="apart">
                 <Text weight={500}>Analogue TV Channels</Text>
@@ -470,7 +487,7 @@ const DashboardPage: NextPage = () => {
                 </Text>
               </Group>
             </Text>
-            <Space h="xs" />
+            <Space h="sm" />
             <Text>
               <Group position="apart">
                 <Text weight={500}>Radio Channels</Text>
@@ -484,22 +501,27 @@ const DashboardPage: NextPage = () => {
             <Text>
               <Group noWrap position="apart">
                 <Text weight={500} lineClamp={1}>
-                  <Tooltip label="Current Channel">
-                    <Text>Current Channel</Text>
-                  </Tooltip>
+                  <Text>
+                    {currentChannel && currentChannel.channelName ? 'Current Channel' : 'Current Application'}
+                  </Text>
                 </Text>
                 <Text>
                   {!currentChannel && <Skeleton height={12} mt={6} width="20%" />}
 
-                  {typeof currentChannel !== 'undefined' && (
+                  {typeof currentChannel !== 'undefined' && currentChannel.channelName && (
                     <Tooltip label={currentChannel && currentChannel.channelName}>
                       <Text lineClamp={1}>{currentChannel.channelName}</Text>
+                    </Tooltip>
+                  )}
+                  {typeof currentChannel !== 'undefined' && currentChannel.application && (
+                    <Tooltip label={currentChannel && currentChannel.application}>
+                      <Text lineClamp={1}>{currentChannel.application}</Text>
                     </Tooltip>
                   )}
                 </Text>
               </Group>
             </Text>
-            <Space h="xs" />
+            <Space h="sm" />
             <Text>
               <Group position="apart">
                 <Text weight={500}>Current Volume</Text>
@@ -525,7 +547,8 @@ const DashboardPage: NextPage = () => {
                       }
                       fullWidth
                       leftIcon={<IconVolume2 size={20} />}
-                      variant="outline"
+                      variant="light"
+                      radius="xl"
                     >
                       Volume Down
                     </Button>
@@ -545,7 +568,8 @@ const DashboardPage: NextPage = () => {
                       }
                       fullWidth
                       leftIcon={<IconVolume size={20} />}
-                      variant="outline"
+                      variant="light"
+                      radius="xl"
                     >
                       Volume Up
                     </Button>
@@ -565,7 +589,8 @@ const DashboardPage: NextPage = () => {
                       }
                       fullWidth
                       leftIcon={<IconCaretLeft size={26} />}
-                      variant="outline"
+                      variant="light"
+                      radius="xl"
                     >
                       Previous Channel
                     </Button>
@@ -585,7 +610,8 @@ const DashboardPage: NextPage = () => {
                       }
                       fullWidth
                       leftIcon={<IconCaretRight size={26} />}
-                      variant="outline"
+                      variant="light"
+                      radius="xl"
                     >
                       Next Channel
                     </Button>
@@ -595,33 +621,37 @@ const DashboardPage: NextPage = () => {
             </Grid>
             <Space h="xl" />
             <Group>
-              <Button
-                leftIcon={
-                  !isLoadingPowerState &&
-                  !['Active Standby', 'Suspend'].includes(powerState.state) ? (
-                    <IconPlugOff size={16} />
-                  ) : (
-                    <IconPlug size={16} />
-                  )
-                }
-                loading={isLoadingTvStateToggle}
-                disabled={connectionStatus === EventSource.OPEN}
-                onClick={handleToggleTvState}
-                fullWidth
-                variant="gradient"
-                gradient={
-                  !isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state)
-                    ? { from: 'orange', to: 'red' }
-                    : { from: 'teal', to: 'lime', deg: 105 }
-                }
-              >
-                Turn{' '}
-                {!isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state)
-                  ? 'Off'
-                  : 'On'}
-              </Button>
+              <Transition mounted transition="fade" duration={400} timingFunction="ease">
+                {(styles) => <Button
+                  style={styles}
+                  leftIcon={
+                    !isLoadingPowerState &&
+                    !['Active Standby', 'Suspend'].includes(powerState.state) ? (
+                      <IconPlugOff size={16} />
+                    ) : (
+                      <IconPlug size={16} />
+                    )
+                  }
+                  loading={isLoadingTvStateToggle}
+                  disabled={connectionStatus === EventSource.OPEN}
+                  onClick={handleToggleTvState}
+                  fullWidth
+                  variant="gradient"
+                  radius="xl"
+                  gradient={
+                    !isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state)
+                      ? { from: 'orange', to: 'red' }
+                      : { from: 'teal', to: 'lime', deg: 105 }
+                  }
+                >
+                  Turn{' '}
+                  {!isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state)
+                    ? 'Off'
+                    : 'On'}
+                             </Button>}
+              </Transition>
             </Group>
-          </Paper>
+          </Card>
         </Col>
 
         <Col lg={6} xl={9}>
@@ -641,10 +671,12 @@ const DashboardPage: NextPage = () => {
                 variant="separated"
                 defaultValue="content"
                 style={{ maxHeight: '27vh' }}
-                radius="md"
+                radius="xl"
               >
-                <Accordion.Item value="content">
-                  <Accordion.Control>Quick App Launch</Accordion.Control>
+                <Accordion.Item value="content" px="xs">
+                  <Accordion.Control>
+                    <Text weight={500}>Quick App Launch</Text>
+                  </Accordion.Control>
                   <Accordion.Panel>
                     <Grid columns={4}>
                       {[].map((application) => (
@@ -659,34 +691,37 @@ const DashboardPage: NextPage = () => {
             </Col>
 
             <Col lg={12}>
-              <Paper withBorder style={{ minHeight: '38.33vh' }} radius="md" p="xs">
+              <Card style={{ minHeight: '40vh' }} shadow="xl" radius="xl" p="xs">
                 <Text mt={6} ml={12} weight={500}>
                   Uptime Overview
                 </Text>
+                <Space h="xs" />
                 <Text mt={2} ml={12} weight={400}>
-                  <span>
-                    {calculatedHourlyChannelView &&
-                    calculatedHourlyChannelView
-                      .map((stat: any) => stat.minutes)
-                      .reduce((acc: number, curr: number) => acc + curr, 0) > 0
-                      ? moment
-                          .duration(
-                            calculatedHourlyChannelView
-                              .map((stat: any) => stat.minutes)
-                              .reduce((acc: number, curr: number) => acc + curr, 0),
-                            'minutes'
-                          )
-                          .humanize() + ' '
-                      : 0 + 'hours'}
-                    today
-                  </span>
+                  {tvUptime && (
+                    <span>
+                      {calculatedHourlyChannelView &&
+                      calculatedHourlyChannelView
+                        .map((stat: any) => stat.minutes)
+                        .reduce((acc: number, curr: number) => acc + curr, 0) > 0
+                        ? `${moment
+                            .duration(
+                              calculatedHourlyChannelView
+                                .map((stat: any) => stat.minutes)
+                                .reduce((acc: number, curr: number) => acc + curr, 0),
+                              'minutes'
+                            )
+                            .humanize()} `
+                        : `${0} hours `}
+                      today
+                    </span>
+                  )}
                 </Text>
-                <ResponsiveContainer width={'99%'} height={400}>
+                <ResponsiveContainer width="99%" height={420}>
                   <BarChart
                     width={1580}
                     height={400}
                     data={calculatedHourlyChannelView}
-                    margin={{ top: 30, right: 30 }}
+                    margin={{ top: 50, left: 10, right: 35, bottom: 40 }}
                   >
                     <CartesianGrid strokeDasharray="1 1" />
                     <XAxis dataKey="hour" tickCount={10} domain={[0, 23]} strokeDasharray="2 2" />
@@ -701,7 +736,7 @@ const DashboardPage: NextPage = () => {
                     <Bar dataKey="minutes" fill="#584AE3" />
                   </BarChart>
                 </ResponsiveContainer>
-              </Paper>
+              </Card>
             </Col>
           </Grid>
         </Col>

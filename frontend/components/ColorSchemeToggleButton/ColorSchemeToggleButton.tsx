@@ -7,6 +7,7 @@ export const ColorSchemeToggleButton = () => {
   return (
     <Group position="center" my={10}>
       <SegmentedControl
+        radius="xl"
         value={colorScheme}
         onChange={(value: 'light' | 'dark') => toggleColorScheme(value)}
         data={[

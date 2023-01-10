@@ -36,7 +36,7 @@ const initialState: AppSliceState = {
   digitalTvChannelCount: 0,
   analogueTvChannelCount: 0,
   digitalRadioChannelCount: 0,
-  connectionStatus: EventSource.CLOSED,
+  connectionStatus: 0,
   powerState: undefined as any,
   volume: -1,
   egpData: {},

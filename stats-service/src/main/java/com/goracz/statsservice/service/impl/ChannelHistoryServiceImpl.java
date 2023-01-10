@@ -57,9 +57,11 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     }
 
     private Mono<ChannelHistory> populateChannelHistoryWithMetadata(ChannelHistory channelHistory) {
-        return this.webChannelMetadataService
+        return channelHistory.getChannelName() != null
+                ? this.webChannelMetadataService
                 .getChannelMetadataByChannelName(channelHistory.getChannelName())
-                .map(metadata -> ChannelHistory.withMetadata(channelHistory, metadata));
+                .map(metadata -> ChannelHistory.withMetadata(channelHistory, metadata))
+                : Mono.just(channelHistory); // TODO: instead -> getChannelMetadataByApplicationPackage()
     }
 
     @Override
@@ -112,8 +114,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
 
     private Mono<Void> handleChannelChange(ConsumerRecord<String, String> message) {
         return this.readCurrentChannelFromMqMessage(message)
-                .map(response -> this.readLastChannelHistoryEntryFromCache()
-                        .switchIfEmpty(this.readLastChannelHistoryEntryFromDatabase())
+                .map(response -> this.readLatestChannelHistoryFromCache()
+                        .switchIfEmpty(this.readLatestChannelHistoryFromDatabase())
                         .switchIfEmpty(ChannelHistory.empty())
                         .doOnNext(latestChannelHistoryEntry -> {
                             if (latestChannelHistoryEntry.isNew()) {
@@ -135,11 +137,11 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .then();
     }
 
-    private Mono<ChannelHistory> readLastChannelHistoryEntryFromCache() {
+    private Mono<ChannelHistory> readLatestChannelHistoryFromCache() {
         return this.cacheProvider.getChannelHistoryCache().get(TV_CHANNEL_HISTORY_KEY);
     }
 
-    private Mono<ChannelHistory> readLastChannelHistoryEntryFromDatabase() {
+    private Mono<ChannelHistory> readLatestChannelHistoryFromDatabase() {
         return this.channelHistoryRepository.findFirstByOrderByStartDesc();
     }
 
@@ -147,17 +149,11 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         return  Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), CurrentTvChannelResponse.class));
     }
 
-    private Mono<Void> updateLatestChannelHistory(ChannelHistory channelHistory) {
-        return Mono.fromCallable(() -> {
-            channelHistory.endViewNow();
-            return this.channelHistoryRepository
-                    .save(channelHistory).retry(RETRY_TRIES)
-                    .flatMap(this::notifyListeners)
-                    .flatMap(this::populateChannelHistoryWithMetadata)
-                    .flatMap(this.channelHistoryRepository::save)
+    private Mono<ChannelHistory> updateLatestChannelHistory(ChannelHistory channelHistory) {
+        return this.populateChannelHistoryWithMetadata(channelHistory)
+                    .flatMap(this::writeChannelHistoryWithCurrentDateAsEndToDatabase)
                     .flatMap(this::writeChannelHistoryToCache)
                     .flatMap(this::notifyListeners);
-        }).then();
     }
 
     private Mono<Void> addNewChannelHistory(CurrentTvChannelResponse currentChannel) {
@@ -175,7 +171,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     public void onPowerStateChange(ConsumerRecord<String, String> mqMessage) throws KafkaConsumeFailException {
         try {
             this.handlePowerStateChange(mqMessage)
-                    .subscribeOn(Schedulers.boundedElastic())
+                    .subscribeOn(Schedulers.parallel())
                     .subscribe();
         } catch (Exception exception) {
             throw new KafkaConsumeFailException(exception.getMessage());
@@ -185,10 +181,9 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     public Mono<PowerStateResponse> handlePowerStateChange(ConsumerRecord<String, String> mqMessage) {
         return this.readPowerStateFromMqMessage(mqMessage)
                 .doOnNext((powerStateResponse) -> {
-                    if (this.isApplicationInForeground(powerStateResponse)) {
-                        this.readLatestChannelHistoryFromDatabase()
-                                .map(this::writeNewChannelHistoryWithCurrentDateAsEndToDatabase)
-                                .subscribeOn(Schedulers.boundedElastic())
+                    if (this.shouldUpdateChannelHistory(powerStateResponse)) {
+                        this.updateLatestChannelHistory()
+                                .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     }
                 });
@@ -199,16 +194,16 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .readValue(message.value(), PowerStateResponse.class));
     }
 
-    private boolean isApplicationInForeground(PowerStateResponse response) {
+    private boolean shouldUpdateChannelHistory(PowerStateResponse response) {
         return response.getState() == PowerState.SUSPEND;
     }
 
-    private Mono<ChannelHistory> writeNewChannelHistoryWithCurrentDateAsEndToDatabase(ChannelHistory channelHistory) {
+    private Mono<ChannelHistory> writeChannelHistoryWithCurrentDateAsEndToDatabase(ChannelHistory channelHistory) {
         return Mono.fromCallable(() -> {
             if (channelHistory.isNew()) {
                 channelHistory.endViewNow();
                 this.channelHistoryRepository.save(channelHistory)
-                        .subscribeOn(Schedulers.boundedElastic())
+                        .subscribeOn(Schedulers.parallel())
                         .subscribe();
             }
             return channelHistory;
@@ -228,9 +223,9 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         // TODO: appId is an empty string just before the TV turns off
         //  - the same would happen when the TV state changes to an inactive state as below
         return this.readForegroundAppChangeMessageFromMq(message)
-                .flatMap(event -> isApplicationInForeground(event)
+                .flatMap(event -> shouldUpdateChannelHistory(event)
                         ? this.updateLatestChannelHistory()
-                        : this.createNewChannelHistoryWithCurrentDateAsStartTime());
+                        : this.createNewChannelHistoryWithCurrentlyRunningApplication(event));
     }
 
     private Mono<ForegroundAppChangeResponse> readForegroundAppChangeMessageFromMq(
@@ -239,8 +234,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .readValue(message.value(), ForegroundAppChangeResponse.class));
     }
 
-    private boolean isApplicationInForeground(ForegroundAppChangeResponse response) {
-        return !response.getAppId().equals(WebOSApplication.TV) && !response.getAppId().equals(WebOSApplication.BLANK);
+    private boolean shouldUpdateChannelHistory(ForegroundAppChangeResponse response) {
+        return !(!response.getAppId().equals(WebOSApplication.TV) && !response.getAppId().equals(WebOSApplication.BLANK));
     }
 
     private Mono<ChannelHistory> updateLatestChannelHistory() {
@@ -251,18 +246,10 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .flatMap(this::notifyListeners);
     }
 
-    private Mono<ChannelHistory> readLatestChannelHistoryFromCache() {
-        return this.cacheProvider.getChannelHistoryCache().get(TV_CHANNEL_HISTORY_KEY);
-    }
-
-    private Mono<ChannelHistory> readLatestChannelHistoryFromDatabase() {
-        return this.channelHistoryRepository.findFirstByOrderByStartDesc();
-    }
-
-    private Mono<ChannelHistory> createNewChannelHistoryWithCurrentDateAsStartTime() {
-        return this.readLatestChannelHistoryFromCache()
-                .switchIfEmpty(this.readLatestChannelHistoryFromDatabase())
-                .map(ChannelHistory::fromChannelHistory)
+    private Mono<ChannelHistory> createNewChannelHistoryWithCurrentlyRunningApplication(
+            ForegroundAppChangeResponse foregroundAppChangeResponse) {
+        return ChannelHistory
+                .fromForegroundApplication(foregroundAppChangeResponse)
                 .flatMap(this.channelHistoryRepository::save)
                 .flatMap(this::writeChannelHistoryToCache)
                 .flatMap(this::notifyListeners);
