@@ -1,19 +1,18 @@
 import {
+  Badge,
+  Button,
+  Card,
   Col,
+  Divider,
   Grid,
+  Group,
   Image,
   Skeleton,
-  Text,
   Space,
-  Group,
-  Divider,
-  Transition,
-  Button,
-  Badge,
+  Text,
   Tooltip,
-  Card,
+  Transition,
   useMantineColorScheme,
-  Accordion,
 } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import {
@@ -31,29 +30,20 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import EventSource from 'eventsource';
 import moment from 'moment';
-import { useRouter } from 'next/router';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip as ChartTooltip,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from 'recharts';
 import ApplicationLayout from '../../layouts/Application';
 import { Channel } from '../../models/channel';
 import { ChannelCategory } from '../../models/channel-category';
 import { appActions, AppSliceState } from '../../store/app-slice';
 import {
-  useUptime,
+  useChannelHistory,
   useChannels,
   useCurrentChannel,
+  useEGP,
   useSoftwareInformation,
   useSystemPower,
+  useUptime,
   useVolume,
-  useChannelHistory,
-  useEGP,
 } from '../../hooks';
 import { ChannelHistory } from '../../models/channel-history';
 import { RingStatistics } from '../../components/Statistics/RingStatistics';
@@ -667,31 +657,20 @@ const DashboardPage: NextPage = () => {
             </Col>
 
             <Col lg={12}>
-              <Accordion
-                variant="separated"
-                defaultValue="content"
-                style={{ maxHeight: '27vh' }}
-                radius="xl"
-              >
-                <Accordion.Item value="content" px="xs">
-                  <Accordion.Control>
-                    <Text weight={500}>Quick App Launch</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Grid columns={4}>
-                      {[].map((application) => (
-                        <Col lg={1}>
-                          <Card>{application}</Card>
-                        </Col>
-                      ))}
-                    </Grid>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
+              <Card style={{ minHeight: '25.5vh' }} shadow="xl" radius="xl" p="xs">
+                <Text mt={6} ml={12} weight={500}>Quick App Launch</Text>
+                <Grid columns={4}>
+                  {[].map((application) => (
+                      <Col lg={1}>
+                        <Card>{application}</Card>
+                      </Col>
+                  ))}
+                </Grid>
+              </Card>
             </Col>
 
             <Col lg={12}>
-              <Card style={{ minHeight: '40vh' }} shadow="xl" radius="xl" p="xs">
+              <Card style={{ minHeight: '20vh' }} shadow="xl" radius="xl" p="xs">
                 <Text mt={6} ml={12} weight={500}>
                   Uptime Overview
                 </Text>
@@ -716,16 +695,29 @@ const DashboardPage: NextPage = () => {
                     </span>
                   )}
                 </Text>
-                <ResponsiveContainer width="99%" height={420}>
+                <ResponsiveContainer width="99%" height={210}>
                   <BarChart
                     width={1580}
-                    height={400}
+                    height={200}
                     data={calculatedHourlyChannelView}
                     margin={{ top: 50, left: 10, right: 35, bottom: 40 }}
                   >
-                    <CartesianGrid strokeDasharray="1 1" />
-                    <XAxis dataKey="hour" tickCount={10} domain={[0, 23]} strokeDasharray="2 2" />
-                    <YAxis tickCount={7} domain={[0, 60]} strokeDasharray="2 2" />
+                    {false && <CartesianGrid />}
+                    <XAxis
+                      dataKey="hour"
+                      tickCount={10}
+                      interval={2}
+                      domain={[0, 23]}
+                      strokeDasharray="1 1"
+                      fontFamily="Poppins"
+                      fontWeight={500}
+                    />
+                    <YAxis
+                      domain={[0, 60]}
+                      strokeDasharray="1 1"
+                      fontFamily="Poppins"
+                      fontWeight={500}
+                    />
                     <ChartTooltip
                       wrapperStyle={{ outline: 'none' }}
                       allowEscapeViewBox={{ x: false, y: false }}

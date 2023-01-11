@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 import { Kafka, Producer } from "kafkajs";
 import lgtv, { Config } from "lgtv2";
 
+import * as Sentry from "@sentry/node";
+import * as Tracing from "@sentry/tracing"
+
 import { logger } from "./utils/logger";
 
 import { TvChannel } from "./models/TvChannel";
@@ -21,6 +24,7 @@ import apps from "./routes/app/apps";
 import {WebOSStreams} from "./constants/webos-streams";
 import {BrokerTopics} from "./constants/broker-topics";
 import {Meta} from "./constants/meta";
+import EnvironmentLocal from "./environments/environment.local";
 
 // Kafka Stuff
 const kafka: Kafka = new Kafka({
@@ -119,8 +123,23 @@ dotenv.config();
 const app: Express = express();
 const port: number = 5000 || process.env.PORT;
 
+// Sentry initialization
+if (EnvironmentLocal.sentryDsn) {
+  Sentry.init({
+    dsn: EnvironmentLocal.sentryDsn,
+    integrations: [
+      new Sentry.Integrations.Http({ tracing: true }),
+      new Tracing.Integrations.Express({ app }),
+    ],
+    tracesSampleRate: 1.0,
+  });
+  logger.info("Sentry initialized.");
+}
+
 // Middleware
 app.use(bodyParser.json());
+app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.tracingHandler());
 
 // TV Controls
 app.use("/api/v1/tv/channels", channels);
@@ -137,6 +156,12 @@ app.use("/api/v1/media/output", output);
 
 // App Controls
 app.use("/api/v1/app", apps);
+
+// Sentry error handler
+if (EnvironmentLocal.sentryDsn) {
+  app.use(Sentry.Handlers.errorHandler());
+  logger.info("Sentry error handler initialized.");
+}
 
 app.listen(port, () => {
   logger.info(`Listening on HTTPS at: https://localhost:${port}`);
