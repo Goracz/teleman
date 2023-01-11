@@ -4,14 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goracz.statsservice.component.RedisCacheProvider;
 import com.goracz.statsservice.entity.UptimeLog;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
+import com.goracz.statsservice.model.response.EventCategory;
+import com.goracz.statsservice.model.response.EventMessage;
 import com.goracz.statsservice.model.response.PowerStateResponse;
 import com.goracz.statsservice.repository.ReactiveUptimeRepository;
+import com.goracz.statsservice.service.EventService;
 import com.goracz.statsservice.service.UptimeService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 @Service
@@ -20,11 +24,14 @@ public class UptimeServiceImpl implements UptimeService {
     private static final String LATEST_UPTIME_LOG_CACHE_KEY = "uptime-log:latest";
     private final ReactiveUptimeRepository uptimeRepository;
     private final RedisCacheProvider cacheProvider;
+    private final EventService<EventMessage<UptimeLog>> eventService;
 
     public UptimeServiceImpl(ReactiveUptimeRepository uptimeRepository,
-                             RedisCacheProvider cacheProvider) {
+                             RedisCacheProvider cacheProvider,
+                             EventService<EventMessage<UptimeLog>> eventService) {
         this.uptimeRepository = uptimeRepository;
         this.cacheProvider = cacheProvider;
+        this.eventService = eventService;
     }
 
     @Override
@@ -110,7 +117,8 @@ public class UptimeServiceImpl implements UptimeService {
     private Mono<UptimeLog> writeNewUptimeLogEntry() {
         return Mono.fromCallable(UptimeLog::withCurrentTime)
                 .flatMap(this.uptimeRepository::save)
-                .flatMap(this::writeToCache);
+                .flatMap(this::writeToCache)
+                .doOnNext(this::notifyListenersAboutUptimeChange);
     }
 
     private Mono<UptimeLog> updateLatestUptimeLogEntry() {
@@ -118,6 +126,12 @@ public class UptimeServiceImpl implements UptimeService {
                 .switchIfEmpty(this.readLastFromDatabase())
                 .map(UptimeLog::setTurnOffToNow)
                 .flatMap(this.uptimeRepository::save)
-                .flatMap(this::writeToCache);
+                .flatMap(this::writeToCache)
+                .doOnNext(this::notifyListenersAboutUptimeChange);
+    }
+
+    private Mono<Sinks.EmitResult> notifyListenersAboutUptimeChange(UptimeLog uptimeLog) {
+        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.UPTIME_LOG_CHANGED, uptimeLog))
+                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()));
     }
 }
