@@ -21,17 +21,5 @@ public enum EventCategory {
     /**
      * The power state of the TV has changed
      */
-    POWER_STATE_CHANGED,
-
-    /**
-     * The channel history has changed
-     * @implNote Usually happens when the channel that was being played has been changed
-     * (f.e. because the TV power state has changed stand-by and no channel is being played from now on)
-     */
-    CHANNEL_HISTORY_CHANGED,
-
-    /**
-     * The application that has been in the foreground has changed
-     */
-    FOREGROUND_APP_CHANGED;
+    POWER_STATE_CHANGED;
 }

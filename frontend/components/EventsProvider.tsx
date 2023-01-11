@@ -5,10 +5,12 @@ import EventSource from 'eventsource';
 import { IconCheck } from '@tabler/icons';
 import { showNotification } from '@mantine/notifications';
 import { Dispatch } from 'redux';
-import { EventCategory } from '../models/event-category';
+import { ControlServiceEventCategory } from '../models/control-service-event-category';
 import { EventMessage } from '../models/event-message';
 import { appActions, AppSliceState } from '../store/app-slice';
 import { ChannelHistory } from '../models/channel-history';
+import { AutomationServiceEventCategory } from '../models/automation-service-event-category';
+import { StatisticsServiceEventCategory } from '../models/statistics-service-event-category';
 
 const onlineStates = ['Active', 'Active Standby'];
 const offlineStates = ['Suspend'];
@@ -25,17 +27,17 @@ const handleControlServiceMessage = (
   console.log('Event received (raw): ', event.data);
   console.log('Event received (parsed): ', response);
 
-  const eventCategory: EventCategory = response.category;
+  const eventCategory: ControlServiceEventCategory = response.category;
   const message = response.payload;
 
   switch (eventCategory) {
-    case EventCategory.VOLUME_CHANGED:
+    case ControlServiceEventCategory.VOLUME_CHANGED:
       dispatch(appActions.setVolume(message));
       break;
-    case EventCategory.CHANNEL_CHANGED:
+    case ControlServiceEventCategory.CHANNEL_CHANGED:
       dispatch(appActions.setCurrentChannel(message));
       break;
-    case EventCategory.POWER_STATE_CHANGED:
+    case ControlServiceEventCategory.POWER_STATE_CHANGED:
       if (offlineStates.includes(powerState as any) && onlineStates.includes(message.state)) {
         // TODO! Notifications are not being shown when called here
         showNotification({
@@ -47,7 +49,6 @@ const handleControlServiceMessage = (
         dispatch(
             appActions.setChannelHistory([...channelHistory, { start: new Date().getTime() }])
         );
-        dispatch(appActions.setUptime(new Date().getTime()));
       } else if (
           offlineStates.includes(message.state) &&
           onlineStates.includes(powerState as any)
@@ -62,15 +63,6 @@ const handleControlServiceMessage = (
       }
       dispatch(appActions.setPowerState(message));
       break;
-    case EventCategory.AUTOMATION_RULE_ADDED:
-      dispatch(appActions.addAutomationRule(message));
-      break;
-    case EventCategory.AUTOMATION_RULE_MODIFIED:
-      dispatch(appActions.updateAutomationRule(message));
-      break;
-    case EventCategory.AUTOMATION_RULE_REMOVED:
-      dispatch(appActions.removeAutomationRule(message));
-      break;
   }
 };
 
@@ -81,13 +73,17 @@ const handleStatisticsServiceEvent = (event: EventMessage, dispatch: Dispatch): 
   console.log('Channel history event received (raw): ', event.data);
   console.log('Channel history event received (parsed): ', response);
 
-  const eventCategory: EventCategory = response.category;
+  const eventCategory: StatisticsServiceEventCategory = response.category;
   const message = response.payload;
 
   switch (eventCategory) {
-    case EventCategory.CHANNEL_HISTORY_CHANGED:
+    case StatisticsServiceEventCategory.CHANNEL_HISTORY_CHANGED:
       dispatch(appActions.setChannelHistoryEnd((message as ChannelHistory).end));
       dispatch(appActions.pushChannelHistory(message));
+
+      break;
+    case StatisticsServiceEventCategory.UPTIME_LOG_CHANGED:
+      dispatch(appActions.setUptime(message));
 
       break;
   }
@@ -100,17 +96,17 @@ const handleAutomationServiceEvent = (event: EventMessage, dispatch: Dispatch): 
   console.log('Automation event received (raw): ', event.data);
   console.log('Automation event received (parsed): ', response);
 
-  const eventCategory: EventCategory = response.category;
+  const eventCategory: AutomationServiceEventCategory = response.category;
   const message = response.payload;
 
   switch (eventCategory) {
-    case EventCategory.AUTOMATION_RULE_ADDED:
+    case AutomationServiceEventCategory.AUTOMATION_RULE_ADDED:
       dispatch(appActions.addAutomationRule(message));
       break;
-    case EventCategory.AUTOMATION_RULE_MODIFIED:
+    case AutomationServiceEventCategory.AUTOMATION_RULE_MODIFIED:
       dispatch(appActions.updateAutomationRule(message));
       break;
-    case EventCategory.AUTOMATION_RULE_REMOVED:
+    case AutomationServiceEventCategory.AUTOMATION_RULE_REMOVED:
       dispatch(appActions.removeAutomationRule(message));
       break;
   }
