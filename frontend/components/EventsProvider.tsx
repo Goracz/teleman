@@ -49,7 +49,6 @@ const handleControlServiceMessage = (
         dispatch(
             appActions.setChannelHistory([...channelHistory, { start: new Date().getTime() }])
         );
-        dispatch(appActions.setUptime(new Date().getTime()));
       } else if (
           offlineStates.includes(message.state) &&
           onlineStates.includes(powerState as any)
@@ -81,6 +80,12 @@ const handleStatisticsServiceEvent = (event: EventMessage, dispatch: Dispatch): 
     case StatisticsServiceEventCategory.CHANNEL_HISTORY_CHANGED:
       dispatch(appActions.setChannelHistoryEnd((message as ChannelHistory).end));
       dispatch(appActions.pushChannelHistory(message));
+
+      break;
+    case StatisticsServiceEventCategory.UPTIME_LOG_CHANGED:
+      dispatch(appActions.setUptime(message));
+
+      break;
   }
 };
 
