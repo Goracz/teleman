@@ -18,13 +18,19 @@ const brokers: string[] = [];
 /**
  * Optional - Your LogDNA configuration
  */
-const logDnaIngestionKey = {
+const logDnaConfiguration = {
   ingestionKey: "",
   host: "",
 };
+/**
+ * Optional - Your Sentry project's DSN
+ */
+const sentryDsn = "";
 
 export default {
   tvIpAddress,
   tvMacAddress,
   brokers,
+  logDnaConfiguration,
+  sentryDsn,
 };

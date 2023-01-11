@@ -7,11 +7,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.goracz.metaservice.entity.ChannelMetadata;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -30,6 +32,16 @@ public class MetaServiceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(MetaServiceApplication.class, args);
 	}
+
+	@Value("${spring.data.mongodb.uri}")
+	private String mongoConnectionString;
+
+	@Value("${spring.redis.host}")
+	private String redisHost;
+	@Value("${spring.redis.port}")
+	private int redisPort;
+	@Value("${spring.redis.password}")
+	private String redisPassword;
 
 	@Bean
 	public WebClient webClient() {
@@ -59,17 +71,17 @@ public class MetaServiceApplication {
 
 	@Bean
 	public MongoClient mongoClient() {
-		return MongoClients.create();
-	}
-
-	@Bean
-	protected String getDatabaseName() {
-		return "reactive";
+		return MongoClients.create(this.mongoConnectionString);
 	}
 
 	@Bean
 	@Primary
 	public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory() {
-		return new LettuceConnectionFactory("127.0.0.1", 6379);
+		final RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
+		configuration.setHostName(this.redisHost);
+		configuration.setPort(this.redisPort);
+		configuration.setPassword(this.redisPassword);
+
+		return new LettuceConnectionFactory(configuration);
 	}
 }
