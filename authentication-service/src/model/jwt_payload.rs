@@ -1,4 +1,0 @@
-
-struct jwt_payload {
-    
-}
