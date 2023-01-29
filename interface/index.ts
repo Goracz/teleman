@@ -36,10 +36,20 @@ producer.connect().then(() => logger.info('Connected to Message Queue.'));
 
 // LG WebOS Stuff
 export const ipAddress: string = config.tvIpAddress;
-export const connectionUrl: string = `ws://${ipAddress}:3000`;
+export const connectionUrl: string = `wss://${ipAddress}:3001`;
 export const connectionConfig: Config = {
   url: connectionUrl,
   timeout: 30_000,
+  // @ts-ignore
+  wsconfig: {
+    keepalive: true,
+    keepaliveInterval: 10000,
+    dropConnectionOnKeepaliveTimeout: true,
+    keepaliveGracePeriod: 5000,
+    tlsOptions: {
+      rejectUnauthorized: false
+    }
+  }
 };
 
 export let connection = lgtv(connectionConfig);
