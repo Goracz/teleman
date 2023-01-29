@@ -13,8 +13,9 @@
   "license": "ISC",
   "dependencies": {
     "@network-utils/arp-lookup": "^2.0.1",
-    "@sentry/node": "^7.29.0",
-    "@sentry/tracing": "^7.29.0",
+    "@sentry/node": "^7.34.0",
+    "@sentry/profiling-node": "^0.0.13",
+    "@sentry/tracing": "^7.34.0",
     "@types/ip": "^1.1.0",
     "@types/morgan": "^1.9.4",
     "body-parser": "^1.20.0",

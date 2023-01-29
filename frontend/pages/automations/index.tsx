@@ -379,9 +379,10 @@ const AutomationsPage: NextPage = () => {
               </Text>
               <Button
                 loading={isLoadingAutomations}
-                variant="outline"
+                variant="light"
                 size="md"
                 mt="xl"
+                radius="xl"
                 onClick={presentAddAutomationDrawer}
                 className={classes.control}
               >
@@ -396,7 +397,7 @@ const AutomationsPage: NextPage = () => {
         <>
           <Grid columns={1} mb={20}>
             <Col>
-              <Button onClick={() => setDrawerOpened(true)} variant="primary" radius="xl">
+              <Button onClick={() => setDrawerOpened(true)} radius="xl">
                 Add new Automation Rule
               </Button>
             </Col>

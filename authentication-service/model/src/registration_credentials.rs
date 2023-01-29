@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct RegistrationCredentials {
-    username: String,
-    password: String,
-    first_name: Option<String>,
-    last_name: Option<String>,
+    pub email: String,
+    pub password: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
 }

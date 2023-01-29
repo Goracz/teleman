@@ -30,7 +30,6 @@ const useStyles = createStyles((theme) => ({
     fontWeight: 900,
     fontSize: 34,
     marginBottom: theme.spacing.md,
-    fontFamily: `Greycliff CF, ${theme.fontFamily}`,
 
     [theme.fn.smallerThan('sm')]: {
       fontSize: 32,
@@ -144,9 +143,10 @@ const TurnTvOnPage: NextPage = () => {
               <Button
                 loading={isLoadingTvStateToggle}
                 disabled={!powerState}
-                variant="outline"
+                variant="light"
                 size="md"
                 mt="xl"
+                radius="xl"
                 onClick={handleToggleTvState}
                 className={classes.control}
               >

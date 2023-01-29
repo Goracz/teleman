@@ -146,7 +146,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     }
 
     private Mono<CurrentTvChannelResponse> readCurrentChannelFromMqMessage(ConsumerRecord<String, String> message) {
-        return  Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), CurrentTvChannelResponse.class));
+        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), CurrentTvChannelResponse.class));
     }
 
     private Mono<ChannelHistory> updateLatestChannelHistory(ChannelHistory channelHistory) {

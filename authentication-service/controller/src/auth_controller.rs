@@ -1,15 +1,36 @@
-use actix_web::{error, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{post, web, HttpResponse};
+use sea_orm::sea_query::tests_cfg::json;
+use sea_orm::DbConn;
+
+use model::auth_response::AuthResponse;
 use model::login_credentials::LoginCredentials;
 use model::registration_credentials::RegistrationCredentials;
+use service::user_service;
 
 #[post("/login")]
-pub async fn login(credentials: web::Json<LoginCredentials>) -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().body("To be implemented"))
+pub async fn login(
+    db: web::Data<DbConn>,
+    credentials: web::Json<LoginCredentials>,
+) -> HttpResponse {
+    let result = user_service::login(db, credentials.0).await;
+    match result {
+        Ok(token) => HttpResponse::Ok().json(AuthResponse { token }),
+        Err(error) => HttpResponse::BadRequest().json(json!({ "message": error })),
+    }
 }
 
 #[post("/register")]
 pub async fn register(
+    db: web::Data<DbConn>,
     credentials: web::Json<RegistrationCredentials>,
-) -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().body("To be implemented"))
+) -> HttpResponse {
+    let user_to_register = credentials.0;
+    let registered_user = user_service::register_user(db, user_to_register).await;
+    match registered_user {
+        Ok(user) => HttpResponse::Ok().json(user),
+        Err(db_error) => {
+            println!("{:?}", db_error);
+            HttpResponse::BadRequest().finish()
+        }
+    }
 }

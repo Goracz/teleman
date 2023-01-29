@@ -9,4 +9,14 @@ name = "model"
 path = "src/lib.rs"
 
 [dependencies]
+sea-orm = { version = "^0", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
+sea-query = { version = "0.28.3" }
 serde = { version = "1.0", features = ["derive"] }
+
+[dependencies.uuid]
+version = "1.2.2"
+features = [
+    "v4",
+    "fast-rng",
+    "macro-diagnostics",
+]

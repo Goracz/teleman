@@ -9,6 +9,9 @@ name = "controller"
 path = "src/lib.rs"
 
 [dependencies]
+sea-orm = { version = "^0", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
 serde = { version = "1.0", features = ["derive"] }
 actix-web = "4"
 model = { path = "../model" }
+entity = { path = "../entity" }
+service = { path = "../service" }
