@@ -33,7 +33,7 @@ public class MetadataScraperServiceImpl implements MetadataScraperService {
     @Override
     public Mono<IPTVResponse> scrape(String countryCode) {
         return this.readFromCache(countryCode)
-                .switchIfEmpty(this.scrapeFromExternalSource(countryCode))
+                .switchIfEmpty(this.scrapeAllHungarianSources()) // TODO
                 .zipWith(Mono.just(countryCode))
                 .flatMap(this::writeToCache);
     }
@@ -81,19 +81,31 @@ public class MetadataScraperServiceImpl implements MetadataScraperService {
         return Flux.just(
                 this.webClient
                         .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/mediaklikk.hu.epg.json")
+                        .uri("https://iptv-org.github.io/epg/guides/hu/m.tv.sms.cz.json")
                         .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
                 this.webClient
                         .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/musor.tv.epg.json")
+                        .uri("https://iptv-org.github.io/epg/guides/hu/mediaklikk.hu.json")
                         .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
                 this.webClient
                         .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/tv.yettel.hu.epg.json")
+                        .uri("https://iptv-org.github.io/epg/guides/hu/mujtvprogram.cz.json")
                         .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
                 this.webClient
                         .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/tvmusor.hu.epg.json")
+                        .uri("https://iptv-org.github.io/epg/guides/hu/musor.tv.json")
+                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
+                this.webClient
+                        .get()
+                        .uri("https://iptv-org.github.io/epg/guides/hu/tv.blue.ch.json")
+                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
+                this.webClient
+                        .get()
+                        .uri("https://iptv-org.github.io/epg/guides/hu/tv.yettel.hu.json")
+                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
+                this.webClient
+                        .get()
+                        .uri("https://iptv-org.github.io/epg/guides/hu/tvmusor.hu.json")
                         .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class))
         )
                 .flatMap(response -> response)

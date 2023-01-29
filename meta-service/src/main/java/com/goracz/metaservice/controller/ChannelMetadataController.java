@@ -20,7 +20,8 @@ public class ChannelMetadataController {
     private final MetadataScraperService metadataScraperService;
 
     @GetMapping()
-    public ResponseEntity<Mono<IPTVResponse>> getChannelMetadataByCountry(@RequestParam String countryCode) {
+    public ResponseEntity<Mono<IPTVResponse>> getChannelMetadataByCountry(
+            @RequestParam(defaultValue = "hu") String countryCode) {
         return ResponseEntity.ok(this.metadataScraperService.scrape(countryCode));
     }
 

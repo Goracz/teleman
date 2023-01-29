@@ -6,11 +6,12 @@ publish = false
 
 [lib]
 name = "entity"
-path = "src/lib.rs"
+path = "src/mod.rs"
 
 [dependencies]
 tokio = { version = "1.24.2", features = ["full"] }
 sea-orm = { version = "^0", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
+sea-query = { version = "0.28.3" }
 serde = { version = "1.0", features = ["derive"] }
 chrono = "0.4.23"
 

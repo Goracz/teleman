@@ -124,43 +124,62 @@ export const EventsProvider: NextPage<any> = ({ children }) => {
   );
 
   useEffect(() => {
-    let eventStream = new EventSource('http://localhost:8080/api/v1/events/stream');
-    let eventStreamReconnectInterval: NodeJS.Timeout;
+    let controlServiceEventStream = new EventSource('http://localhost:8080/api/v1/events/stream');
+    let controlServiceEventStreamReconnectInterval: NodeJS.Timeout;
 
     // TODO! This should be refactored as soon as possible - the application should only have 1 event stream.
-    const channelHistoryEventStream = new EventSource('http://localhost:8081/api/v1/events/stream');
-    const automationEventStream = new EventSource('http://localhost:8083/api/v1/events/stream');
+    let statisticsServiceEventStream = new EventSource('http://localhost:8081/api/v1/events/stream');
+    let statisticsServiceEventStreamReconnectInterval: NodeJS.Timeout;
 
-    const tryReconnect = () => {
-      eventStreamReconnectInterval = setInterval(() => {
-        eventStream = new EventSource('http://localhost:8080/api/v1/events/stream');
+    let automationEventStream = new EventSource('http://localhost:8083/api/v1/events/stream');
+    let automationEventStreamReconnectInterval: NodeJS.Timeout;
+
+    const tryReconnectToControlServiceEventStream = () => {
+      controlServiceEventStreamReconnectInterval = setInterval(() => {
+        controlServiceEventStream = new EventSource('http://localhost:8080/api/v1/events/stream');
+      }, 3000);
+    };
+    const tryReconnectToStatisticsServiceEventStream = () => {
+      statisticsServiceEventStreamReconnectInterval = setInterval(() => {
+        statisticsServiceEventStream = new EventSource('http://localhost:8081/api/v1/events/stream');
+      }, 3000);
+    };
+    const tryReconnectToAutomationServiceEventStream = () => {
+      automationEventStreamReconnectInterval = setInterval(() => {
+        automationEventStream = new EventSource('http://localhost:8083/api/v1/events/stream');
       }, 3000);
     };
 
-    eventStream.onmessage = (event: EventMessage) => {
+    controlServiceEventStream.onmessage = (event: EventMessage) => {
       try {
         handleControlServiceMessage(event, dispatch, powerState as any, channelHistory);
       } catch (error: any) {
         console.error(`Could not process control service event message: ${error}`);
       }
     };
-    eventStream.onerror = (): void => {
+    controlServiceEventStream.onerror = (): void => {
       dispatch(appActions.setConnectionStatus(2));
-      tryReconnect();
+      tryReconnectToControlServiceEventStream();
     };
-    eventStream.onopen = (): void => {
+    controlServiceEventStream.onopen = (): void => {
       if (connectionStatus === 2) {
-        clearInterval(eventStreamReconnectInterval);
+        clearInterval(controlServiceEventStreamReconnectInterval);
         dispatch(appActions.setConnectionStatus(1));
       }
     };
 
-    channelHistoryEventStream.onmessage = (event: EventMessage) => {
+    statisticsServiceEventStream.onmessage = (event: EventMessage) => {
       try {
         handleStatisticsServiceEvent(event, dispatch);
       } catch (error: any) {
         console.error(`Could not process channel history service event message: ${error}`);
       }
+    };
+    statisticsServiceEventStream.onerror = (): void => {
+      tryReconnectToStatisticsServiceEventStream();
+    };
+    statisticsServiceEventStream.onopen = (): void => {
+      clearInterval(statisticsServiceEventStreamReconnectInterval);
     };
 
     automationEventStream.onmessage = (event: EventMessage) => {
@@ -169,6 +188,12 @@ export const EventsProvider: NextPage<any> = ({ children }) => {
       } catch (error: any) {
         console.error(`Could not process automation service event message: ${error}`);
       }
+    };
+    automationEventStream.onerror = (): void => {
+      tryReconnectToAutomationServiceEventStream();
+    };
+    automationEventStream.onopen = (): void => {
+      clearInterval(automationEventStreamReconnectInterval);
     };
   }, []);
 

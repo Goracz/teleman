@@ -3,7 +3,6 @@ package com.goracz.statsservice;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +39,7 @@ public class StatsServiceApplication {
 		return JsonMapper
 				.builder()
 				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-				.addModule(new JavaTimeModule())
+				.findAndAddModules()
 				.build();
 	}
 
