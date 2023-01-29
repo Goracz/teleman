@@ -1,0 +1,25 @@
+[package]
+name = "repository"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "repository"
+path = "src/lib.rs"
+
+[dependencies]
+actix-web = "4"
+tokio = { version = "1.24.2", features = ["full"] }
+sea-orm = { version = "^0", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
+serde = { version = "1.0", features = ["derive"] }
+chrono = "0.4.23"
+entity = { path = "../entity" }
+
+[dependencies.uuid]
+version = "1.2.2"
+features = [
+    "v4",
+    "fast-rng",
+    "macro-diagnostics",
+]

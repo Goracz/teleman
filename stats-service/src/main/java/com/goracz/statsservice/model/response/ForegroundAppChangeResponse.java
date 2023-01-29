@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class ForegroundAppChangeResponse {
+public class
+ForegroundAppChangeResponse {
     private boolean subscribed;
     private boolean returnValue;
     private WebOSApplication appId;
