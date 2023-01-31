@@ -1,8 +1,8 @@
 package com.goracz.statsservice;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,13 +19,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 @SpringBootApplication
 @EnableReactiveMongoRepositories
 public class StatsServiceApplication {
-	public static void main(String[] args) {
-		SpringApplication.run(StatsServiceApplication.class, args);
-	}
-
 	@Value("${spring.data.mongodb.uri}")
 	private String mongoConnectionString;
-
 	@Value("${spring.redis.host}")
 	private String redisHost;
 	@Value("${spring.redis.port}")
@@ -33,14 +28,18 @@ public class StatsServiceApplication {
 	@Value("${spring.redis.password}")
 	private String redisPassword;
 
+	public static void main(String[] args) {
+		SpringApplication.run(StatsServiceApplication.class, args);
+	}
+
 	@Bean
 	@Primary
 	public ObjectMapper primaryObjectMapper() {
-		return JsonMapper
-				.builder()
-				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-				.findAndAddModules()
-				.build();
+		final ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+		return objectMapper;
 	}
 
 	@Bean

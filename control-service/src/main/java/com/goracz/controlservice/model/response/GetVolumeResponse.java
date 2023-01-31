@@ -26,7 +26,9 @@ class VolumeStatus {
     private String volumeLimiter;
     private String soundOutput;
     private String mode;
+    private boolean externalDeviceControl;
     private int volume;
+    private boolean volumeSyncable;
     private boolean adjustVolume;
     private boolean muteStatus;
     private String cause;
