@@ -8,5 +8,7 @@ public enum PowerState {
     @JsonProperty("Active Standby")
     ACTIVE_STANDBY,
     @JsonProperty("Suspend")
-    SUSPEND;
+    SUSPEND,
+    @JsonProperty("Screen Saver")
+    SCREEN_SAVER
 }

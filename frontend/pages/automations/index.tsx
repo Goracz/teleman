@@ -1,29 +1,30 @@
 import {
-  Text,
+  Avatar,
   Button,
+  Col,
   Container,
   createStyles,
-  SimpleGrid,
-  Title,
-  Drawer,
-  Select,
-  Space,
-  Grid,
-  Col,
-  NumberInput,
   Divider,
-  Input,
-  Stack,
+  Drawer,
+  Grid,
   Group,
-  Avatar,
+  Input,
+  NumberInput,
+  Select,
+  SimpleGrid,
+  Skeleton,
+  Space,
+  Stack,
+  Text,
   TextInput,
+  Title,
 } from '@mantine/core';
 import { DatePicker, TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { IconCalendar, IconClock } from '@tabler/icons';
 import Lottie from 'lottie-react';
 import { NextPage } from 'next';
-import { forwardRef, useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AutomationCard } from '../../components/AutomationCard';
 import { useAutomationRules } from '../../hooks';
@@ -393,17 +394,27 @@ const AutomationsPage: NextPage = () => {
           </SimpleGrid>
         </Container>
       )}
-      {automations && automations.length > 0 && (
-        <>
-          <Grid columns={1} mb={20}>
-            <Col>
-              <Button onClick={() => setDrawerOpened(true)} radius="xl">
-                Add new Automation Rule
-              </Button>
-            </Col>
-          </Grid>
-          <Grid columns={12}>
-            {automations.map((rule: AutomationRule) => (
+      <>
+        <Grid columns={1} mb={20}>
+          <Col>
+            <Button onClick={() => setDrawerOpened(true)} radius="xl">
+              Add new Automation Rule
+            </Button>
+          </Col>
+        </Grid>
+        <Grid columns={12}>
+          {!automations && (
+            <>
+              <Group spacing="lg">
+                <Skeleton height="23vh" width="21vw" radius="xl" />
+                <Skeleton height="23vh" width="21vw" radius="xl" />
+                <Skeleton height="23vh" width="21vw" radius="xl" />
+              </Group>
+            </>
+          )}
+          {automations &&
+            automations.length > 0 &&
+            automations.map((rule: AutomationRule) => (
               <Col sm={6} md={4} lg={3}>
                 <AutomationCard
                   id={rule.id!}
@@ -415,9 +426,8 @@ const AutomationsPage: NextPage = () => {
                 />
               </Col>
             ))}
-          </Grid>
-        </>
-      )}
+        </Grid>
+      </>
     </ApplicationLayout>
   );
 };

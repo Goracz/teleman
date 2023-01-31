@@ -167,6 +167,16 @@ const useAutomationRules = () => {
   };
 };
 
+const useTvIp = () => {
+  const { data, error } = useSWR('http://localhost:5000/api/v1/system/info/ip', fetcher);
+
+  return {
+    data,
+    isLoading: data ? false : !error && !data,
+    isError: data ? false : error,
+  };
+};
+
 export {
   useChannels,
   useCurrentChannel,
@@ -178,4 +188,5 @@ export {
   useChannelHistory,
   useEGP,
   useAutomationRules,
+  useTvIp,
 };
