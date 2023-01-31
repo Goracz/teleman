@@ -53,7 +53,7 @@ async fn main() -> std::io::Result<()> {
                     .service(user_controller::get_users),
             )
             .app_data(Data::new(db_connection.to_owned()))
-            .app_data(kafka_producer.to_owned())
+            .app_data(Data::new(kafka_producer.to_owned()))
     })
     .bind(("0.0.0.0", 8084))?
     .run()
