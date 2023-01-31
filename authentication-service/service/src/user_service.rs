@@ -40,8 +40,12 @@ pub async fn register_user(
 ) -> Result<user::Model, String> {
     let is_user_registered_with_email =
         user_repository::find_by_email(db.to_owned(), user.email.to_owned()).await;
-    if is_user_registered_with_email.is_ok() {
-        return Err("A user is already registered with this email.".to_string());
+    match is_user_registered_with_email {
+        Ok(user_option) => match user_option {
+            Some(_) => return Err("A user is already registered with this email.".to_string()),
+            None => (),
+        },
+        Err(_) => (),
     }
     let password_salt = Uuid::new_v4().to_string();
     let password_salt_encoded = encode(&password_salt);
