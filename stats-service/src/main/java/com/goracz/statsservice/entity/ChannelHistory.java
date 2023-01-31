@@ -63,16 +63,6 @@ public class ChannelHistory implements Serializable, Persistable<String> {
      */
     private ZonedDateTime end;
 
-    @Override
-    public boolean isNew() {
-        return this.getChannelId() != null && this.getEnd() == null;
-    }
-
-    public ChannelHistory endViewNow() {
-        this.setEnd(ZonedDateTime.now());
-        return this;
-    }
-
     public static Mono<ChannelHistory> empty() {
         return Mono.just(ChannelHistory.builder().build());
     }
@@ -121,5 +111,15 @@ public class ChannelHistory implements Serializable, Persistable<String> {
     public static ChannelHistory withMetadata(ChannelHistory channelHistory, ChannelMetadataResponse metadata) {
         channelHistory.setChannelLogoUrl(metadata.getChannelLogoUrl());
         return channelHistory;
+    }
+
+    @Override
+    public boolean isNew() {
+        return this.getChannelId() != null && this.getEnd() == null;
+    }
+
+    public ChannelHistory endViewNow() {
+        this.setEnd(ZonedDateTime.now());
+        return this;
     }
 }

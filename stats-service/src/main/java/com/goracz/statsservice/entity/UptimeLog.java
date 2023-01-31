@@ -28,6 +28,12 @@ public class UptimeLog implements Serializable, Persistable<String> {
     @LastModifiedDate
     private ZonedDateTime updatedAt;
 
+    public static UptimeLog withCurrentTime() {
+        return UptimeLog.builder()
+                .turnOnTime(ZonedDateTime.now())
+                .build();
+    }
+
     @Override
     public boolean isNew() {
         return turnOnTime != null && turnOffTime == null;
@@ -36,11 +42,5 @@ public class UptimeLog implements Serializable, Persistable<String> {
     public UptimeLog setTurnOffToNow() {
         this.turnOffTime = ZonedDateTime.now();
         return this;
-    }
-
-    public static UptimeLog withCurrentTime() {
-        return UptimeLog.builder()
-                .turnOnTime(ZonedDateTime.now())
-                .build();
     }
 }
