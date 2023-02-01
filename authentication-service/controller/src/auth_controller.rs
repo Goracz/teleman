@@ -3,6 +3,7 @@ use rdkafka::producer::BaseProducer;
 use sea_orm::sea_query::tests_cfg::json;
 use sea_orm::DbConn;
 
+use entity::user;
 use model::auth_response::AuthResponse;
 use model::login_credentials::LoginCredentials;
 use model::registration_credentials::RegistrationCredentials;
@@ -25,7 +26,7 @@ pub async fn login(
 pub async fn register(
     db: web::Data<DbConn>,
     producer: web::Data<BaseProducer>,
-    credentials: web::Json<RegistrationCredentials>,
+    credentials: web::Json<user::Model>,
 ) -> HttpResponse {
     let user_to_register = credentials.0;
     let registered_user = user_service::register_user(db, producer, user_to_register).await;
