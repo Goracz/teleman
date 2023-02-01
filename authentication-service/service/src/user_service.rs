@@ -1,18 +1,14 @@
-use std::borrow::Borrow;
-
 use actix_web::web;
 use argon2::Argon2;
 use chrono::Local;
 use password_hash::{PasswordHash, PasswordVerifier};
 use rdkafka::producer::{BaseProducer, BaseRecord};
-use sea_orm::sea_query::tests_cfg::json;
 use sea_orm::{ActiveValue, DbConn, DbErr, TryIntoModel};
 use uuid::Uuid;
 
 use entity::user;
 use model::login_credentials::LoginCredentials;
 use model::mq_topic::MqTopic;
-use model::registration_credentials::RegistrationCredentials;
 use repository::user_repository;
 use utility::base64::encode;
 
@@ -36,7 +32,7 @@ pub async fn get_by_email(
 pub async fn register_user(
     db: web::Data<DbConn>,
     producer: web::Data<BaseProducer>,
-    user: RegistrationCredentials,
+    user: user::Model,
 ) -> Result<user::Model, String> {
     let is_user_registered_with_email =
         user_repository::find_by_email(db.to_owned(), user.email.to_owned()).await;
@@ -49,38 +45,30 @@ pub async fn register_user(
     }
     let password_salt = Uuid::new_v4().to_string();
     let password_salt_encoded = encode(&password_salt);
-    let password_hash_result = generate_password_hash(user.password, password_salt_encoded);
+    let password_hash_result =
+        generate_password_hash(user.password.to_owned(), password_salt_encoded);
     match password_hash_result {
         Ok(password_hash) => {
-            let user_to_persist = user::ActiveModel {
-                id: ActiveValue::NotSet,
-                email: ActiveValue::Set(user.email),
-                password: ActiveValue::Set(password_hash),
-                first_name: ActiveValue::Set(user.first_name),
-                last_name: ActiveValue::Set(user.last_name),
-                create_date: ActiveValue::NotSet,
-                update_date: ActiveValue::NotSet,
-            };
+            let mut user_to_persist = user::ActiveModel::from(user.to_owned());
+            user_to_persist.password = ActiveValue::Set(password_hash);
             let persisted_user = user_repository::save(db.to_owned(), user_to_persist).await;
             match persisted_user {
                 Ok(user) => {
                     let user_model_result = user.try_into_model();
                     match user_model_result {
                         Ok(user_model) => {
-                            producer.send(
-                                BaseRecord::to(MqTopic::UserRegistration.name())
-                                    .payload(
-                                        &json!({
-                        "id": user_model.id,
-                        "email": user_model.email,
-                        "firstName": user_model.first_name,
-                        "lastName": user_model.last_name,
-                        })
-                                            .to_string(),
-                                    )
-                                    .key(&Local::now().to_rfc3339()),
-                            ).expect(&format!("Could not notify listeners about user registration of user with email: {}.", user_model.email));
-                            Ok(user_model)
+                            let user_model_serialization_result = user_model.to_json();
+                            match user_model_serialization_result {
+                                Ok(user_model_serialized) => {
+                                    producer.send(
+                                        BaseRecord::to(MqTopic::UserRegistration.name())
+                                            .payload(user_model_serialized.as_bytes())
+                                            .key(&Local::now().to_rfc3339()),
+                                    ).expect(&format!("Could not notify listeners about user registration of user with email: {}.", user_model.email));
+                                    Ok(user_model)
+                                }
+                                Err(_) => Err("Couldn't serialize user model.".to_string()),
+                            }
                         }
                         Err(_) => Err("Couldn't convert user entity to user model.".to_string()),
                     }
@@ -88,7 +76,7 @@ pub async fn register_user(
                 Err(_) => Err("Couldn't register user.".to_string()),
             }
         }
-        Err(_) => Err("".to_string()),
+        Err(_) => Err("Couldn't serialize user password.".to_string()),
     }
 }
 
@@ -106,25 +94,23 @@ pub async fn login(
                 let is_password_valid = is_password_valid(&password_encoded, &db_user.password);
                 match is_password_valid {
                     true => {
-                        producer
-                            .send(
-                                BaseRecord::to(MqTopic::UserLogin.name())
-                                    .payload(
-                                        &json!({
-                                            "id": db_user.id,
-                                            "email": db_user.email,
-                                            "firstName": db_user.first_name,
-                                            "lastName": db_user.last_name,
-                                        })
-                                            .to_string(),
+                        let user_model_serialization_result = db_user.to_json();
+                        match user_model_serialization_result {
+                            Ok(user_model_serialized) => {
+                                producer
+                                    .send(
+                                        BaseRecord::to(MqTopic::UserLogin.name())
+                                            .payload(user_model_serialized.as_bytes())
+                                            .key(&Local::now().to_rfc3339()),
                                     )
-                                    .key(&Local::now().to_rfc3339()),
-                            )
-                            .expect(&format!(
-                                "Could not notify listeners about user login of user with email: {}.",
-                                db_user.email,
-                            ));
-                        Ok(generate_jwt_token(&db_user).unwrap())
+                                    .expect(&format!(
+                                        "Could not notify listeners about user login of user with email: {}.",
+                                        db_user.email,
+                                    ));
+                                Ok(generate_jwt_token(&db_user).unwrap())
+                            }
+                            Err(_) => Err("Couldn't serialize user model.".to_string()),
+                        }
                     }
                     false => Err(generic_error_message),
                 }
