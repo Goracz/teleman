@@ -1,12 +1,11 @@
 package com.goracz.controlservice.service.impl;
 
-import com.goracz.controlservice.service.EventService;
 import com.goracz.controlservice.model.EventCategory;
 import com.goracz.controlservice.model.EventMessage;
-import org.springframework.stereotype.Service;
-
+import com.goracz.controlservice.service.EventService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
@@ -14,7 +13,7 @@ import reactor.core.publisher.Sinks;
 @RequiredArgsConstructor
 public class EventServiceImpl<T> implements EventService<T> {
     @Getter
-    private final Sinks.Many<T> eventStream = Sinks.many().multicast().directBestEffort();
+    private final Sinks.Many<T> eventStream = Sinks.many().multicast().directAllOrNothing();
     @Override
     public Mono<Sinks.EmitResult> emit(T message, EventCategory eventCategory) {
         return Mono.fromCallable(() -> new EventMessage<>(eventCategory, message))

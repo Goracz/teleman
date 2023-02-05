@@ -6,5 +6,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 public enum EventCategory {
     CHANNEL_HISTORY_CHANGED,
     FOREGROUND_APP_CHANGED,
-    UPTIME_LOG_CHANGED;
+    UPTIME_LOG_CHANGED,
+    POWER_STATE_CHANGED
 }

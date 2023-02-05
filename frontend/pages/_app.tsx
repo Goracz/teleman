@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { AppProps } from 'next/app';
 import { getCookie, setCookie } from 'cookies-next';
 import Head from 'next/head';
-import { MantineProvider, ColorScheme, ColorSchemeProvider } from '@mantine/core';
+import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
 import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
 import { NavigationProgress } from '@mantine/nprogress';
 import { NotificationsProvider } from '@mantine/notifications';
 import { Provider } from 'react-redux';
+import '../styles.css';
 
 import {
   IconArrowLeft,
@@ -72,14 +73,14 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
 
   return (
     <>
-      <MantineProvider
-        theme={{ colorScheme, fontFamily: 'Poppins', transitionTimingFunction: 'ease' }}
-        withGlobalStyles
-        withNormalizeCSS
-      >
-        <NotificationsProvider>
-          <Provider store={store}>
-            <EventsProvider>
+      <Provider store={store}>
+        <EventsProvider>
+          <MantineProvider
+            theme={{ colorScheme, fontFamily: 'Poppins', transitionTimingFunction: 'ease' }}
+            withGlobalStyles
+            withNormalizeCSS
+          >
+            <NotificationsProvider>
               <Head>
                 <title>Teleman</title>
                 <meta
@@ -88,11 +89,11 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
                 />
                 <link rel="shortcut icon" href="/favicon.svg" />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
-                  <link rel="preconnect" href="https://fonts.gstatic.com" />
-                  <link
-                    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-                    rel="stylesheet"
-                  />
+                <link rel="preconnect" href="https://fonts.gstatic.com" />
+                <link
+                  href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+                  rel="stylesheet"
+                />
               </Head>
 
               <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
@@ -106,10 +107,10 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
                   <Component {...pageProps} />
                 </SpotlightProvider>
               </ColorSchemeProvider>
-            </EventsProvider>
-          </Provider>
-        </NotificationsProvider>
-      </MantineProvider>
+            </NotificationsProvider>
+          </MantineProvider>
+        </EventsProvider>
+      </Provider>
     </>
   );
 }

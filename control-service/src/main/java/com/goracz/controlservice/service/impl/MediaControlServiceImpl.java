@@ -24,16 +24,19 @@ public class MediaControlServiceImpl implements MediaControlService {
     private final EventService<EventMessage<GetVolumeResponse>> eventService;
     private final WebClient webClient;
     private final RedisCacheProvider cacheProvider;
+    private final ObjectMapper objectMapper;
     @Getter
     private final Sinks.Many<GetVolumeResponse> volumeStream = Sinks.many().multicast().onBackpressureBuffer();
 
     public MediaControlServiceImpl(
             EventService<EventMessage<GetVolumeResponse>> eventService,
             WebClient webClient,
-            RedisCacheProvider cacheProvider) {
+            RedisCacheProvider cacheProvider,
+            ObjectMapper objectMapper) {
         this.eventService = eventService;
         this.webClient = webClient;
         this.cacheProvider = cacheProvider;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -109,7 +112,7 @@ public class MediaControlServiceImpl implements MediaControlService {
     }
 
     private Mono<GetVolumeResponse> getVolumeFromMqMessage(ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), GetVolumeResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), GetVolumeResponse.class));
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutVolumeChange(GetVolumeResponse volume) {

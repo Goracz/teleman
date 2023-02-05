@@ -42,15 +42,18 @@ public class TvControlServiceImpl implements TvControlService {
     private final WebClient webClient;
     private final WebChannelMetadataService channelMetadataService;
     private final RedisCacheProvider cacheProvider;
+    private final ObjectMapper objectMapper;
 
     public TvControlServiceImpl(EventService<EventMessage<CurrentTvChannelResponse>> eventService,
             WebClient webClient,
             WebChannelMetadataService channelMetadataService,
-            RedisCacheProvider cacheProvider) {
+            RedisCacheProvider cacheProvider,
+            ObjectMapper objectMapper) {
         this.eventService = eventService;
         this.webClient = webClient;
         this.channelMetadataService = channelMetadataService;
         this.cacheProvider = cacheProvider;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -165,7 +168,7 @@ public class TvControlServiceImpl implements TvControlService {
 
     private Mono<CurrentTvChannelResponse> getCurrentTvChannelFromMqMessage(
             ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), CurrentTvChannelResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), CurrentTvChannelResponse.class));
     }
 
     private Mono<Void> notifyListenersAboutChannelChange(CurrentTvChannelResponse currentChannel) {

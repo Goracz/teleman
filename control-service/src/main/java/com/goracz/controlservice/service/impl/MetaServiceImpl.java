@@ -23,7 +23,7 @@ public class MetaServiceImpl implements MetaService {
 
     private Mono<ServiceDescription> readFromCache() {
         return this.cacheProvider
-                .getServiceDescriptionCachce()
+                .getServiceDescriptionCache()
                 .get(CACHE_KEY);
     }
 
@@ -38,7 +38,7 @@ public class MetaServiceImpl implements MetaService {
 
     private Mono<ServiceDescription> writeToCache(ServiceDescription serviceDescription) {
         return this.cacheProvider
-                .getServiceDescriptionCachce()
+                .getServiceDescriptionCache()
                 .set(CACHE_KEY, serviceDescription)
                 .map(result -> serviceDescription);
     }

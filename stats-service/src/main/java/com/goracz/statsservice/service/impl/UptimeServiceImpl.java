@@ -25,13 +25,16 @@ public class UptimeServiceImpl implements UptimeService {
     private final ReactiveUptimeRepository uptimeRepository;
     private final RedisCacheProvider cacheProvider;
     private final EventService<EventMessage<UptimeLog>> eventService;
+    private final ObjectMapper objectMapper;
 
     public UptimeServiceImpl(ReactiveUptimeRepository uptimeRepository,
                              RedisCacheProvider cacheProvider,
-                             EventService<EventMessage<UptimeLog>> eventService) {
+                             EventService<EventMessage<UptimeLog>> eventService,
+                             ObjectMapper objectMapper) {
         this.uptimeRepository = uptimeRepository;
         this.cacheProvider = cacheProvider;
         this.eventService = eventService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -87,7 +90,7 @@ public class UptimeServiceImpl implements UptimeService {
     }
 
     private Mono<PowerStateResponse> readPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), PowerStateResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), PowerStateResponse.class));
     }
 
     private Mono<UptimeLog> writeToCache(UptimeLog uptimeLog) {

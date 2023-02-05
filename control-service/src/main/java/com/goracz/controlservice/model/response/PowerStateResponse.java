@@ -28,7 +28,9 @@ enum PowerStateProcessing {
     @JsonProperty("Prepare Power On")
     PREPARE_POWER_ON,
     @JsonProperty("LastInput Ready")
-    LAST_INPUT_READY
+    LAST_INPUT_READY,
+    @JsonProperty("Prepare Resume")
+    PREPARE_RESUME
 }
 
 enum PowerState {

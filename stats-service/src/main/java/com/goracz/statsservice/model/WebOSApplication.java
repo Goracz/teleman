@@ -1,6 +1,7 @@
 package com.goracz.statsservice.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.io.Serializable;
 
@@ -12,14 +13,22 @@ public enum WebOSApplication implements Serializable {
     TV("com.webos.app.livetv"),
     @JsonProperty("com.webos.app.browser")
     BROWSER("com.webos.app.browser"),
-    YOUTUBE(""),
-    TWITCH(""),
-    @JsonProperty
+    @JsonProperty("youtube.leanback.v4")
+    YOUTUBE("youtube.leanback.v4"),
+    @JsonProperty("spotify-beehive")
+    SPOTIFY("spotify-beehive"),
+    TWITCH("twitch"),
+    @JsonProperty("")
     BLANK("");
 
-    public final String appPackageName;
+    private final String appPackageName;
 
     WebOSApplication(String appPackageName) {
         this.appPackageName = appPackageName;
+    }
+
+    @JsonValue
+    public String getAppPackageName() {
+        return appPackageName;
     }
 }

@@ -78,7 +78,7 @@ const ApplicationLayout: NextPage<any> = ({ children }) => {
                 </Text>
               </Group>
               <Code sx={{ fontWeight: 700 }} mt={6}>
-                v2023.01.29.dev
+                v2023.02.05.dev
               </Code>
               {!pageName && <Skeleton height={10} width={80} radius="xl" />}
               {pageName && (

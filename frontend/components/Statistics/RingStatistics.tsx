@@ -1,14 +1,14 @@
 import {
-  RingProgress,
-  Text,
+  Badge,
   Card,
   Center,
   Group,
-  Table,
-  Badge,
+  Image,
+  RingProgress,
   Space,
   Stack,
-  Image,
+  Table,
+  Text,
   Tooltip,
 } from '@mantine/core';
 import { IconDeviceTv } from '@tabler/icons';
@@ -66,7 +66,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
   };
 
   return (
-    <Card style={{ minHeight: '25vh', height: '100%' }} shadow="xl" radius="xl" p="sm">
+    <Card style={{ minHeight: '25vh', height: '100%' }} shadow="md" radius="xl" p="sm">
       <Text mt={6} ml={12} weight={500}>
         Channels Overview
       </Text>
@@ -140,17 +140,27 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
                         </td>
                         <td>
                           <Group style={{ maxWidth: width > 1200 ? width * 0.06 : height * 0.3 }}>
-                            <Tooltip label={statEntry ? (statEntry.channelName !== 'null' ? statEntry.channelName : 'N/A') : ''}>
-                              <Group
-                                noWrap
-                              >
+                            <Tooltip
+                              label={
+                                statEntry
+                                  ? statEntry.channelName !== 'null'
+                                    ? statEntry.channelName
+                                    : 'N/A'
+                                  : ''
+                              }
+                            >
+                              <Group noWrap>
                                 {statEntry.channelLogoUrl ? (
-                                    <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
-                                ) : <IconDeviceTv width="1vw" height="2vh" />}
-                                <Text
-                                  lineClamp={1}
-                                >
-                                  {statEntry ? (statEntry.channelName !== 'null' ? statEntry.channelName : 'N/A') : ''}
+                                  <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
+                                ) : (
+                                  <IconDeviceTv width="1vw" height="2vh" />
+                                )}
+                                <Text lineClamp={1}>
+                                  {statEntry
+                                    ? statEntry.channelName !== 'null'
+                                      ? statEntry.channelName
+                                      : 'N/A'
+                                    : ''}
                                 </Text>
                               </Group>
                             </Tooltip>
