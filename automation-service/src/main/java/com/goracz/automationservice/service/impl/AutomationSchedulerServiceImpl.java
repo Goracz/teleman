@@ -28,13 +28,12 @@ import java.util.concurrent.ScheduledFuture;
 public class AutomationSchedulerServiceImpl implements AutomationSchedulerService {
     private final TaskScheduler taskScheduler;
     private final WebTvControlService webTvControlService;
-    private final HashMap<String, ScheduledFuture<?>> scheduledFutures;
+    private final HashMap<String, ScheduledFuture<?>> scheduledFutures = new HashMap<>();
 
     public AutomationSchedulerServiceImpl(TaskScheduler taskScheduler,
                                           WebTvControlService webTvControlService) {
         this.taskScheduler = taskScheduler;
         this.webTvControlService = webTvControlService;
-        this.scheduledFutures = new HashMap<>();
     }
 
     @Override

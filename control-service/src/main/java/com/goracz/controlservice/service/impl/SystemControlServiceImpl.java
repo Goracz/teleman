@@ -1,20 +1,12 @@
 package com.goracz.controlservice.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goracz.controlservice.component.RedisCacheProvider;
-import com.goracz.controlservice.exception.KafkaConsumeFailException;
-import com.goracz.controlservice.model.EventCategory;
-import com.goracz.controlservice.model.EventMessage;
 import com.goracz.controlservice.model.response.PowerStateResponse;
 import com.goracz.controlservice.model.response.SoftwareInformationResponse;
-import com.goracz.controlservice.service.EventService;
 import com.goracz.controlservice.service.SystemControlService;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
 
 @Service
 public class SystemControlServiceImpl implements SystemControlService {
@@ -35,16 +27,12 @@ public class SystemControlServiceImpl implements SystemControlService {
 
     private static final String POWER_STATE_CACHE_KEY = "system:power:state";
 
-    private final EventService<EventMessage<PowerStateResponse>> eventService;
-
     private final WebClient webClient;
     private final RedisCacheProvider cacheProvider;
 
 
-    public SystemControlServiceImpl(EventService<EventMessage<PowerStateResponse>> eventService,
-                                    WebClient webClient,
+    public SystemControlServiceImpl(WebClient webClient,
                                     RedisCacheProvider cacheProvider) {
-        this.eventService = eventService;
         this.webClient = webClient;
         this.cacheProvider = cacheProvider;
     }
@@ -82,16 +70,6 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .bodyToMono(Void.class)
                 .retry(INTERFACE_REQUEST_TRIES)
                 .log();
-    }
-
-    @KafkaListener(topics = "power-state-change")
-    private void onPowerStateChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
-        try {
-            this.handlePowerStateChange(message)
-                    .subscribe();
-        } catch (Exception exception) {
-            throw new KafkaConsumeFailException(exception.getMessage());
-        }
     }
 
     private Mono<SoftwareInformationResponse> getSoftwareInformationFromTv() {
@@ -132,27 +110,11 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .log();
     }
 
-    private Mono<Sinks.EmitResult> handlePowerStateChange(ConsumerRecord<String, String> message) {
-        return this.getPowerStateFromMqMessage(message)
-                .flatMap(this::writePowerStateToCache)
-                .flatMap(this::notifyListenersAboutNewPowerState);
-    }
-
-    private Mono<PowerStateResponse> getPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), PowerStateResponse.class));
-    }
-
     private Mono<PowerStateResponse> writePowerStateToCache(PowerStateResponse powerState) {
         return this.cacheProvider.getPowerStateResponseCache()
                 .set(POWER_STATE_CACHE_KEY, powerState)
                 .map(response -> powerState)
                 .retry(CACHE_WRITE_TRIES)
-                .log();
-    }
-
-    private Mono<Sinks.EmitResult> notifyListenersAboutNewPowerState(PowerStateResponse powerState) {
-        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.POWER_STATE_CHANGED, powerState))
-                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()))
                 .log();
     }
 }

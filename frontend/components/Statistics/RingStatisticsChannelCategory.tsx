@@ -1,12 +1,12 @@
 import {
-  RingProgress,
-  Text,
+  Badge,
   Card,
   Center,
   Group,
-  Table,
-  Badge,
+  RingProgress,
   Stack,
+  Table,
+  Text,
   Tooltip,
 } from '@mantine/core';
 import moment from 'moment';
@@ -63,7 +63,7 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
   };
 
   return (
-    <Card style={{ minHeight: '25vh', height: '100%' }} shadow="xl" radius="xl" p="sm">
+    <Card style={{ minHeight: '25vh', height: '100%' }} shadow="md" radius="xl" p="sm">
       <Text mt={6} ml={12} weight={500}>
         Channel Category Overview
       </Text>
@@ -87,11 +87,13 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
                     <Group spacing="xs">
                       <Badge style={{ backgroundColor: statEntry.color }} size="xs" radius="xl" />
                       <Text>
-                        {
-                          statEntry.channelCategory ? ChannelCategoryLegend[
+                        {statEntry.channelCategory
+                          ? ChannelCategoryLegend[
                               statEntry.channelCategory as keyof typeof ChannelCategoryLegend
-                              ] : WebOSApplication[statEntry.application as keyof typeof WebOSApplication]
-                        }
+                            ]
+                          : WebOSApplication[
+                              statEntry.application as keyof typeof WebOSApplication
+                            ]}
                       </Text>
                     </Group>
                   </Group>
@@ -131,7 +133,13 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
                 height > 1650
                   ? index < 5
                   : index < 3 && (
-                      <tr key={statEntry.channelCategory ? statEntry.channelCategory : statEntry.application}>
+                      <tr
+                        key={
+                          statEntry.channelCategory
+                            ? statEntry.channelCategory
+                            : statEntry.application
+                        }
+                      >
                         <td>
                           <Badge
                             style={{ backgroundColor: statEntry.color }}
@@ -143,17 +151,23 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
                           <Group style={{ maxWidth: width > 1200 ? width * 0.06 : height * 0.3 }}>
                             <Tooltip
                               label={
-                                statEntry.channelCategory ? ChannelCategoryLegend[
-                                  statEntry.channelCategory as keyof typeof ChannelCategoryLegend
-                                ] : WebOSApplication[statEntry.application as keyof typeof WebOSApplication]
+                                statEntry.channelCategory
+                                  ? ChannelCategoryLegend[
+                                      statEntry.channelCategory as keyof typeof ChannelCategoryLegend
+                                    ]
+                                  : WebOSApplication[
+                                      statEntry.application as keyof typeof WebOSApplication
+                                    ]
                               }
                             >
                               <Text lineClamp={1}>
-                                {
-                                  statEntry.channelCategory ? ChannelCategoryLegend[
+                                {statEntry.channelCategory
+                                  ? ChannelCategoryLegend[
                                       statEntry.channelCategory as keyof typeof ChannelCategoryLegend
-                                      ] : WebOSApplication[statEntry.application as keyof typeof WebOSApplication]
-                                }
+                                    ]
+                                  : WebOSApplication[
+                                      statEntry.application as keyof typeof WebOSApplication
+                                    ]}
                               </Text>
                             </Tooltip>
                           </Group>

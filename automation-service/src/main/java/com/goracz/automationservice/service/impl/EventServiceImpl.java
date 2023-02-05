@@ -13,7 +13,7 @@ import reactor.core.publisher.Sinks;
 @RequiredArgsConstructor
 public class EventServiceImpl<T> implements EventService<T> {
     @Getter
-    private final Sinks.Many<T> eventStream = Sinks.many().multicast().onBackpressureBuffer();
+    private final Sinks.Many<T> eventStream = Sinks.many().multicast().directAllOrNothing();
     @Override
     public Mono<Sinks.EmitResult> emit(T message, EventCategory eventCategory) {
         return Mono.fromCallable(() -> new EventMessage<>(eventCategory, message))

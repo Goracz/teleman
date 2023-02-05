@@ -16,10 +16,10 @@ const onlineStates = ['Active', 'Active Standby'];
 const offlineStates = ['Suspend'];
 
 const handleControlServiceMessage = (
-    event: EventMessage,
-    dispatch: Dispatch,
-    powerState: string,
-    channelHistory: ChannelHistory[]
+  event: EventMessage,
+  dispatch: Dispatch,
+  powerState: string,
+  channelHistory: ChannelHistory[]
 ): void => {
   const response = JSON.parse(event.data);
 
@@ -47,11 +47,11 @@ const handleControlServiceMessage = (
           icon: <IconCheck size={16} />,
         });
         dispatch(
-            appActions.setChannelHistory([...channelHistory, { start: new Date().getTime() }])
+          appActions.setChannelHistory([...channelHistory, { start: new Date().getTime() }])
         );
       } else if (
-          offlineStates.includes(message.state) &&
-          onlineStates.includes(powerState as any)
+        offlineStates.includes(message.state) &&
+        onlineStates.includes(powerState as any)
       ) {
         showNotification({
           color: 'blue',
@@ -66,7 +66,12 @@ const handleControlServiceMessage = (
   }
 };
 
-const handleStatisticsServiceEvent = (event: EventMessage, dispatch: Dispatch): void => {
+const handleStatisticsServiceEvent = (
+  event: EventMessage,
+  dispatch: Dispatch,
+  powerState: string,
+  channelHistory: ChannelHistory[]
+): void => {
   const response = JSON.parse(event.data);
 
   // TODO: Remove console logs when stable
@@ -86,6 +91,31 @@ const handleStatisticsServiceEvent = (event: EventMessage, dispatch: Dispatch): 
       dispatch(appActions.setUptime(message));
 
       break;
+    case StatisticsServiceEventCategory.POWER_STATE_CHANGED:
+      if (offlineStates.includes(powerState as any) && onlineStates.includes(message.state)) {
+        // TODO! Notifications are not being shown when called here
+        showNotification({
+          color: 'blue',
+          title: 'Connection upgraded',
+          message: 'You are directly connected to the TV',
+          icon: <IconCheck size={16} />,
+        });
+        dispatch(
+          appActions.setChannelHistory([...channelHistory, { start: new Date().getTime() }])
+        );
+      } else if (
+        offlineStates.includes(message.state) &&
+        onlineStates.includes(powerState as any)
+      ) {
+        showNotification({
+          color: 'blue',
+          title: 'Connection downgraded',
+          message: 'You are connected to the system services',
+          icon: <IconCheck size={16} />,
+        });
+        dispatch(appActions.setChannelHistoryEnd(new Date()));
+      }
+      dispatch(appActions.setPowerState(message));
   }
 };
 
@@ -124,31 +154,14 @@ export const EventsProvider: NextPage<any> = ({ children }) => {
   );
 
   useEffect(() => {
-    let controlServiceEventStream = new EventSource('http://localhost:8080/api/v1/events/stream');
-    let controlServiceEventStreamReconnectInterval: NodeJS.Timeout;
+    const controlServiceEventStream = new EventSource('http://localhost:8080/api/v1/events/stream');
 
     // TODO! This should be refactored as soon as possible - the application should only have 1 event stream.
-    let statisticsServiceEventStream = new EventSource('http://localhost:8081/api/v1/events/stream');
-    let statisticsServiceEventStreamReconnectInterval: NodeJS.Timeout;
+    const statisticsServiceEventStream = new EventSource(
+      'http://localhost:8081/api/v1/events/stream'
+    );
 
-    let automationEventStream = new EventSource('http://localhost:8083/api/v1/events/stream');
-    let automationEventStreamReconnectInterval: NodeJS.Timeout;
-
-    const tryReconnectToControlServiceEventStream = () => {
-      controlServiceEventStreamReconnectInterval = setInterval(() => {
-        controlServiceEventStream = new EventSource('http://localhost:8080/api/v1/events/stream');
-      }, 3000);
-    };
-    const tryReconnectToStatisticsServiceEventStream = () => {
-      statisticsServiceEventStreamReconnectInterval = setInterval(() => {
-        statisticsServiceEventStream = new EventSource('http://localhost:8081/api/v1/events/stream');
-      }, 3000);
-    };
-    const tryReconnectToAutomationServiceEventStream = () => {
-      automationEventStreamReconnectInterval = setInterval(() => {
-        automationEventStream = new EventSource('http://localhost:8083/api/v1/events/stream');
-      }, 3000);
-    };
+    const automationEventStream = new EventSource('http://localhost:8083/api/v1/events/stream');
 
     controlServiceEventStream.onmessage = (event: EventMessage) => {
       try {
@@ -157,29 +170,18 @@ export const EventsProvider: NextPage<any> = ({ children }) => {
         console.error(`Could not process control service event message: ${error}`);
       }
     };
-    controlServiceEventStream.onerror = (): void => {
-      dispatch(appActions.setConnectionStatus(2));
-      tryReconnectToControlServiceEventStream();
-    };
     controlServiceEventStream.onopen = (): void => {
       if (connectionStatus === 2) {
-        clearInterval(controlServiceEventStreamReconnectInterval);
         dispatch(appActions.setConnectionStatus(1));
       }
     };
 
     statisticsServiceEventStream.onmessage = (event: EventMessage) => {
       try {
-        handleStatisticsServiceEvent(event, dispatch);
+        handleStatisticsServiceEvent(event, dispatch, powerState as any, channelHistory);
       } catch (error: any) {
         console.error(`Could not process channel history service event message: ${error}`);
       }
-    };
-    statisticsServiceEventStream.onerror = (): void => {
-      tryReconnectToStatisticsServiceEventStream();
-    };
-    statisticsServiceEventStream.onopen = (): void => {
-      clearInterval(statisticsServiceEventStreamReconnectInterval);
     };
 
     automationEventStream.onmessage = (event: EventMessage) => {
@@ -189,12 +191,8 @@ export const EventsProvider: NextPage<any> = ({ children }) => {
         console.error(`Could not process automation service event message: ${error}`);
       }
     };
-    automationEventStream.onerror = (): void => {
-      tryReconnectToAutomationServiceEventStream();
-    };
-    automationEventStream.onopen = (): void => {
-      clearInterval(automationEventStreamReconnectInterval);
-    };
+
+    console.log('EventsProvider component got rendered AGAIN...');
   }, []);
 
   return <>{children}</>;

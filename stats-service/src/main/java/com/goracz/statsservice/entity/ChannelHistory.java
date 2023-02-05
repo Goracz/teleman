@@ -115,7 +115,7 @@ public class ChannelHistory implements Serializable, Persistable<String> {
 
     @Override
     public boolean isNew() {
-        return this.getChannelId() != null && this.getEnd() == null;
+        return this.getStart() != null && this.getEnd() == null;
     }
 
     public ChannelHistory endViewNow() {

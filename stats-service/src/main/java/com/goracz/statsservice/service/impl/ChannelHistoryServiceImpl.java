@@ -17,29 +17,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.ZoneId;
 
 @Service
 public class ChannelHistoryServiceImpl implements ChannelHistoryService {
+    private static final int CACHE_WRITE_TRIES = 3;
 
     private static final String TV_CHANNEL_HISTORY_KEY = "tv:channel:history";
+    private static final String POWER_STATE_CACHE_KEY = "system:power:state";
+
     private static final int RETRY_TRIES = 3;
 
-    private final EventService<EventMessage<ChannelHistory>> eventService;
+    private final EventService<EventMessage<ChannelHistory>> channelHistoryEventService;
+    private final EventService<EventMessage<PowerStateResponse>> powerStateEventService;
     private final ReactiveSortingChannelHistoryRepository channelHistoryRepository;
     private final WebChannelMetadataService webChannelMetadataService;
     private final RedisCacheProvider cacheProvider;
+    private final ObjectMapper objectMapper;
 
-    public ChannelHistoryServiceImpl(EventService<EventMessage<ChannelHistory>> eventService,
+    public ChannelHistoryServiceImpl(EventService<EventMessage<ChannelHistory>> channelHistoryEventService,
+                                     EventService<EventMessage<PowerStateResponse>> powerStateEventService,
                                      ReactiveSortingChannelHistoryRepository channelHistoryRepository,
                                      WebChannelMetadataService webChannelMetadataService,
-                                     RedisCacheProvider cacheProvider) {
-        this.eventService = eventService;
+                                     RedisCacheProvider cacheProvider,
+                                     ObjectMapper objectMapper) {
+        this.channelHistoryEventService = channelHistoryEventService;
+        this.powerStateEventService = powerStateEventService;
         this.channelHistoryRepository = channelHistoryRepository;
         this.webChannelMetadataService = webChannelMetadataService;
         this.cacheProvider = cacheProvider;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -118,21 +128,27 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                         .switchIfEmpty(this.readLatestChannelHistoryFromDatabase())
                         .switchIfEmpty(ChannelHistory.empty())
                         .doOnNext(latestChannelHistoryEntry -> {
+                            if (latestChannelHistoryEntry.getChannelName().equals(response.getChannelName())) {
+                                // No-op as the channel has not changed, even though we got such an event.
+                                return;
+                            }
                             if (latestChannelHistoryEntry.isNew()) {
                                 // A channel is already in the cache, the current channel's end
                                 // time has to be set to now.
+                                // After that, the channel that has just been changed to also has to be processed.
                                 this.updateLatestChannelHistory(latestChannelHistoryEntry)
-                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .flatMap(ignored -> this.addNewChannelHistory(response))
+                                        .subscribeOn(Schedulers.parallel())
                                         .subscribe();
                             } else {
                                 // A channel is not in the cache yet, so the current channel's start
                                 // time has to be set to now.
                                 this.addNewChannelHistory(response)
-                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .subscribeOn(Schedulers.parallel())
                                         .subscribe();
                             }
                         })
-                        .subscribeOn(Schedulers.boundedElastic())
+                        .subscribeOn(Schedulers.parallel())
                         .subscribe())
                 .then();
     }
@@ -146,7 +162,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     }
 
     private Mono<CurrentTvChannelResponse> readCurrentChannelFromMqMessage(ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> new ObjectMapper().readValue(message.value(), CurrentTvChannelResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), CurrentTvChannelResponse.class));
     }
 
     private Mono<ChannelHistory> updateLatestChannelHistory(ChannelHistory channelHistory) {
@@ -180,6 +196,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
 
     public Mono<PowerStateResponse> handlePowerStateChange(ConsumerRecord<String, String> mqMessage) {
         return this.readPowerStateFromMqMessage(mqMessage)
+                .doOnNext(this::processPowerStateChange)
                 .doOnNext((powerStateResponse) -> {
                     if (this.shouldUpdateChannelHistory(powerStateResponse)) {
                         this.updateLatestChannelHistory()
@@ -189,9 +206,28 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 });
     }
 
+    private Mono<Sinks.EmitResult> processPowerStateChange(PowerStateResponse powerStateResponse) {
+        return this.writePowerStateToCache(powerStateResponse)
+                .flatMap(this::notifyListenersAboutNewPowerState);
+    }
+
     private Mono<PowerStateResponse> readPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> new ObjectMapper()
+        return Mono.fromCallable(() -> this.objectMapper
                 .readValue(message.value(), PowerStateResponse.class));
+    }
+
+    private Mono<PowerStateResponse> writePowerStateToCache(PowerStateResponse powerState) {
+        return this.cacheProvider.getPowerStateResponseCache()
+                .set(POWER_STATE_CACHE_KEY, powerState)
+                .map(response -> powerState)
+                .retry(CACHE_WRITE_TRIES)
+                .log();
+    }
+
+    private Mono<Sinks.EmitResult> notifyListenersAboutNewPowerState(PowerStateResponse powerState) {
+        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.POWER_STATE_CHANGED, powerState))
+                .flatMap(eventMessage -> this.powerStateEventService.emit(eventMessage, eventMessage.getCategory()))
+                .log();
     }
 
     private boolean shouldUpdateChannelHistory(PowerStateResponse response) {
@@ -223,19 +259,19 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         // TODO: appId is an empty string just before the TV turns off
         //  - the same would happen when the TV state changes to an inactive state as below
         return this.readForegroundAppChangeMessageFromMq(message)
-                .flatMap(event -> shouldUpdateChannelHistory(event)
+                .flatMap(event -> isTvRunningThirdPartyApplication(event)
                         ? this.updateLatestChannelHistory()
                         : this.createNewChannelHistoryWithCurrentlyRunningApplication(event));
     }
 
     private Mono<ForegroundAppChangeResponse> readForegroundAppChangeMessageFromMq(
             ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> new ObjectMapper()
+        return Mono.fromCallable(() -> this.objectMapper
                 .readValue(message.value(), ForegroundAppChangeResponse.class));
     }
 
-    private boolean shouldUpdateChannelHistory(ForegroundAppChangeResponse response) {
-        return !(!response.getAppId().equals(WebOSApplication.TV) && !response.getAppId().equals(WebOSApplication.BLANK));
+    private boolean isTvRunningThirdPartyApplication(ForegroundAppChangeResponse response) {
+        return !response.getAppId().equals(WebOSApplication.TV);
     }
 
     private Mono<ChannelHistory> updateLatestChannelHistory() {
@@ -269,7 +305,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
 
     private Mono<ChannelHistory> notifyListeners(ChannelHistory channelHistory) {
         return Mono.fromCallable(() -> new EventMessage<>(EventCategory.CHANNEL_HISTORY_CHANGED, channelHistory))
-                .map(eventMessage -> this.eventService.getEventStream().tryEmitNext(eventMessage))
+                .map(eventMessage -> this.channelHistoryEventService.getEventStream().tryEmitNext(eventMessage))
                 .map(ignored -> channelHistory);
     }
 }
