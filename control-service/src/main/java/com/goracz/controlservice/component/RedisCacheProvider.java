@@ -2,7 +2,6 @@ package com.goracz.controlservice.component;
 
 import com.goracz.controlservice.model.response.*;
 import lombok.Getter;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
@@ -19,7 +18,7 @@ public class RedisCacheProvider {
     private final ReactiveValueOperations<String, CurrentTvChannelResponse> currentTvChannelCache;
     private final ReactiveValueOperations<String, SoftwareInformationResponse> softwareInformationResponseCache;
     private final ReactiveValueOperations<String, PowerStateResponse> powerStateResponseCache;
-    private final ReactiveValueOperations<String, ServiceDescription> serviceDescriptionCachce;
+    private final ReactiveValueOperations<String, ServiceDescription> serviceDescriptionCache;
 
     public RedisCacheProvider(ReactiveRedisConnectionFactory factory) {
         this.volumeResponseCache = this.reactiveVolumeResponseRedisTemplate(factory).opsForValue();
@@ -27,7 +26,7 @@ public class RedisCacheProvider {
         this.currentTvChannelCache = this.reactiveCurrentTvChannelResponseRedisTemplate(factory).opsForValue();
         this.softwareInformationResponseCache = this.reactiveSoftwareInformationResponseRedisTemplate(factory).opsForValue();
         this.powerStateResponseCache = this.reactivePowerStateResponseRedisTemplate(factory).opsForValue();
-        this.serviceDescriptionCachce = this.reactiveServiceDescriptionRedisTemplate(factory).opsForValue();
+        this.serviceDescriptionCache = this.reactiveServiceDescriptionRedisTemplate(factory).opsForValue();
     }
 
     private ReactiveRedisTemplate<String, GetVolumeResponse> reactiveVolumeResponseRedisTemplate(
@@ -80,19 +79,6 @@ public class RedisCacheProvider {
         return new ReactiveRedisTemplate<>(factory, context);
     }
 
-    private ReactiveRedisTemplate<String, PowerStateResponse> reactivePowerStateResponseRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
-        final StringRedisSerializer keySerializer = new StringRedisSerializer();
-        final Jackson2JsonRedisSerializer<PowerStateResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
-                PowerStateResponse.class);
-        final RedisSerializationContext.RedisSerializationContextBuilder<String, PowerStateResponse> builder = 
-                RedisSerializationContext.newSerializationContext(keySerializer);
-        final RedisSerializationContext<String, PowerStateResponse> context = builder.value(valueSerializer)
-                .build();
-
-        return new ReactiveRedisTemplate<>(factory, context);
-    }
-
     private ReactiveRedisTemplate<String, ServiceDescription> reactiveServiceDescriptionRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
@@ -101,6 +87,19 @@ public class RedisCacheProvider {
         final RedisSerializationContext.RedisSerializationContextBuilder<String, ServiceDescription> builder =
                 RedisSerializationContext.newSerializationContext(keySerializer);
         final RedisSerializationContext<String, ServiceDescription> context = builder.value(valueSerializer)
+                .build();
+
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
+
+    private ReactiveRedisTemplate<String, PowerStateResponse> reactivePowerStateResponseRedisTemplate(
+            ReactiveRedisConnectionFactory factory) {
+        final StringRedisSerializer keySerializer = new StringRedisSerializer();
+        final Jackson2JsonRedisSerializer<PowerStateResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
+                PowerStateResponse.class);
+        final RedisSerializationContext.RedisSerializationContextBuilder<String, PowerStateResponse> builder =
+                RedisSerializationContext.newSerializationContext(keySerializer);
+        final RedisSerializationContext<String, PowerStateResponse> context = builder.value(valueSerializer)
                 .build();
 
         return new ReactiveRedisTemplate<>(factory, context);

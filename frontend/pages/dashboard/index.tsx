@@ -40,6 +40,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useViewportSize } from '@mantine/hooks';
+import { tz } from 'moment-timezone';
 import ApplicationLayout from '../../layouts/Application';
 import { Channel } from '../../models/channel';
 import { ChannelCategory } from '../../models/channel-category';
@@ -59,6 +60,41 @@ import { ChannelHistory } from '../../models/channel-history';
 import { RingStatistics } from '../../components/Statistics/RingStatistics';
 import { RingStatisticsChannelCategory } from '../../components/Statistics/RingStatisticsChannelCategory';
 
+const applications = [
+  {
+    name: 'YouTube',
+    package: '',
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/1384/1384060.png',
+  },
+  {
+    name: 'Spotify',
+    package: '',
+    iconUrl:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Spotify_icon.svg/991px-Spotify_icon.svg.png',
+  },
+  {
+    name: 'Tidal',
+    package: '',
+    iconUrl: 'https://cdn4.iconfinder.com/data/icons/logos-brands-5/24/tidal-512.png',
+  },
+  {
+    name: 'Browser',
+    package: '',
+    iconUrl: 'https://www.freeiconspng.com/thumbs/www-icon/www-domain-icon-0.png',
+  },
+  {
+    name: 'RTL+',
+    package: '',
+    iconUrl:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/RTL%2B_Logo_2021.svg/2560px-RTL%2B_Logo_2021.svg.png',
+  },
+  {
+    name: 'Twitch',
+    package: '',
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/5968/5968819.png',
+  },
+];
+
 // Calculates that on a given day, how many minutes was the TV watched by every hour in 24 hours
 const calculateHowManyMinutesWatchedInAGivenHour = (
   channelHistories: ChannelHistory[],
@@ -69,25 +105,26 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
   );
 
   const hours = new Array(24).fill(0);
+  const timezone = tz.guess();
 
   dayChannelHistories.forEach((channelHistory) => {
-    const startHour = moment.unix(channelHistory.start).hour();
-    const endHour = moment.unix(channelHistory.end).hour();
-    for (let i = startHour; i <= endHour; i += 1) {
-      console.log(`Start: ${startHour}, End: ${endHour}, i: ${i}`);
+    const startDate = tz(moment.unix(channelHistory.start), timezone);
+    const startDateHour = startDate.hour();
+    const endDate = tz(moment.unix(channelHistory.end), timezone);
+    const endDateHour = endDate.hour();
+
+    for (let i = startDateHour; i <= endDateHour; i += 1) {
       let duration: number;
 
-      if (
-        moment.unix(channelHistory.end).hour() > moment.unix(channelHistory.start).hour() &&
-        i < endHour
-      ) {
-        duration = 60;
+      if (startDateHour === i) {
+        duration = startDate.minute();
+      } else if (endDateHour > startDateHour && i < endDateHour) {
+        duration = 60 - startDate.hour(i).minute(0).minutes();
       } else {
-        duration =
-          moment.unix(channelHistory.end).minute() - moment.unix(channelHistory.start).minute();
+        duration = endDate.minute();
       }
 
-      hours[i] += duration;
+      hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
     }
   });
 
@@ -405,12 +442,12 @@ const DashboardPage: NextPage = () => {
     <ApplicationLayout>
       <Grid>
         <Col span={12}>
-          <Card shadow="xl" radius="xl" px={30} py={10}>
+          <Card shadow="md" radius="xl" px={30} py={10}>
             Filters
           </Card>
         </Col>
         <Col lg={6} xl={3}>
-          <Card style={{ height: '100%' }} shadow="xl" radius="xl" px={30} pb={30}>
+          <Card style={{ height: '100%' }} shadow="md" radius="xl" px={30} pb={30}>
             <Image src="https://teleman.s3.eu-central-1.amazonaws.com/lg-tv-OLED42C24LA.png" />
             <Text weight="bold" size={20}>
               <Group spacing="sm">
@@ -683,34 +720,32 @@ const DashboardPage: NextPage = () => {
             </Col>
 
             <Col lg={12}>
-              <Card style={{ minHeight: '25.5vh' }} shadow="xl" radius="xl" p="xs">
+              <Card style={{ minHeight: '25.5vh' }} shadow="md" radius="xl" p="xs">
                 <Text mt={6} ml={12} weight={500}>
                   Quick App Launch
                 </Text>
                 <Grid columns={4} p={20}>
-                  {['YouTube', 'Spotify', 'Tidal', 'Browser', 'RTL+', 'Twitch'].map(
-                    (application) => (
-                      <Col lg={1} p={20}>
-                        <Card
-                          withBorder
-                          style={{ height: '9vh', cursor: 'pointer' }}
-                          radius="lg"
-                          shadow="sm"
-                        >
-                          <Group px={20} pb={10} position="apart" style={{ height: '100%' }}>
-                            <Text>Icon here...</Text>
-                            <Text weight={500}>{application}</Text>
-                          </Group>
-                        </Card>
-                      </Col>
-                    )
-                  )}
+                  {applications.map((application) => (
+                    <Col lg={1} p={20}>
+                      <Card
+                        withBorder
+                        style={{ height: '9vh', cursor: 'pointer' }}
+                        radius="lg"
+                        shadow="sm"
+                      >
+                        <Group px={20} pb={10} position="apart" style={{ height: '100%' }}>
+                          <Image width="2.5vw" alt={application.name} src={application.iconUrl} />
+                          <Text weight={500}>{application.name}</Text>
+                        </Group>
+                      </Card>
+                    </Col>
+                  ))}
                 </Grid>
               </Card>
             </Col>
 
             <Col lg={12}>
-              <Card style={{ minHeight: '30vh' }} shadow="xl" radius="xl" p="xs">
+              <Card style={{ minHeight: '30vh' }} shadow="md" radius="xl" p="xs">
                 <Text mt={6} ml={12} weight={500}>
                   Uptime Overview
                 </Text>
@@ -776,14 +811,48 @@ const DashboardPage: NextPage = () => {
                           </span>
                         )}
                       </Text>
-                      <ResponsiveContainer width="99%" height={210}>
+                      <ResponsiveContainer width="99%" height={305}>
                         <BarChart
                           width={1580}
-                          height={200}
+                          height={295}
                           data={calculatedHourlyChannelView}
                           margin={{ top: 50, left: 10, right: 35, bottom: 40 }}
                         >
-                          {false && <CartesianGrid />}
+                          <defs>
+                            {colorScheme.colorScheme === 'light' && (
+                              <linearGradient id="colorUv" x1="0.15" y1="0.85" x2="0.85" y2="0.15">
+                                <stop offset="0%" stopColor="#ac6ce4" />
+                                <stop offset="8.33%" stopColor="#a769e4" />
+                                <stop offset="16.67%" stopColor="#a266e4" />
+                                <stop offset="25%" stopColor="#9d62e4" />
+                                <stop offset="33.33%" stopColor="#975fe4" />
+                                <stop offset="41.67%" stopColor="#915de4" />
+                                <stop offset="50%" stopColor="#8b5ae4" />
+                                <stop offset="58.33%" stopColor="#8557e5" />
+                                <stop offset="66.67%" stopColor="#7d55e5" />
+                                <stop offset="75%" stopColor="#7652e5" />
+                                <stop offset="83.33%" stopColor="#6d50e5" />
+                                <stop offset="100%" stopColor="#594ce6" />
+                              </linearGradient>
+                            )}
+                            {colorScheme.colorScheme === 'dark' && (
+                              <linearGradient id="colorUv" x1="0.15" y1="0.85" x2="0.85" y2="0.15">
+                                <stop offset="0%" stopColor="#873dc7" />
+                                <stop offset="8.33%" stopColor="#833cc7" />
+                                <stop offset="16.67%" stopColor="#7f3cc6" />
+                                <stop offset="25%" stopColor="#7a3cc6" />
+                                <stop offset="33.33%" stopColor="#763bc6" />
+                                <stop offset="41.67%" stopColor="#713bc6" />
+                                <stop offset="50%" stopColor="#6c3ac6" />
+                                <stop offset="58.33%" stopColor="#673ac6" />
+                                <stop offset="66.67%" stopColor="#6139c6" />
+                                <stop offset="75%" stopColor="#5b39c6" />
+                                <stop offset="83.33%" stopColor="#5539c7" />
+                                <stop offset="100%" stopColor="#4539c6" />
+                              </linearGradient>
+                            )}
+                          </defs>
+                          <CartesianGrid vertical={false} />
                           <XAxis
                             dataKey="hour"
                             tickCount={10}
@@ -808,7 +877,12 @@ const DashboardPage: NextPage = () => {
                             }}
                             content={<CustomTooltip />}
                           />
-                          <Bar dataKey="minutes" fill="#584AE3" />
+                          <Bar
+                            dataKey="minutes"
+                            radius={24}
+                            fill="url(#colorUv)"
+                            className="uptime-chart-bar"
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </>
