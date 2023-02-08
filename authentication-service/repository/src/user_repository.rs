@@ -1,5 +1,5 @@
 use actix_web::web;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbConn, DbErr, DeleteResult, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 use entity::user;
@@ -28,4 +28,8 @@ pub async fn save(
     user_model: user::ActiveModel,
 ) -> Result<user::ActiveModel, DbErr> {
     user_model.save(db.get_ref()).await
+}
+
+pub async fn delete_by_id(db: web::Data<DbConn>, user_id: Uuid) -> Result<DeleteResult, DbErr> {
+    user::Entity::delete_by_id(user_id).exec(db.get_ref()).await
 }
