@@ -28,6 +28,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
 
     private static final String TV_CHANNEL_HISTORY_KEY = "tv:channel:history";
     private static final String POWER_STATE_CACHE_KEY = "system:power:state";
+    private static final String FOREGROUND_APP_CACHE_KEY = "system:foreground-app";
 
     private static final int RETRY_TRIES = 3;
 
@@ -175,11 +176,31 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     private Mono<Void> addNewChannelHistory(CurrentTvChannelResponse currentChannel) {
         return this.webChannelMetadataService
                 .getChannelMetadataByChannelName(currentChannel.getChannelName())
-                .map(channelMetadata -> this.channelHistoryRepository
-                        .save(ChannelHistory.fromCurrentChannelAndMetadata(currentChannel, channelMetadata))
+                .map(channelMetadata ->
+                        Mono.fromCallable(() -> ChannelHistory.fromCurrentChannelAndMetadata(currentChannel, channelMetadata))
+                                .flatMap(this::populateApplicationPackageIfChannelIsUnknown)
+                                .flatMap(this.channelHistoryRepository::save)
                         .flatMap(this::writeChannelHistoryToCache)
                         .flatMap(this::notifyListeners))
                 .then();
+    }
+
+    private Mono<ChannelHistory> populateApplicationPackageIfChannelIsUnknown(ChannelHistory channelHistory) {
+        return Mono.fromCallable(() -> {
+            if (channelHistory.getChannelName() == null) {
+                this.readForegroundApplicationFromCache()
+                        .map(channelHistory::setForegroundAppTo)
+                        .subscribeOn(Schedulers.parallel())
+                        .subscribe();
+            }
+            return channelHistory;
+        });
+    }
+
+    private Mono<ForegroundAppChangeResponse> readForegroundApplicationFromCache() {
+        return this.cacheProvider
+                .getForegroundAppChangeResponseCache()
+                .get(FOREGROUND_APP_CACHE_KEY);
     }
 
     @KafkaListener(topics = "power-state-change")
@@ -259,9 +280,18 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         // TODO: appId is an empty string just before the TV turns off
         //  - the same would happen when the TV state changes to an inactive state as below
         return this.readForegroundAppChangeMessageFromMq(message)
+                .doOnNext(this::writeForegroudApplicationToCache)
                 .flatMap(event -> isTvRunningThirdPartyApplication(event)
                         ? this.updateLatestChannelHistory()
                         : this.createNewChannelHistoryWithCurrentlyRunningApplication(event));
+    }
+
+    private Mono<ForegroundAppChangeResponse> writeForegroudApplicationToCache(ForegroundAppChangeResponse response) {
+        return this.cacheProvider.getForegroundAppChangeResponseCache()
+                .set(FOREGROUND_APP_CACHE_KEY, response)
+                .map(ignored -> response)
+                .retry(CACHE_WRITE_TRIES)
+                .log();
     }
 
     private Mono<ForegroundAppChangeResponse> readForegroundAppChangeMessageFromMq(
