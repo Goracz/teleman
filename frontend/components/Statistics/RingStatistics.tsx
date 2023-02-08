@@ -82,7 +82,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
               <>
                 <Stack spacing="xs">
                   <Group>
-                    <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
+                    <Image width="2vw" height="2vh" src={statEntry.channelLogoUrl} />
                     <Text>{statEntry.channelName}</Text>
                   </Group>
                   <Space />
@@ -112,7 +112,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
           }
         />
 
-        <div>
+        <div style={{ width: '40%' }}>
           <Table>
             <thead>
               <tr>
@@ -139,7 +139,7 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
                           />
                         </td>
                         <td>
-                          <Group style={{ maxWidth: width > 1200 ? width * 0.06 : height * 0.3 }}>
+                          <Group style={{ maxWidth: width > 1200 ? width * 0.12 : height * 0.3 }}>
                             <Tooltip
                               label={
                                 statEntry
@@ -151,11 +151,11 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
                             >
                               <Group noWrap>
                                 {statEntry.channelLogoUrl ? (
-                                  <Image width="1vw" height="2vh" src={statEntry.channelLogoUrl} />
+                                  <Image width="1.5vw" src={statEntry.channelLogoUrl} />
                                 ) : (
-                                  <IconDeviceTv width="1vw" height="2vh" />
+                                  <IconDeviceTv width="1.5vw" />
                                 )}
-                                <Text lineClamp={1}>
+                                <Text>
                                   {statEntry
                                     ? statEntry.channelName !== 'null'
                                       ? statEntry.channelName
