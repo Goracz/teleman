@@ -115,7 +115,7 @@ export const RingStatisticsChannelCategory: NextPage<StatsRingProps> = ({ data }
           }
         />
 
-        <div>
+        <div style={{ width: '40%' }}>
           <Table>
             <thead>
               <tr>

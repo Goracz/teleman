@@ -41,6 +41,7 @@ import {
 } from 'recharts';
 import { useViewportSize } from '@mantine/hooks';
 import { tz } from 'moment-timezone';
+import { DateRangePicker, DateRangePickerValue } from '@mantine/dates';
 import ApplicationLayout from '../../layouts/Application';
 import { Channel } from '../../models/channel';
 import { ChannelCategory } from '../../models/channel-category';
@@ -176,6 +177,10 @@ const DashboardPage: NextPage = () => {
     }[]
   >();
   const [calculatedHourlyChannelView, setCalculatedHourlyChannelView] = React.useState<any>();
+  const [filterDateRange, setFilterDateRange] = React.useState<DateRangePickerValue>([
+    new Date(2023, 1, 1),
+    new Date(),
+  ]);
 
   const { height, width } = useViewportSize();
   const colorScheme = useMantineColorScheme();
@@ -443,7 +448,15 @@ const DashboardPage: NextPage = () => {
       <Grid>
         <Col span={12}>
           <Card shadow="md" radius="xl" px={30} py={10}>
-            Filters
+            <Group position="apart">
+              <Text>Filters</Text>
+              <DateRangePicker
+                radius="xl"
+                placeholder="Pick dates range"
+                value={filterDateRange}
+                onChange={setFilterDateRange}
+              />
+            </Group>
           </Card>
         </Col>
         <Col lg={6} xl={3}>
@@ -726,15 +739,15 @@ const DashboardPage: NextPage = () => {
                 </Text>
                 <Grid columns={4} p={20}>
                   {applications.map((application) => (
-                    <Col lg={1} p={20}>
+                    <Col xl={1} lg={2} md={1} sm={2} xs={1} p={20}>
                       <Card
                         withBorder
-                        style={{ height: '9vh', cursor: 'pointer' }}
+                        style={{ height: '8vh', cursor: 'pointer' }}
                         radius="lg"
-                        shadow="sm"
+                        shadow="xs"
                       >
                         <Group px={20} pb={10} position="apart" style={{ height: '100%' }}>
-                          <Image width="2.5vw" alt={application.name} src={application.iconUrl} />
+                          <Image width="2vw" alt={application.name} src={application.iconUrl} />
                           <Text weight={500}>{application.name}</Text>
                         </Group>
                       </Card>
