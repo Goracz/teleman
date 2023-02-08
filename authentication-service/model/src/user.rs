@@ -1,5 +1,7 @@
 use sea_orm::Iden;
+use serde::Serialize;
 
+#[derive(Serialize)]
 pub enum User {
     Table,
     Id,

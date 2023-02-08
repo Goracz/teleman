@@ -12,7 +12,16 @@ path = "src/lib.rs"
 sea-orm = { version = "^0", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
 serde = { version = "1.0", features = ["derive"] }
 actix-web = "4"
+serde_json = "1.0.91"
 rdkafka = "0.29.0"
 model = { path = "../model" }
 entity = { path = "../entity" }
 service = { path = "../service" }
+
+[dependencies.uuid]
+version = "1.2.2"
+features = [
+    "v4",
+    "fast-rng",
+    "macro-diagnostics",
+]

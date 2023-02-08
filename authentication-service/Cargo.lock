@@ -804,7 +804,9 @@ dependencies = [
  "rdkafka",
  "sea-orm",
  "serde",
+ "serde_json",
  "service",
+ "uuid 1.2.2",
 ]
 
 [[package]]
