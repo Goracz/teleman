@@ -122,4 +122,9 @@ public class ChannelHistory implements Serializable, Persistable<String> {
         this.setEnd(ZonedDateTime.now());
         return this;
     }
+
+    public ChannelHistory setForegroundAppTo(ForegroundAppChangeResponse foregroundAppChangeResponse) {
+        this.setApplication(foregroundAppChangeResponse.getAppId());
+        return this;
+    }
 }
