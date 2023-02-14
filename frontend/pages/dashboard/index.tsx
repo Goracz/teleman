@@ -102,11 +102,13 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
   day: Date
 ) => {
   const dayChannelHistories = channelHistories.filter(
-    (channelHistory) => moment.unix(channelHistory.start).isSame(day, 'day') && channelHistory.end
+    (channelHistory) =>
+      (moment.unix(channelHistory.start).isSame(day, 'day') && channelHistory.end) ||
+      moment.unix(channelHistory.end).isSame(day, 'day')
   );
 
   const hours = new Array(24).fill(0);
-  const timezone = tz.guess();
+  const timezone = tz('Europe/London').format();
 
   dayChannelHistories.forEach((channelHistory) => {
     const startDate = tz(moment.unix(channelHistory.start), timezone);
@@ -114,18 +116,34 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
     const endDate = tz(moment.unix(channelHistory.end), timezone);
     const endDateHour = endDate.hour();
 
-    for (let i = startDateHour; i <= endDateHour; i += 1) {
-      let duration: number;
+    if (endDateHour < startDateHour) {
+      for (let i = 0; i <= endDateHour; i += 1) {
+        let duration: number;
 
-      if (startDateHour === i) {
-        duration = startDate.minute();
-      } else if (endDateHour > startDateHour && i < endDateHour) {
-        duration = 60 - startDate.hour(i).minute(0).minutes();
-      } else {
-        duration = endDate.minute();
+        if (startDateHour === i) {
+          duration = 60 - startDate.minute();
+        } else if (i < endDateHour) {
+          duration = 60 - startDate.hour(i).minute(0).minutes();
+        } else {
+          duration = endDate.minute();
+        }
+
+        hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
       }
+    } else {
+      for (let i = startDateHour; i <= endDateHour; i += 1) {
+        let duration: number;
 
-      hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
+        if (startDateHour === i) {
+          duration = 60 - startDate.minute();
+        } else if (endDateHour > startDateHour && i < endDateHour) {
+          duration = 60 - startDate.hour(i).minute(0).minutes();
+        } else {
+          duration = endDate.minute();
+        }
+
+        hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
+      }
     }
   });
 
