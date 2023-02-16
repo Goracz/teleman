@@ -170,7 +170,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         return this.populateChannelHistoryWithMetadata(channelHistory)
                     .flatMap(this::writeChannelHistoryWithCurrentDateAsEndToDatabase)
                     .flatMap(this::writeChannelHistoryToCache)
-                    .flatMap(this::notifyListeners);
+                    .doOnNext(this::notifyListeners);
     }
 
     private Mono<Void> addNewChannelHistory(CurrentTvChannelResponse currentChannel) {
@@ -309,7 +309,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .map(ChannelHistory::endViewNow)
                 .flatMap(this.channelHistoryRepository::save)
                 .flatMap(this::writeChannelHistoryToCache)
-                .flatMap(this::notifyListeners);
+                .doOnNext(this::notifyListeners);
     }
 
     private Mono<ChannelHistory> createNewChannelHistoryWithCurrentlyRunningApplication(
@@ -318,7 +318,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .fromForegroundApplication(foregroundAppChangeResponse)
                 .flatMap(this.channelHistoryRepository::save)
                 .flatMap(this::writeChannelHistoryToCache)
-                .flatMap(this::notifyListeners);
+                .doOnNext(this::notifyListeners);
     }
 
     /**
@@ -333,9 +333,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .map(result -> channelHistory);
     }
 
-    private Mono<ChannelHistory> notifyListeners(ChannelHistory channelHistory) {
+    private Mono<Sinks.EmitResult> notifyListeners(ChannelHistory channelHistory) {
         return Mono.fromCallable(() -> new EventMessage<>(EventCategory.CHANNEL_HISTORY_CHANGED, channelHistory))
-                .map(eventMessage -> this.channelHistoryEventService.getEventStream().tryEmitNext(eventMessage))
-                .map(ignored -> channelHistory);
+                .flatMap(eventMessage -> this.channelHistoryEventService.emit(eventMessage, eventMessage.getCategory()));
     }
 }

@@ -3,7 +3,6 @@ package com.goracz.controlservice.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goracz.controlservice.component.RedisCacheProvider;
 import com.goracz.controlservice.exception.KafkaConsumeFailException;
-import com.goracz.controlservice.model.EventCategory;
 import com.goracz.controlservice.model.EventMessage;
 import com.goracz.controlservice.model.request.SetChannelRequest;
 import com.goracz.controlservice.model.response.CurrentTvChannelResponse;
@@ -16,6 +15,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 @Service
@@ -112,7 +112,7 @@ public class TvControlServiceImpl implements TvControlService {
                 .set(TV_CHANNEL_CURRENT_KEY, currentChannel)
                 .map(response -> currentChannel)
                 .retry(CACHE_WRITE_TRIES)
-                .publishOn(Schedulers.boundedElastic());
+                .publishOn(Schedulers.parallel());
     }
 
     @Override
@@ -152,15 +152,13 @@ public class TvControlServiceImpl implements TvControlService {
     @KafkaListener(topics = "channel-change")
     private void onChannelChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
-            this.handleChannelChange(message)
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .subscribe();
+            this.handleChannelChange(message).subscribe();
         } catch (Exception exception) {
             throw new KafkaConsumeFailException(exception.getMessage());
         }
     }
 
-    private Mono<Void> handleChannelChange(ConsumerRecord<String, String> message) {
+    private Mono<Sinks.EmitResult> handleChannelChange(ConsumerRecord<String, String> message) {
         return this.getCurrentTvChannelFromMqMessage(message)
                 .flatMap(this::writeCurrentChannelToCache)
                 .flatMap(this::notifyListenersAboutChannelChange);
@@ -171,10 +169,8 @@ public class TvControlServiceImpl implements TvControlService {
         return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), CurrentTvChannelResponse.class));
     }
 
-    private Mono<Void> notifyListenersAboutChannelChange(CurrentTvChannelResponse currentChannel) {
-        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.CHANNEL_CHANGED, currentChannel))
-                .map(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()))
-                .then()
-                .publishOn(Schedulers.boundedElastic());
+    private Mono<Sinks.EmitResult> notifyListenersAboutChannelChange(CurrentTvChannelResponse currentChannel) {
+        return Mono.fromCallable(() -> EventMessage.fromCurrentChannel(currentChannel))
+                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()));
     }
 }

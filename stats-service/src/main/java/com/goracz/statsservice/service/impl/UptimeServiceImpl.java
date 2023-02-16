@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goracz.statsservice.component.RedisCacheProvider;
 import com.goracz.statsservice.entity.UptimeLog;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
-import com.goracz.statsservice.model.response.EventCategory;
 import com.goracz.statsservice.model.response.EventMessage;
 import com.goracz.statsservice.model.response.PowerStateResponse;
 import com.goracz.statsservice.repository.ReactiveUptimeRepository;
@@ -134,7 +133,7 @@ public class UptimeServiceImpl implements UptimeService {
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutUptimeChange(UptimeLog uptimeLog) {
-        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.UPTIME_LOG_CHANGED, uptimeLog))
+        return Mono.fromCallable(() -> EventMessage.fromUptimeLog(uptimeLog))
                 .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()));
     }
 }
