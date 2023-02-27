@@ -12,6 +12,7 @@ import com.goracz.statsservice.service.ChannelHistoryService;
 import com.goracz.statsservice.service.EventService;
 import com.goracz.statsservice.service.WebChannelMetadataService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,7 +115,6 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
      * @throws KafkaConsumeFailException If the message cannot be parsed to a CurrentTvChannelResponse object.
      */
     @KafkaListener(topics = "channel-change")
-    @Transactional
     public void onChannelChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
            this.handleChannelChange(message).subscribe();
@@ -129,7 +129,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                         .switchIfEmpty(this.readLatestChannelHistoryFromDatabase())
                         .switchIfEmpty(ChannelHistory.empty())
                         .doOnNext(latestChannelHistoryEntry -> {
-                            if (latestChannelHistoryEntry.getChannelName().equals(response.getChannelName())) {
+                            if (Strings.isNotEmpty(latestChannelHistoryEntry.getChannelName()) &&
+                                    latestChannelHistoryEntry.getChannelName().equals(response.getChannelName())) {
                                 // No-op as the channel has not changed, even though we got such an event.
                                 return;
                             }
@@ -168,14 +169,16 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
 
     private Mono<ChannelHistory> updateLatestChannelHistory(ChannelHistory channelHistory) {
         return this.populateChannelHistoryWithMetadata(channelHistory)
-                    .flatMap(this::writeChannelHistoryWithCurrentDateAsEndToDatabase)
-                    .flatMap(this::writeChannelHistoryToCache)
-                    .flatMap(this::notifyListeners);
+                .onErrorReturn(channelHistory)
+                .flatMap(this::writeChannelHistoryWithCurrentDateAsEndToDatabase)
+                .flatMap(this::writeChannelHistoryToCache)
+                .doOnNext(this::notifyListeners);
     }
 
     private Mono<Void> addNewChannelHistory(CurrentTvChannelResponse currentChannel) {
         return this.webChannelMetadataService
                 .getChannelMetadataByChannelName(currentChannel.getChannelName())
+                .onErrorReturn(ChannelMetadataResponse.empty())
                 .map(channelMetadata ->
                         Mono.fromCallable(() -> ChannelHistory.fromCurrentChannelAndMetadata(currentChannel, channelMetadata))
                                 .flatMap(this::populateApplicationPackageIfChannelIsUnknown)
@@ -203,8 +206,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .get(FOREGROUND_APP_CACHE_KEY);
     }
 
-    @KafkaListener(topics = "power-state-change")
-    @Transactional
+    @KafkaListener(topics = "power_state_changes")
     public void onPowerStateChange(ConsumerRecord<String, String> mqMessage) throws KafkaConsumeFailException {
         try {
             this.handlePowerStateChange(mqMessage)
@@ -217,7 +219,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
 
     public Mono<PowerStateResponse> handlePowerStateChange(ConsumerRecord<String, String> mqMessage) {
         return this.readPowerStateFromMqMessage(mqMessage)
-                .doOnNext(this::processPowerStateChange)
+                .flatMap(this::processPowerStateChange)
                 .doOnNext((powerStateResponse) -> {
                     if (this.shouldUpdateChannelHistory(powerStateResponse)) {
                         this.updateLatestChannelHistory()
@@ -227,9 +229,10 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 });
     }
 
-    private Mono<Sinks.EmitResult> processPowerStateChange(PowerStateResponse powerStateResponse) {
+    private Mono<PowerStateResponse> processPowerStateChange(PowerStateResponse powerStateResponse) {
         return this.writePowerStateToCache(powerStateResponse)
-                .flatMap(this::notifyListenersAboutNewPowerState);
+                .flatMap(this::notifyListenersAboutNewPowerState)
+                .map(ignored -> powerStateResponse);
     }
 
     private Mono<PowerStateResponse> readPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
@@ -246,8 +249,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutNewPowerState(PowerStateResponse powerState) {
-        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.POWER_STATE_CHANGED, powerState))
-                .flatMap(eventMessage -> this.powerStateEventService.emit(eventMessage, eventMessage.getCategory()))
+        return Mono.fromCallable(() -> EventMessage.fromPowerStateResponse(powerState))
+                .flatMap(this.powerStateEventService::emit)
                 .log();
     }
 
@@ -309,7 +312,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .map(ChannelHistory::endViewNow)
                 .flatMap(this.channelHistoryRepository::save)
                 .flatMap(this::writeChannelHistoryToCache)
-                .flatMap(this::notifyListeners);
+                .doOnNext(this::notifyListeners);
     }
 
     private Mono<ChannelHistory> createNewChannelHistoryWithCurrentlyRunningApplication(
@@ -318,7 +321,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .fromForegroundApplication(foregroundAppChangeResponse)
                 .flatMap(this.channelHistoryRepository::save)
                 .flatMap(this::writeChannelHistoryToCache)
-                .flatMap(this::notifyListeners);
+                .doOnNext(this::notifyListeners);
     }
 
     /**
@@ -333,9 +336,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .map(result -> channelHistory);
     }
 
-    private Mono<ChannelHistory> notifyListeners(ChannelHistory channelHistory) {
-        return Mono.fromCallable(() -> new EventMessage<>(EventCategory.CHANNEL_HISTORY_CHANGED, channelHistory))
-                .map(eventMessage -> this.channelHistoryEventService.getEventStream().tryEmitNext(eventMessage))
-                .map(ignored -> channelHistory);
+    private Mono<Sinks.EmitResult> notifyListeners(ChannelHistory channelHistory) {
+        return Mono.fromCallable(() -> EventMessage.fromChannelHistoryChange(channelHistory))
+                .flatMap(this.channelHistoryEventService::emit);
     }
 }

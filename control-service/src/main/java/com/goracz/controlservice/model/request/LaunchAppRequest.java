@@ -1,5 +1,6 @@
 package com.goracz.controlservice.model.request;
 
+import com.goracz.controlservice.model.WebOSApplication;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,5 +11,5 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class LaunchAppRequest {
-    private String id;
+    private WebOSApplication application;
 }
