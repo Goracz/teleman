@@ -19,6 +19,9 @@ public class RedisCacheProvider {
     private final ReactiveValueOperations<String, SoftwareInformationResponse> softwareInformationResponseCache;
     private final ReactiveValueOperations<String, PowerStateResponse> powerStateResponseCache;
     private final ReactiveValueOperations<String, ServiceDescription> serviceDescriptionCache;
+    private final ReactiveValueOperations<String, ApplicationListResponse> applicationListCache;
+    private final ReactiveValueOperations<String, LaunchPointsResponse> launchPointsCache;
+    private final ReactiveValueOperations<String, ForegroundAppChangeResponse> foregroundAppCache;
 
     public RedisCacheProvider(ReactiveRedisConnectionFactory factory) {
         this.volumeResponseCache = this.reactiveVolumeResponseRedisTemplate(factory).opsForValue();
@@ -27,6 +30,9 @@ public class RedisCacheProvider {
         this.softwareInformationResponseCache = this.reactiveSoftwareInformationResponseRedisTemplate(factory).opsForValue();
         this.powerStateResponseCache = this.reactivePowerStateResponseRedisTemplate(factory).opsForValue();
         this.serviceDescriptionCache = this.reactiveServiceDescriptionRedisTemplate(factory).opsForValue();
+        this.applicationListCache = this.reactiveApplicationListRedisTemplate(factory).opsForValue();
+        this.launchPointsCache = this.reactiveLaunchPointsRedisTemplate(factory).opsForValue();
+        this.foregroundAppCache = this.reactiveForegroundAppRedisTemplate(factory).opsForValue();
     }
 
     private ReactiveRedisTemplate<String, GetVolumeResponse> reactiveVolumeResponseRedisTemplate(
@@ -100,6 +106,45 @@ public class RedisCacheProvider {
         final RedisSerializationContext.RedisSerializationContextBuilder<String, PowerStateResponse> builder =
                 RedisSerializationContext.newSerializationContext(keySerializer);
         final RedisSerializationContext<String, PowerStateResponse> context = builder.value(valueSerializer)
+                .build();
+
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
+
+    private ReactiveRedisTemplate<String, ApplicationListResponse> reactiveApplicationListRedisTemplate(
+            ReactiveRedisConnectionFactory factory) {
+        final StringRedisSerializer keySerializer = new StringRedisSerializer();
+        final Jackson2JsonRedisSerializer<ApplicationListResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
+                ApplicationListResponse.class);
+        final RedisSerializationContext.RedisSerializationContextBuilder<String, ApplicationListResponse> builder =
+                RedisSerializationContext.newSerializationContext(keySerializer);
+        final RedisSerializationContext<String, ApplicationListResponse> context = builder.value(valueSerializer)
+                .build();
+
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
+
+    private ReactiveRedisTemplate<String, LaunchPointsResponse> reactiveLaunchPointsRedisTemplate(
+            ReactiveRedisConnectionFactory factory) {
+        final StringRedisSerializer keySerializer = new StringRedisSerializer();
+        final Jackson2JsonRedisSerializer<LaunchPointsResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
+                LaunchPointsResponse.class);
+        final RedisSerializationContext.RedisSerializationContextBuilder<String, LaunchPointsResponse> builder =
+                RedisSerializationContext.newSerializationContext(keySerializer);
+        final RedisSerializationContext<String, LaunchPointsResponse> context = builder.value(valueSerializer)
+                .build();
+
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
+
+    private ReactiveRedisTemplate<String, ForegroundAppChangeResponse> reactiveForegroundAppRedisTemplate(
+            ReactiveRedisConnectionFactory factory) {
+        final StringRedisSerializer keySerializer = new StringRedisSerializer();
+        final Jackson2JsonRedisSerializer<ForegroundAppChangeResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
+                ForegroundAppChangeResponse.class);
+        final RedisSerializationContext.RedisSerializationContextBuilder<String, ForegroundAppChangeResponse> builder =
+                RedisSerializationContext.newSerializationContext(keySerializer);
+        final RedisSerializationContext<String, ForegroundAppChangeResponse> context = builder.value(valueSerializer)
                 .build();
 
         return new ReactiveRedisTemplate<>(factory, context);

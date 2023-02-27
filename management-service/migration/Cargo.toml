@@ -9,7 +9,9 @@ name = "migration"
 path = "src/lib.rs"
 
 [dependencies]
+sea-orm = { version = "^0", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
 async-std = { version = "^1", features = ["attributes", "tokio1"] }
+model = { path = '../model' }
 
 [dependencies.sea-orm-migration]
 version = "^0.10.0"

@@ -17,4 +17,8 @@ public class ChannelMetadataResponse {
     private String channelLogoUrl;
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
+
+    public static ChannelMetadataResponse empty() {
+        return new ChannelMetadataResponse();
+    }
 }

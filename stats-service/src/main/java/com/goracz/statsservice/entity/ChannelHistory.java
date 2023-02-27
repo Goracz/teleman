@@ -1,5 +1,6 @@
 package com.goracz.statsservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.goracz.statsservice.model.WebOSApplication;
 import com.goracz.statsservice.model.response.ChannelMetadataResponse;
 import com.goracz.statsservice.model.response.CurrentTvChannelResponse;
@@ -9,11 +10,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.Persistable;
 import org.springframework.data.mongodb.core.mapping.Document;
 import reactor.core.publisher.Mono;
 
-import java.io.Serializable;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 @Document
@@ -21,7 +21,8 @@ import java.time.ZonedDateTime;
 @NoArgsConstructor
 @Data
 @Builder
-public class ChannelHistory implements Serializable, Persistable<String> {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ChannelHistory {
     /**
      * Primary key
      */
@@ -74,7 +75,7 @@ public class ChannelHistory implements Serializable, Persistable<String> {
                 .channelName(channelHistory.getChannelName())
                 .channelCategory(channelHistory.getChannelCategory())
                 .channelLogoUrl(channelHistory.getChannelLogoUrl())
-                .start(ZonedDateTime.now())
+                .start(ZonedDateTime.now(ZoneId.of("UTC")))
                 .build();
     }
 
@@ -85,7 +86,7 @@ public class ChannelHistory implements Serializable, Persistable<String> {
                 .channelId(channelHistory.getChannelId())
                 .channelName(channelHistory.getChannelName())
                 .channelCategory(metadata.getChannelCategory())
-                .start(ZonedDateTime.now())
+                .start(ZonedDateTime.now(ZoneId.of("UTC")))
                 .build();
     }
 
@@ -96,7 +97,7 @@ public class ChannelHistory implements Serializable, Persistable<String> {
                 .channelId(channelHistory.getChannelId())
                 .channelName(channelHistory.getChannelName())
                 .channelCategory(metadata.getChannelCategory())
-                .start(ZonedDateTime.now())
+                .start(ZonedDateTime.now(ZoneId.of("UTC")))
                 .build();
     }
 
@@ -104,7 +105,7 @@ public class ChannelHistory implements Serializable, Persistable<String> {
         return Mono.fromCallable(() -> ChannelHistory
                 .builder()
                 .application(foregroundAppChangeResponse.getAppId())
-                .start(ZonedDateTime.now())
+                .start(ZonedDateTime.now(ZoneId.of("UTC")))
                 .build());
     }
 
@@ -113,13 +114,12 @@ public class ChannelHistory implements Serializable, Persistable<String> {
         return channelHistory;
     }
 
-    @Override
     public boolean isNew() {
         return this.getStart() != null && this.getEnd() == null;
     }
 
     public ChannelHistory endViewNow() {
-        this.setEnd(ZonedDateTime.now());
+        this.setEnd(ZonedDateTime.now(ZoneId.of("UTC")));
         return this;
     }
 

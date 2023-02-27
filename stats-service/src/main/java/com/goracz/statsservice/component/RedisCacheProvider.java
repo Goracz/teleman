@@ -1,5 +1,6 @@
 package com.goracz.statsservice.component;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.entity.UptimeLog;
 import com.goracz.statsservice.model.response.ForegroundAppChangeResponse;
@@ -16,13 +17,15 @@ import org.springframework.stereotype.Component;
 @Component
 @Getter
 public class RedisCacheProvider {
+    private final ObjectMapper objectMapper;
     private final ReactiveRedisConnectionFactory factory;
     private final ReactiveValueOperations<String, ChannelHistory> channelHistoryCache;
     private final ReactiveValueOperations<String, UptimeLog> uptimeLogCache;
     private final ReactiveValueOperations<String, PowerStateResponse> powerStateResponseCache;
     private final ReactiveValueOperations<String, ForegroundAppChangeResponse> foregroundAppChangeResponseCache;
 
-    public RedisCacheProvider(ReactiveRedisConnectionFactory factory) {
+    public RedisCacheProvider(ObjectMapper objectMapper, ReactiveRedisConnectionFactory factory) {
+        this.objectMapper = objectMapper;
         this.factory = factory;
         this.channelHistoryCache = this.channelHistoryReactiveRedisTemplate().opsForValue();
         this.uptimeLogCache = this.uptimeLogReactiveRedisTemplate().opsForValue();
@@ -34,6 +37,7 @@ public class RedisCacheProvider {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<ChannelHistory> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 ChannelHistory.class);
+        valueSerializer.setObjectMapper(this.objectMapper);
         final RedisSerializationContext.RedisSerializationContextBuilder<String, ChannelHistory> builder =
                 RedisSerializationContext.newSerializationContext(keySerializer);
         final RedisSerializationContext<String, ChannelHistory> context = builder.value(valueSerializer).build();
@@ -45,6 +49,7 @@ public class RedisCacheProvider {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<UptimeLog> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 UptimeLog.class);
+        valueSerializer.setObjectMapper(this.objectMapper);
         final RedisSerializationContext.RedisSerializationContextBuilder<String, UptimeLog> builder =
                 RedisSerializationContext.newSerializationContext(keySerializer);
         final RedisSerializationContext<String, UptimeLog> context = builder.value(valueSerializer).build();
@@ -57,6 +62,7 @@ public class RedisCacheProvider {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<PowerStateResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 PowerStateResponse.class);
+        valueSerializer.setObjectMapper(this.objectMapper);
         final RedisSerializationContext.RedisSerializationContextBuilder<String, PowerStateResponse> builder =
                 RedisSerializationContext.newSerializationContext(keySerializer);
         final RedisSerializationContext<String, PowerStateResponse> context = builder.value(valueSerializer)
@@ -70,6 +76,7 @@ public class RedisCacheProvider {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<ForegroundAppChangeResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 ForegroundAppChangeResponse.class);
+        valueSerializer.setObjectMapper(this.objectMapper);
         final RedisSerializationContext.RedisSerializationContextBuilder<String, ForegroundAppChangeResponse> builder =
                 RedisSerializationContext.newSerializationContext(keySerializer);
         final RedisSerializationContext<String, ForegroundAppChangeResponse> context = builder.value(valueSerializer)

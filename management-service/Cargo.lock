@@ -1700,6 +1700,8 @@ name = "migration"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "model",
+ "sea-orm",
  "sea-orm-migration",
 ]
 
@@ -1734,6 +1736,15 @@ dependencies = [
  "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
+]
+
+[[package]]
+name = "model"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "sea-orm",
+ "serde",
 ]
 
 [[package]]
@@ -3162,6 +3173,7 @@ dependencies = [
  "dotenvy",
  "jsonwebtoken",
  "migration",
+ "model",
  "rdkafka",
  "repository",
  "sea-orm",

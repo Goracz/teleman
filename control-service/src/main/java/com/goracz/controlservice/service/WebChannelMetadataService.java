@@ -1,7 +1,7 @@
 package com.goracz.controlservice.service;
 
-import com.goracz.controlservice.model.response.Channel;
 import com.goracz.controlservice.model.response.ChannelMetadataResponse;
+import com.goracz.controlservice.model.response.LgChannel;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -23,5 +23,5 @@ public interface WebChannelMetadataService {
      * @param channels Channels to pre-cache
      * @return Channels that have been pre-cached
      */
-    Flux<Channel> populate(Collection<Channel> channels);
+    Flux<LgChannel> populate(Collection<LgChannel> channels);
 }

@@ -1,9 +1,9 @@
 import bodyParser from "body-parser";
+import cors from "cors";
 import dotenv from "dotenv";
 import express, { Express } from "express";
 import { Kafka, Producer } from "kafkajs";
 import lgtv, { Config } from "lgtv2";
-import cors from "cors";
 
 import * as Sentry from "@sentry/node";
 import { ProfilingIntegration } from "@sentry/profiling-node";
