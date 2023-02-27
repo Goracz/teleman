@@ -1,6 +1,5 @@
 package com.goracz.statsservice.service.impl;
 
-import com.goracz.statsservice.model.response.EventCategory;
 import com.goracz.statsservice.model.response.EventMessage;
 import com.goracz.statsservice.service.EventService;
 import lombok.Getter;
@@ -11,12 +10,12 @@ import reactor.core.publisher.Sinks;
 
 @Service
 @RequiredArgsConstructor
-public class EventServiceImpl<T> implements EventService<T> {
+public class EventServiceImpl<T extends EventMessage<?>> implements EventService<T> {
     @Getter
     private final Sinks.Many<T> eventStream = Sinks.many().multicast().directAllOrNothing();
     @Override
-    public Mono<Sinks.EmitResult> emit(T message, EventCategory eventCategory) {
-        return Mono.fromCallable(() -> new EventMessage<>(eventCategory, message))
+    public Mono<Sinks.EmitResult> emit(T message) {
+        return Mono.fromCallable(() -> new EventMessage<>(message.getCategory(), message))
                 .map(eventMessage -> this.getEventStream().tryEmitNext(message));
     }
 }

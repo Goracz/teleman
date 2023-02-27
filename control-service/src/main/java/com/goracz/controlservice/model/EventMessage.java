@@ -1,5 +1,6 @@
 package com.goracz.controlservice.model;
 
+import com.goracz.controlservice.model.response.CurrentTvChannelResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +24,11 @@ public class EventMessage<T> {
      * Payload of the event
      */
     private T payload;
+
+    public static EventMessage<CurrentTvChannelResponse> fromCurrentChannel(CurrentTvChannelResponse currentChannel) {
+        return EventMessage.<CurrentTvChannelResponse>builder()
+                .category(EventCategory.CHANNEL_CHANGED)
+                .payload(currentChannel)
+                .build();
+    }
 }

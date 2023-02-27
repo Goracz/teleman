@@ -20,19 +20,23 @@ import reactor.core.scheduler.Schedulers;
 @Service
 public class UptimeServiceImpl implements UptimeService {
     private static final int CACHE_WRITE_TRIES = 3;
+    private static final String POWER_STATE_RESPONSE_CACHE_KEY = "system:power:state";
     private static final String LATEST_UPTIME_LOG_CACHE_KEY = "uptime-log:latest";
     private final ReactiveUptimeRepository uptimeRepository;
     private final RedisCacheProvider cacheProvider;
-    private final EventService<EventMessage<UptimeLog>> eventService;
+    private final EventService<EventMessage<PowerStateResponse>> powerStateEventService;
+    private final EventService<EventMessage<UptimeLog>> uptimeLogEventService;
     private final ObjectMapper objectMapper;
 
     public UptimeServiceImpl(ReactiveUptimeRepository uptimeRepository,
                              RedisCacheProvider cacheProvider,
-                             EventService<EventMessage<UptimeLog>> eventService,
+                             EventService<EventMessage<PowerStateResponse>> powerStateEventService,
+                             EventService<EventMessage<UptimeLog>> uptimeLogEventService,
                              ObjectMapper objectMapper) {
         this.uptimeRepository = uptimeRepository;
         this.cacheProvider = cacheProvider;
-        this.eventService = eventService;
+        this.powerStateEventService = powerStateEventService;
+        this.uptimeLogEventService = uptimeLogEventService;
         this.objectMapper = objectMapper;
     }
 
@@ -54,7 +58,6 @@ public class UptimeServiceImpl implements UptimeService {
     }
 
     @KafkaListener(topics = "power-state-change")
-    @Transactional
     public void onPowerStateChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
             this.handlePowerStateChange(message).subscribe();
@@ -66,26 +69,32 @@ public class UptimeServiceImpl implements UptimeService {
     private Mono<PowerStateResponse> handlePowerStateChange(ConsumerRecord<String, String> message) {
         return this.readPowerStateFromMqMessage(message)
                 .doOnNext(powerStateResponse -> {
+                    // FIXME: Logic is not 100% correct here, hence power state is not updated across the system
                     if (powerStateResponse.hasTvTurnedOn() && !this.systemRecoveredFromError(powerStateResponse)) {
                         // The power state has changed to ON, so we need to create a new UptimeLog
                         // with the current time as the turn on time
                         this.writeNewUptimeLogEntry()
+                                .doOnNext(this::notifyListenersAboutUptimeChange)
                                 .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     } else if (powerStateResponse.hasTvTurnedOff()) {
                         // The power state has changed to OFF, so the latest uptime log should be
                         // updated with the turn-off time.
                         this.updateLatestUptimeLogEntry()
+                                .doOnNext(this::notifyListenersAboutUptimeChange)
                                 .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     } else if (powerStateResponse.hasTvTurnedOn() && this.systemRecoveredFromError(powerStateResponse)) {
                         // The power state has changed to ON while the system thinks it is already ON.
                         this.updateLatestUptimeLogEntry()
-                                .map(result -> this.writeNewUptimeLogEntry())
+                                .flatMap(result -> this.writeNewUptimeLogEntry())
+                                .doOnNext(this::notifyListenersAboutUptimeChange)
                                 .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     }
-                });
+                })
+                .doOnNext(this::writePowerStateToCache)
+                .doOnNext(this::notifyListenersAboutPowerStateChange);
     }
 
     private Mono<PowerStateResponse> readPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
@@ -132,8 +141,20 @@ public class UptimeServiceImpl implements UptimeService {
                 .doOnNext(this::notifyListenersAboutUptimeChange);
     }
 
+    private Mono<Boolean> writePowerStateToCache(PowerStateResponse powerStateResponse) {
+        return this.cacheProvider
+                .getPowerStateResponseCache()
+                .set(POWER_STATE_RESPONSE_CACHE_KEY, powerStateResponse)
+                .retry(CACHE_WRITE_TRIES);
+    }
+
+    private Mono<Sinks.EmitResult> notifyListenersAboutPowerStateChange(PowerStateResponse powerStateResponse) {
+        return Mono.fromCallable(() -> EventMessage.fromPowerStateResponse(powerStateResponse))
+                .flatMap(this.powerStateEventService::emit);
+    }
+
     private Mono<Sinks.EmitResult> notifyListenersAboutUptimeChange(UptimeLog uptimeLog) {
         return Mono.fromCallable(() -> EventMessage.fromUptimeLog(uptimeLog))
-                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()));
+                .flatMap(this.uptimeLogEventService::emit);
     }
 }

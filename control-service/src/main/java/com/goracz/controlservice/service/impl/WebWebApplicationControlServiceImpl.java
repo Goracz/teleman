@@ -1,10 +1,11 @@
 package com.goracz.controlservice.service.impl;
 
+import com.goracz.controlservice.model.WebOSApplication;
+import com.goracz.controlservice.model.request.LaunchAppRequest;
 import com.goracz.controlservice.model.response.ApplicationListResponse;
 import com.goracz.controlservice.model.response.LaunchPointsResponse;
 import com.goracz.controlservice.service.WebApplicationControlService;
 import com.goracz.controlservice.service.WebService;
-import com.goracz.controlservice.model.request.LaunchAppRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -38,11 +39,11 @@ public class WebWebApplicationControlServiceImpl extends WebService implements W
     }
 
     @Override
-    public Mono<Void> openApplication(String identifier) {
+    public Mono<Void> openApplication(WebOSApplication identifier) {
         return this.webClient
                 .post()
                 .uri("http://localhost:5000/api/v1/app/launch")
-                .bodyValue(LaunchAppRequest.builder().id(identifier).build())
+                .bodyValue(LaunchAppRequest.builder().application(identifier).build())
                 .retrieve()
                 .bodyToMono(Void.class)
                 .retry(this.retriesCount)

@@ -12,6 +12,7 @@ members = [
     "database",
     "entity",
     "migration",
+    "model",
     "repository",
     "service",
 ]
@@ -31,6 +32,7 @@ sentry-actix = "0.29.2"
 controller = { path = "./controller" }
 database = { path = "./database" }
 migration = { path = "./migration" }
+model = { path = "./model" }
 repository = { path = "./repository" }
 
 [dependencies.uuid]

@@ -12,5 +12,5 @@ import java.util.Collection;
 @Data
 @Builder
 public class PopulateChannelsResponse {
-    private Collection<Channel> channels;
+    private Collection<LgChannel> channels;
 }

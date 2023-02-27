@@ -24,10 +24,10 @@ public class TvChannelListResponse {
     private TunerChannel tunerChannel;
     private int dataType;
     @JsonProperty("channelList")
-    private ArrayList<Channel> channelList;
+    private ArrayList<LgChannel> channelList;
     private boolean subscribed;
 
-    public static TvChannelListResponse fromListOfChannels(List<Channel> channels) {
+    public static TvChannelListResponse fromListOfChannels(List<LgChannel> channels) {
         return TvChannelListResponse.builder().channelList(new ArrayList<>(channels)).build();
     }
 }
