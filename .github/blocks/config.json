@@ -1,0 +1,9 @@
+{
+  "allow": [
+    {
+      "owner": "Krzysztof-Cieslak",
+      "repo": "IDE-Block",
+      "id": "ide-block"
+    }
+  ]
+}
