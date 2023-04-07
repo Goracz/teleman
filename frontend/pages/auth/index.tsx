@@ -24,7 +24,8 @@ import { IconCheck } from '@tabler/icons';
 import { GoogleButton, TwitterButton } from '../../components/SocialButtons/SocialButtons';
 import { useLogin, useRegister } from '../../hooks/auth';
 
-const LoginPage: NextPage<CardProps> = (props: CardProps) => {
+// @ts-ignore
+const LoginPage: NextPage = (props: CardProps) => {
   const router = useRouter();
 
   const [type, toggle] = useToggle(['login', 'register']);

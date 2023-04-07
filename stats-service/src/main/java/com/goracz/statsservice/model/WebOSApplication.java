@@ -17,7 +17,8 @@ public enum WebOSApplication implements Serializable {
     YOUTUBE("youtube.leanback.v4"),
     @JsonProperty("spotify-beehive")
     SPOTIFY("spotify-beehive"),
-    TWITCH("twitch"),
+    @JsonProperty("tv.twitch.tv.starshot.lg")
+    TWITCH("tv.twitch.tv.starshot.lg"),
     @JsonProperty("")
     BLANK("");
 

@@ -1,0 +1,1140 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: app-automation-service
+  name: app-automation-service
+spec:
+  ports:
+    - name: "8083"
+      port: 8083
+      targetPort: 8083
+  selector:
+    io.kompose.service: app-automation-service
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: app-control-service
+  name: app-control-service
+spec:
+  ports:
+    - name: "8080"
+      port: 8080
+      targetPort: 8080
+  selector:
+    io.kompose.service: app-control-service
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: app-interface
+  name: app-interface
+spec:
+  ports:
+    - name: "5000"
+      port: 5000
+      targetPort: 5000
+  selector:
+    io.kompose.service: app-interface
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: app-meta-service
+  name: app-meta-service
+spec:
+  ports:
+    - name: "8082"
+      port: 8082
+      targetPort: 8082
+  selector:
+    io.kompose.service: app-meta-service
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: app-stats-service
+  name: app-stats-service
+spec:
+  ports:
+    - name: "8081"
+      port: 8081
+      targetPort: 8081
+  selector:
+    io.kompose.service: app-stats-service
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: frontend
+  name: frontend
+spec:
+  ports:
+    - name: "3001"
+      port: 3001
+      targetPort: 3000
+  selector:
+    io.kompose.service: frontend
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: grafana
+  name: grafana
+spec:
+  ports:
+    - name: "3000"
+      port: 3000
+      targetPort: 3000
+  selector:
+    io.kompose.service: grafana
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: kafka
+  name: kafka
+spec:
+  ports:
+    - name: "9092"
+      port: 9092
+      targetPort: 9092
+  selector:
+    io.kompose.service: kafka
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: loki
+  name: loki
+spec:
+  ports:
+    - name: "3100"
+      port: 3100
+      targetPort: 3100
+  selector:
+    io.kompose.service: loki
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: mongodb
+  name: mongodb
+spec:
+  ports:
+    - name: "27017"
+      port: 27017
+      targetPort: 27017
+  selector:
+    io.kompose.service: mongodb
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: postgres
+  name: postgres
+spec:
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
+  selector:
+    io.kompose.service: postgres
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: prometheus
+  name: prometheus
+spec:
+  ports:
+    - name: "9090"
+      port: 9090
+      targetPort: 9090
+  selector:
+    io.kompose.service: prometheus
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: redis
+  name: redis
+spec:
+  ports:
+    - name: "6379"
+      port: 6379
+      targetPort: 6379
+  selector:
+    io.kompose.service: redis
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: tempo
+  name: tempo
+spec:
+  ports:
+    - name: "14250"
+      port: 14250
+      targetPort: 14250
+    - name: "4317"
+      port: 4317
+      targetPort: 4317
+  selector:
+    io.kompose.service: tempo
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: zookeeper
+  name: zookeeper
+spec:
+  ports:
+    - name: "2181"
+      port: 2181
+      targetPort: 2181
+  selector:
+    io.kompose.service: zookeeper
+status:
+  loadBalancer: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: app-automation-service
+  name: app-automation-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app-automation-service
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: app-automation-service
+    spec:
+      containers:
+        - env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: app-automation-service
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo:4317
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=app-automation-service,compose_service=app-automation-service
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: TV_CONTROL_SERVICE_URI
+              value: http://app-control-service:8080/api/v1
+          image: app-automation-service
+          name: app-automation-service
+          ports:
+            - containerPort: 8083
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: teleman-default
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              io.kompose.network/teleman-default: "true"
+  podSelector:
+    matchLabels:
+      io.kompose.network/teleman-default: "true"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: app-control-service
+  name: app-control-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app-control-service
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: app-control-service
+    spec:
+      containers:
+        - env:
+            - name: INTERFACE_URI
+              value: http://app-interface:5000
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: app-control-service
+            - name: META_SERVICE_URI
+              value: http://app-meta-service:8082
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo:4317
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=app-control-service,compose_service=app-control-service
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+          image: app-control-service
+          name: app-control-service
+          ports:
+            - containerPort: 8080
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  labels:
+    io.kompose.service: app-interface
+  name: app-interface
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app-interface
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: app-interface
+    spec:
+      containers:
+        - env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: app-interface
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo:4317
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=app-interface,compose_service=app-interface
+          image: app-interface
+          name: app-interface
+          ports:
+            - containerPort: 5000
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: app-meta-service
+  name: app-meta-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app-meta-service
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: app-meta-service
+    spec:
+      containers:
+        - env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: app-meta-service
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo:4317
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=app-meta-service,compose_service=app-meta-service
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+          image: app-meta-service
+          name: app-meta-service
+          ports:
+            - containerPort: 8082
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: app-stats-service
+  name: app-stats-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app-stats-service
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: app-stats-service
+    spec:
+      containers:
+        - env:
+            - name: INTERFACE_URI
+              value: http://app-interface:5000
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: app-stats-service
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo:4317
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=app-stats-service,compose_service=app-stats-service
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+          image: app-stats-service
+          name: app-stats-service
+          ports:
+            - containerPort: 8081
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: frontend
+    spec:
+      containers:
+        - args:
+            - yarn
+            - dev
+          env:
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: app-frontend
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo:4317
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=app-frontend,compose_service=app-frontend
+          image: frontend
+          name: frontend
+          ports:
+            - containerPort: 3000
+          resources: {}
+          volumeMounts:
+            - mountPath: /app
+              name: frontend-claim0
+      restartPolicy: Always
+      volumes:
+        - name: frontend-claim0
+          persistentVolumeClaim:
+            claimName: frontend-claim0
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: frontend-claim0
+  name: frontend-claim0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: grafana
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: grafana
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: grafana
+    spec:
+      containers:
+        - env:
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: Admin
+            - name: GF_AUTH_DISABLE_LOGIN_FORM
+              value: "true"
+          image: grafana/grafana:9.4.3
+          name: grafana
+          ports:
+            - containerPort: 3000
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/grafana/provisioning/datasources
+              name: grafana-claim0
+            - mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+              name: grafana-claim1
+            - mountPath: /etc/grafana/dashboards
+              name: grafana-claim2
+      restartPolicy: Always
+      volumes:
+        - name: grafana-claim0
+          persistentVolumeClaim:
+            claimName: grafana-claim0
+        - name: grafana-claim1
+          persistentVolumeClaim:
+            claimName: grafana-claim1
+        - name: grafana-claim2
+          persistentVolumeClaim:
+            claimName: grafana-claim2
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: grafana-claim0
+  name: grafana-claim0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: grafana-claim1
+  name: grafana-claim1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: grafana-claim2
+  name: grafana-claim2
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: kafka
+  name: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: kafka
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: kafka
+    spec:
+      containers:
+        - env:
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: PLAINTEXT://kafka:9092
+            - name: KAFKA_BROKER_ID
+              value: "1"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              value: zookeeper:2181
+          image: confluentinc/cp-kafka:7.3.3
+          name: kafka
+          ports:
+            - containerPort: 9092
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: loki
+  name: loki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: loki
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: loki
+    spec:
+      containers:
+        - args:
+            - -config.file=/etc/loki/local-config.yaml
+          image: grafana/loki:2.7.4
+          name: loki
+          ports:
+            - containerPort: 3100
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: mongodb
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mongodb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: mongodb
+    spec:
+      containers:
+        - image: mongo:4.4-bionic
+          name: mongodb
+          ports:
+            - containerPort: 27017
+          resources: {}
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongodb-data
+      restartPolicy: Always
+      volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb-data
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: mongodb-data
+  name: mongodb-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: postgres
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: postgres
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_PASSWORD
+              value: postgres
+            - name: POSTGRES_USER
+              value: postgres
+          image: postgres:13-alpine
+          name: postgres
+          ports:
+            - containerPort: 5432
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-data
+      restartPolicy: Always
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-data
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: postgres-data
+  name: postgres-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: prometheus
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: prometheus
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: prometheus
+    spec:
+      containers:
+        - args:
+            - --config.file=/workspace/prometheus.yml
+            - --enable-feature=exemplar-storage
+          image: prom/prometheus:v2.42.0
+          name: prometheus
+          ports:
+            - containerPort: 9090
+          resources: {}
+          volumeMounts:
+            - mountPath: /workspace
+              name: prometheus-claim0
+      restartPolicy: Always
+      volumes:
+        - name: prometheus-claim0
+          persistentVolumeClaim:
+            claimName: prometheus-claim0
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: prometheus-claim0
+  name: prometheus-claim0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: redis
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: redis
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: redis
+    spec:
+      containers:
+        - image: redis:6.2-alpine
+          name: redis
+          ports:
+            - containerPort: 6379
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: tempo
+  name: tempo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: tempo
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: tempo
+    spec:
+      containers:
+        - args:
+            - --target=all
+            - --storage.trace.backend=local
+            - --storage.trace.local.path=/var/tempo
+            - --auth.enabled=false
+          image: grafana/tempo:2.0.1
+          name: tempo
+          ports:
+            - containerPort: 14250
+            - containerPort: 4317
+          resources: {}
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+    kompose.version: 1.28.0 (HEAD)
+
+  labels:
+    io.kompose.service: zookeeper
+  name: zookeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: zookeeper
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.dev.yaml -o kubernetes
+        kompose.version: 1.28.0 (HEAD)
+
+      labels:
+        io.kompose.network/teleman-default: "true"
+        io.kompose.service: zookeeper
+    spec:
+      containers:
+        - env:
+            - name: ZOOKEEPER_CLIENT_PORT
+              value: "2181"
+            - name: ZOOKEEPER_TICK_TIME
+              value: "2000"
+          image: confluentinc/cp-zookeeper:7.3.3
+          name: zookeeper
+          ports:
+            - containerPort: 2181
+          resources: {}
+      restartPolicy: Always
+status: {}

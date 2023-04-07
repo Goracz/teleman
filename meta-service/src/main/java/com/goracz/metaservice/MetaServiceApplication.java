@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.goracz.metaservice.entity.ChannelMetadata;
+import com.goracz.metaservice.decoder.XmlDecoder;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,10 +15,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -29,13 +25,8 @@ import java.time.Duration;
 
 @SpringBootApplication
 public class MetaServiceApplication {
-	public static void main(String[] args) {
-		SpringApplication.run(MetaServiceApplication.class, args);
-	}
-
 	@Value("${spring.data.mongodb.uri}")
 	private String mongoConnectionString;
-
 	@Value("${spring.redis.host}")
 	private String redisHost;
 	@Value("${spring.redis.port}")
@@ -43,12 +34,36 @@ public class MetaServiceApplication {
 	@Value("${spring.redis.password}")
 	private String redisPassword;
 
-	@Bean
+	public static void main(String[] args) {
+		SpringApplication.run(MetaServiceApplication.class, args);
+	}
+
+	@Bean(name = "webClient")
+	@Primary
 	public WebClient webClient() {
 		final int maxBufferSize = 16 * 1024 * 1024;
 
 		final ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
 				.codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(maxBufferSize))
+				.build();
+		final HttpClient client = HttpClient.create(ConnectionProvider.builder("teleman-http-client")
+				.maxIdleTime(Duration.ofSeconds(30))
+				.build());
+		return WebClient.builder()
+				.clientConnector(new ReactorClientHttpConnector(client))
+				.exchangeStrategies(exchangeStrategies)
+				.build();
+	}
+
+	@Bean(name = "xmlIptvWebClient")
+	public WebClient xmlIptvWebClient() {
+		final int maxBufferSize = 16 * 1024 * 1024;
+
+		final XmlDecoder xmlDecoder = new XmlDecoder();
+		xmlDecoder.setMaxInMemorySize(maxBufferSize);
+
+		ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
+				.codecs(configurer -> configurer.customCodecs().register(xmlDecoder))
 				.build();
 		final HttpClient client = HttpClient.create(ConnectionProvider.builder("teleman-http-client")
 				.maxIdleTime(Duration.ofSeconds(30))

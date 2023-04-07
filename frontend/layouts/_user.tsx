@@ -1,13 +1,7 @@
+import { useRouter } from 'next/router';
 import React from 'react';
-import {
-  IconArrowsLeftRight,
-  IconChevronLeft,
-  IconChevronRight,
-  IconDoorExit,
-  IconSearch,
-  IconSettings,
-  IconTrash,
-} from '@tabler/icons';
+import { useSelector } from 'react-redux';
+
 import {
   Avatar,
   Box,
@@ -19,8 +13,16 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { openSpotlight } from '@mantine/spotlight';
-import { useRouter } from 'next/router';
-import { useSelector } from 'react-redux';
+import {
+  IconArrowsLeftRight,
+  IconChevronLeft,
+  IconChevronRight,
+  IconDoorExit,
+  IconSearch,
+  IconSettings,
+  IconTrash,
+} from '@tabler/icons';
+
 import { useLogout } from '../hooks/auth';
 import { AppSliceState } from '../store/app-slice';
 
@@ -36,7 +38,7 @@ export const User = () => {
           sx={{
             paddingTop: theme.spacing.sm,
             borderTop: `1px solid ${
-              theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
+              theme.colorScheme === 'dark' ? theme.colors.indigo[9] : theme.colors.gray[2]
             }`,
           }}
         >
@@ -49,8 +51,7 @@ export const User = () => {
               color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
 
               '&:hover': {
-                backgroundColor:
-                  theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[1],
+                backgroundColor: theme.colorScheme === 'dark' ? '#231a49' : theme.colors.gray[1],
                 transition: 'background-color 300ms ease',
               },
             }}

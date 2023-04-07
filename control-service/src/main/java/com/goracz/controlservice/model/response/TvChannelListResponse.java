@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,10 +24,13 @@ public class TvChannelListResponse {
     private TunerChannel tunerChannel;
     private int dataType;
     @JsonProperty("channelList")
-    private ArrayList<LgChannel> channelList;
+    private List<LgChannel> channelList;
     private boolean subscribed;
 
     public static TvChannelListResponse fromListOfChannels(List<LgChannel> channels) {
-        return TvChannelListResponse.builder().channelList(new ArrayList<>(channels)).build();
+        return TvChannelListResponse
+                .builder()
+                .channelList(new LinkedList<>(channels))
+                .build();
     }
 }

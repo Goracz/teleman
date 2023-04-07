@@ -7,7 +7,7 @@ import com.goracz.statsservice.service.WebService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Mono;import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +24,7 @@ public class WebChannelMetadataServiceImpl extends WebService implements WebChan
                 .retrieve()
                 .bodyToMono(ChannelMetadataResponse.class)
                 .retry(this.retriesCount)
-                .log();
+                .log()
+                .publishOn(Schedulers.boundedElastic());
     }
 }
