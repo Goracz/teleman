@@ -49,7 +49,7 @@ pub async fn update(db: web::Data<DbConn>, id: Uuid, new_user: user::Model) -> R
 pub async fn register_user(
     db: web::Data<DbConn>,
     producer: web::Data<BaseProducer>,
-    user: RegistrationCredentials,
+    user: user::Model,
 ) -> Result<user::Model, DbErr> {
     let is_user_registered_with_email =
         user_repository::find_by_email(db.to_owned(), user.email.to_owned()).await?;

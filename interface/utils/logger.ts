@@ -1,45 +1,40 @@
-import winston from "winston";
-// @ts-ignore
-import logdnaWinston from "logdna-winston";
-import ip from "ip";
-import { Meta } from "../constants/meta";
-import EnvironmentLocal from "../environments/environment.local";
+import { getSpan } from "@opentelemetry/api/build/src/trace/context-utils";
 
-const logDNAOptions = {
-  key: EnvironmentLocal.logDnaConfiguration.ingestionKey,
-  hostname: EnvironmentLocal.logDnaConfiguration.host,
-  ip: ip.address(),
-  app: Meta.serviceId,
-  env: "Development",
-  indexMeta: true,
-};
+const { createLogger, format, transports } = require("winston");
+const { context } = require("@opentelemetry/api");
 
-export const logger = winston.createLogger({
-  level: "debug",
-  format: winston.format.json(),
-  defaultMeta: { service: Meta.serviceId },
-  transports: [
-    new winston.transports.File({ filename: "error.log", level: "error" }),
-    new winston.transports.File({ filename: "combined.log" }),
-  ],
-  exceptionHandlers: [
-    new winston.transports.File({ filename: "exceptions.log" }),
-  ],
-  rejectionHandlers: [
-    new winston.transports.File({ filename: "rejections.log" }),
-  ],
+const { combine, timestamp, printf, json, errors } = format;
+
+const traceIdFormat = format((info: any) => {
+  const span = getSpan(context.active());
+  if (span) {
+    const traceId = span.spanContext().traceId;
+    const spanId = span.spanContext().spanId;
+    const traceFlags = span.spanContext().traceFlags;
+    info.message = `trace_id=${traceId} span_id=${spanId} trace_flags=${traceFlags} ${info.message}`;
+  }
+  return info;
 });
-if (
-  EnvironmentLocal.logDnaConfiguration.host &&
-  EnvironmentLocal.logDnaConfiguration.ingestionKey
-) {
-  logger.add(new logdnaWinston(logDNAOptions));
-}
 
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.simple(),
-    })
-  );
-}
+const jsonFormat = format((info: any) => {
+  const time = info.timestamp;
+  const type = info.level;
+  const msg = info.message;
+
+  return {
+    time,
+    type,
+    msg,
+  };
+});
+
+export const logger = createLogger({
+  format: combine(
+    timestamp(),
+    errors({ stack: true }),
+    traceIdFormat(),
+    json(),
+    jsonFormat()
+  ),
+  transports: [new transports.Console()],
+});

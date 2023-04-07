@@ -27,7 +27,7 @@ public class KafkaConsumerConfig {
                 bootstrapAddress);
         props.put(
                 ConsumerConfig.GROUP_ID_CONFIG,
-                "lgwebosstatsservice");
+                "core-services");
         props.put(
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                 StringDeserializer.class);
@@ -39,8 +39,22 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
+        return this.buildKafkaListenerContainerFactory();
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory2() {
+        return this.buildKafkaListenerContainerFactory("uptime-log-service");
+    }
+
+    private ConcurrentKafkaListenerContainerFactory<String, String> buildKafkaListenerContainerFactory() {
+        return this.buildKafkaListenerContainerFactory("core-services");
+    }
+
+    private ConcurrentKafkaListenerContainerFactory<String, String> buildKafkaListenerContainerFactory(String groupId) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
+        factory.setConsumerFactory(this.consumerFactory());
+        factory.getContainerProperties().setGroupId(groupId);
         return factory;
     }
 }

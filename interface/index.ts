@@ -7,7 +7,6 @@ import lgtv, { Config } from "lgtv2";
 
 import * as Sentry from "@sentry/node";
 import { ProfilingIntegration } from "@sentry/profiling-node";
-import * as Tracing from "@sentry/tracing";
 
 import { BrokerTopics } from "./constants/broker-topics";
 import { Meta } from "./constants/meta";
@@ -24,11 +23,16 @@ import power from "./routes/system/power";
 import screen from "./routes/system/screen";
 import channels from "./routes/tv/channels";
 import { logger } from "./utils/logger";
+import metrics from "./routes/metrics";
+import { kafkajsLogCreator } from "./utils/kafkajs-logger";
+
+require("./tracing");
 
 // Kafka Stuff
 const kafka: Kafka = new Kafka({
   clientId: Meta.serviceId,
-  brokers: config.brokers,
+  brokers: [process.env.KAFKA_BOOTSTRAP_SERVERS as string] || config.brokers,
+  logCreator: kafkajsLogCreator,
 });
 const producer: Producer = kafka.producer();
 producer.connect().then(() => logger.info("Connected to Message Queue."));
@@ -141,11 +145,9 @@ if (EnvironmentLocal.sentryDsn) {
   Sentry.init({
     dsn: EnvironmentLocal.sentryDsn,
     integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-      new Tracing.Integrations.Express({ app }),
+      new Sentry.Integrations.Http({ tracing: false }),
       new ProfilingIntegration(),
     ],
-    tracesSampleRate: 1.0,
     profilesSampleRate: 1.0,
   });
   logger.info("Sentry initialized.");
@@ -159,7 +161,9 @@ const corsOptions = {
 app.use(bodyParser.json());
 app.use(cors(corsOptions));
 app.use(Sentry.Handlers.requestHandler());
-app.use(Sentry.Handlers.tracingHandler());
+
+// Metrics
+app.use("/metrics", metrics);
 
 // TV Controls
 app.use("/api/v1/tv/channels", channels);
@@ -184,5 +188,5 @@ if (EnvironmentLocal.sentryDsn) {
 }
 
 app.listen(port, () => {
-  logger.info(`Listening on HTTPS at: https://localhost:${port}`);
+  logger.info(`Listening on HTTP at: http://localhost:${port}`);
 });

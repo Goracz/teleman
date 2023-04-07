@@ -1,10 +1,10 @@
-import { Router, Request, Response } from "express";
+import { Request, Response, Router } from "express";
 
 import { connection } from "../..";
 
 const router: Router = Router();
 
-router.post("/launch", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   await new Promise((resolve, reject) => {
     connection.request(
       "ssap://com.webos.applicationManager/launch",

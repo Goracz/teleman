@@ -1,4 +1,5 @@
 use std::env;
+use std::env::VarError;
 
 use actix_cors::Cors;
 use actix_web::web::Data;
@@ -24,6 +25,10 @@ async fn main() -> std::io::Result<()> {
         },
     ));
     env::set_var("RUST_BACKTRACE", "1");
+    let kafka_bootstrap_servers = match env::var("KAFKA_BOOTSTRAP_SERVERS") {
+        Ok(bootstrap_servers) => bootstrap_servers,
+        Err(_) => "localhost:9092"
+    };
 
     let db_connection = get_connection()
         .await
@@ -33,7 +38,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to persist pending migrations.");
 
     let kafka_producer = ClientConfig::new()
-        .set("bootstrap.servers", "localhost:9092")
+        .set("bootstrap.servers", kafka_bootstrap_servers)
         .create::<BaseProducer>()
         .unwrap();
 

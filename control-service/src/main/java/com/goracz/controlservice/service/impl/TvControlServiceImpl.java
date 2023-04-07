@@ -60,14 +60,17 @@ public class TvControlServiceImpl implements TvControlService {
     public Mono<TvChannelListResponse> getChannelList() {
         return this.getChannelListFromCache()
                 .switchIfEmpty(this.getChannelListFromTv())
-                .flatMap(response -> this.channelMetadataService.populate(response.getChannelList())
-                        .collectList()
-                        .map(TvChannelListResponse::fromListOfChannels)
-                        .flatMap(this::writeChannelListToCache));
+                // .flatMap(response -> this.channelMetadataService.populate(response.getChannelList())
+                        // .collectList()
+                        // .map(TvChannelListResponse::fromListOfChannels)
+                        .flatMap(this::writeChannelListToCache);
     }
 
     private Mono<TvChannelListResponse> getChannelListFromCache() {
-        return this.cacheProvider.getTvChannelListResponseCache().get(TV_CHANNEL_LIST_CACHE_KEY);
+        return this.cacheProvider
+                .getTvChannelListResponseCache()
+                .get(TV_CHANNEL_LIST_CACHE_KEY)
+                .publishOn(Schedulers.immediate());
     }
 
     private Mono<TvChannelListResponse> getChannelListFromTv() {
@@ -76,7 +79,8 @@ public class TvControlServiceImpl implements TvControlService {
                 .uri("/tv/channels")
                 .retrieve()
                 .bodyToMono(TvChannelListResponse.class)
-                .log();
+                .log()
+                .publishOn(Schedulers.immediate());
     }
 
     private Mono<TvChannelListResponse> writeChannelListToCache(TvChannelListResponse populatedChannels) {
@@ -84,7 +88,8 @@ public class TvControlServiceImpl implements TvControlService {
                 .set(TV_CHANNEL_LIST_CACHE_KEY, populatedChannels)
                 .map(response -> populatedChannels)
                 .retry(CACHE_WRITE_TRIES)
-                .thenReturn(populatedChannels);
+                .thenReturn(populatedChannels)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     @Override
@@ -112,7 +117,7 @@ public class TvControlServiceImpl implements TvControlService {
                 .set(TV_CHANNEL_CURRENT_KEY, currentChannel)
                 .map(response -> currentChannel)
                 .retry(CACHE_WRITE_TRIES)
-                .publishOn(Schedulers.parallel());
+                .publishOn(Schedulers.boundedElastic());
     }
 
     @Override
@@ -166,11 +171,13 @@ public class TvControlServiceImpl implements TvControlService {
 
     private Mono<CurrentTvChannelResponse> getCurrentTvChannelFromMqMessage(
             ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), CurrentTvChannelResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), CurrentTvChannelResponse.class))
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutChannelChange(CurrentTvChannelResponse currentChannel) {
         return Mono.fromCallable(() -> EventMessage.fromCurrentChannel(currentChannel))
-                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()));
+                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()))
+                .publishOn(Schedulers.immediate());
     }
 }

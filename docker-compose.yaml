@@ -1,0 +1,235 @@
+x-logging: &default-logging
+  driver: loki
+  options:
+    loki-url: 'http://localhost:3100/api/prom/push'
+    loki-pipeline-stages: |
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d{3}'
+          max_wait_time: 3s
+      - regex:
+          expression: '^(?P<date>\d{4}-\d{2}-\d{2}) (?P<time>\d{2}:\d{2}:\d{2}.\d{3}) (?P<message>(?s:.*))$$'
+version: "3.4"
+
+services:
+  # Infrastructure
+  loki:
+    image: grafana/loki:2.7.4
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+
+  prometheus:
+    image: prom/prometheus:v2.42.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./container-config/prometheus:/workspace
+    command:
+      - --config.file=/workspace/prometheus.yml
+      - --enable-feature=exemplar-storage
+    depends_on:
+      - loki
+    logging: *default-logging
+
+  tempo:
+    image: grafana/tempo:2.0.1
+    command: [ "--target=all", "--storage.trace.backend=local", "--storage.trace.local.path=/var/tempo", "--auth.enabled=false" ]
+    ports:
+      - "14250:14250"
+      - "4317:4317"
+    depends_on:
+      - loki
+    logging: *default-logging
+
+  grafana:
+    image: grafana/grafana:9.4.3
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./container-config/grafana/:/etc/grafana/provisioning/datasources
+      - ./container-config/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./container-config/dashboards:/etc/grafana/dashboards
+    depends_on:
+      - loki
+      - prometheus
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    logging: *default-logging
+
+  redis:
+    image: "redis:6.2-alpine"
+    ports:
+      - "6379:6379"
+
+  zookeeper:
+    image: "confluentinc/cp-zookeeper:7.3.3"
+    platform: linux/arm64
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: "confluentinc/cp-kafka:7.3.3"
+    platform: linux/arm64
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  mongodb:
+    image: "mongo:4.4-bionic"
+    ports:
+      - "27017:27017"
+    volumes:
+      - "mongodb_data:/data/db"
+
+  postgres:
+    image: "postgres:13-alpine"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+
+  # Applications
+  app-interface:
+    build: ./interface/
+    depends_on:
+      - kafka
+      - zookeeper
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=app-interface,compose_service=app-interface
+      - OTEL_METRICS_EXPORTER=none
+      - MANAGEMENT_METRICS_TAGS_APPLICATION=app-interface
+    ports:
+      - "5000:5000"
+    logging: *default-logging
+
+  app-control-service:
+    build: ./control-service/
+    depends_on:
+      - app-interface
+      - kafka
+      - zookeeper
+      - redis
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - INTERFACE_URI=http://app-interface:5000
+      - META_SERVICE_URI=http://app-meta-service:8082
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=app-control-service,compose_service=app-control-service
+      - OTEL_METRICS_EXPORTER=none
+      - MANAGEMENT_METRICS_TAGS_APPLICATION=app-control-service
+    ports:
+      - "8080:8080"
+    logging: *default-logging
+
+  app-stats-service:
+    build: ./stats-service/
+    depends_on:
+      - app-interface
+      - kafka
+      - zookeeper
+      - redis
+      - mongodb
+    environment:
+      - INTERFACE_URI=http://app-interface:5000
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=app-stats-service,compose_service=app-stats-service
+      - OTEL_METRICS_EXPORTER=none
+      - MANAGEMENT_METRICS_TAGS_APPLICATION=app-stats-service
+    ports:
+      - "8081:8081"
+    logging: *default-logging
+
+#  meta-service:
+#    build: ./meta-service/
+#    depends_on:
+#      - redis
+#      - mongodb
+#    environment:
+#      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+#      - REDIS_HOST=redis
+#      - REDIS_PORT=6379
+#      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+#      - OTEL_RESOURCE_ATTRIBUTES=service.name=meta-service,compose_service=meta-service
+#      - OTEL_METRICS_EXPORTER=none
+#      - MANAGEMENT_METRICS_TAGS_APPLICATION=meta-service
+#    ports:
+#      - "8082:8082"
+#    logging: *default-logging
+
+  app-automation-service:
+    build: ./automation-service/
+    depends_on:
+      - app-interface
+      - kafka
+      - zookeeper
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TV_CONTROL_SERVICE_URI=http://app-control-service:8080/api/v1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=app-automation-service,compose_service=app-automation-service
+      - OTEL_METRICS_EXPORTER=none
+      - MANAGEMENT_METRICS_TAGS_APPLICATION=app-automation-service
+    ports:
+      - "8083:8083"
+    logging: *default-logging
+
+#  authentication-service:
+#    build: ./authentication-service/
+#    depends_on:
+#      - interface
+#      - kafka
+#      - zookeeper
+#      - postgres
+#    environment:
+#      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+#      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+#      - OTEL_RESOURCE_ATTRIBUTES=service.name=authentication-service,compose_service=authentication-service
+#      - OTEL_METRICS_EXPORTER=none
+#      - MANAGEMENT_METRICS_TAGS_APPLICATION=authentication-service
+#    ports:
+#      - "8084:8084"
+#    logging: *default-logging
+
+  frontend:
+    build: ./frontend/
+    depends_on:
+      - app-control-service
+      - app-stats-service
+      - app-automation-service
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=app-frontend,compose_service=app-frontend
+      - OTEL_METRICS_EXPORTER=none
+      - MANAGEMENT_METRICS_TAGS_APPLICATION=app-frontend
+    ports:
+      - "3001:3000"
+    logging: *default-logging
+
+volumes:
+  mongodb_data:
+    driver: local
+  postgres_data:
+    driver: local

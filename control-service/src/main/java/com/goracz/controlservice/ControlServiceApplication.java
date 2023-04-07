@@ -21,6 +21,8 @@ public class ControlServiceApplication {
     private int redisPort;
     @Value("${spring.redis.password}")
     private String redisPassword;
+    @Value("${interface.uri}")
+    private String interfaceUri;
 
     public static void main(String[] args) {
         SpringApplication.run(ControlServiceApplication.class, args);
@@ -59,7 +61,7 @@ public class ControlServiceApplication {
     public WebClient webClient() {
         return WebClient
                 .builder()
-                .baseUrl("http://127.0.0.1:5000/api/v1")
+                .baseUrl(String.format("%s/api/v1", interfaceUri))
                 .build();
     }
 }

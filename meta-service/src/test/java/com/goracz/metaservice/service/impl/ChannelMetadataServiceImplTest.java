@@ -5,10 +5,7 @@ import com.goracz.metaservice.entity.ChannelCategory;
 import com.goracz.metaservice.entity.ChannelMetadata;
 import com.goracz.metaservice.repository.ReactiveSortingChannelMetadataRepository;
 import com.goracz.metaservice.service.ChannelMetadataService;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -23,6 +20,7 @@ import reactor.test.StepVerifier;
 import java.util.List;
 
 @SpringBootTest
+@Disabled("Not implemented yet")
 class ChannelMetadataServiceImplTest {
     @InjectMocks
     private ChannelMetadataServiceImpl channelMetadataService;

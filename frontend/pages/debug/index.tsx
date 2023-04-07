@@ -2,6 +2,7 @@ import { NextPage } from 'next';
 import {
   Anchor,
   Center,
+  createStyles,
   Group,
   Progress,
   ScrollArea,
@@ -10,7 +11,6 @@ import {
   TextInput,
   Tooltip,
   UnstyledButton,
-  createStyles,
 } from '@mantine/core';
 import { IconChevronDown, IconChevronUp, IconSearch, IconSelector } from '@tabler/icons';
 import { useState } from 'react';
@@ -51,7 +51,7 @@ interface TableProps {
   statuses: { up: number; down: number };
 }
 
-const data: TableProps[] = [
+const tableProps: TableProps[] = [
   {
     serviceName: 'WebOS-Teleman Interface',
     component: 'Core',
@@ -132,7 +132,7 @@ const getLabelForComponent = (component: string): string => {
 function filterData(data: TableProps[], search: string) {
   const query = search.toLowerCase().trim();
   return data.filter((item) =>
-    keys(data[0]).some((key) => item[key].toLowerCase().includes(query))
+    keys(data[0]).some((key) => (item[key] as string).toLowerCase().includes(query))
   );
 }
 
@@ -149,10 +149,10 @@ function sortData(
   return filterData(
     [...data].sort((a, b) => {
       if (payload.reversed) {
-        return b[sortBy].localeCompare(a[sortBy]);
+        return (b[sortBy] as string).localeCompare(a[sortBy] as string);
       }
 
-      return a[sortBy].localeCompare(b[sortBy]);
+      return (a[sortBy] as string).localeCompare(b[sortBy] as string);
     }),
     payload.search
   );
@@ -188,7 +188,7 @@ const DebugPage: NextPage = () => {
   const { classes, theme } = useStyles();
 
   const [search, setSearch] = useState('');
-  const [sortedData, setSortedData] = useState(data);
+  const [, setSortedData] = useState(tableProps);
   const [sortBy, setSortBy] = useState<keyof TableProps | null>(null);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
@@ -196,16 +196,16 @@ const DebugPage: NextPage = () => {
     const reversed = field === sortBy ? !reverseSortDirection : false;
     setReverseSortDirection(reversed);
     setSortBy(field);
-    setSortedData(sortData(data, { sortBy: field, reversed, search }));
+    setSortedData(sortData(tableProps, { sortBy: field, reversed, search }));
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.currentTarget;
     setSearch(value);
-    setSortedData(sortData(data, { sortBy, reversed: reverseSortDirection, search: value }));
+    setSortedData(sortData(tableProps, { sortBy, reversed: reverseSortDirection, search: value }));
   };
 
-  const rows = data.map((row: TableProps) => {
+  const rows = tableProps.map((row: TableProps) => {
     const totalReviews = row.statuses.down + row.statuses.up;
     const positiveReviews = (row.statuses.up / totalReviews) * 100;
     const negativeReviews = (row.statuses.down / totalReviews) * 100;

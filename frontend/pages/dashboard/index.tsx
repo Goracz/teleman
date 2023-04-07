@@ -1,15 +1,19 @@
-import { Col, Grid, Skeleton, useMantineColorScheme } from '@mantine/core';
-import { showNotification } from '@mantine/notifications';
-import { IconCheck, IconX } from '@tabler/icons';
+import moment from 'moment';
+import { tz } from 'moment-timezone';
 import { NextPage } from 'next';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import moment from 'moment';
-import { tz } from 'moment-timezone';
-import ApplicationLayout from '../../layouts/Application';
-import { Channel } from '../../models/channel';
-import { ChannelCategory } from '../../models/channel-category';
-import { appActions, AppSliceState } from '../../store/app-slice';
+
+import { Col, Grid, Skeleton, useMantineColorScheme } from '@mantine/core';
+import { showNotification } from '@mantine/notifications';
+import { IconCheck, IconX } from '@tabler/icons';
+
+import Filter from '../../components/Dashboard/Filter';
+import QuickAppLauncher from '../../components/Dashboard/QuickAppLauncher';
+import TvCard from '../../components/Dashboard/TvCard';
+import UptimeChart from '../../components/Dashboard/UptimeChart';
+import { RingStatistics } from '../../components/Statistics/RingStatistics';
+import { RingStatisticsChannelCategory } from '../../components/Statistics/RingStatisticsChannelCategory';
 import {
   useChannelHistory,
   useChannels,
@@ -21,14 +25,16 @@ import {
   useUptime,
   useVolume,
 } from '../../hooks';
+import ApplicationLayout from '../../layouts/Application';
+import { Channel } from '../../models/channel';
+import { ChannelCategory } from '../../models/channel-category';
 import { ChannelHistory } from '../../models/channel-history';
-import { RingStatistics } from '../../components/Statistics/RingStatistics';
-import { RingStatisticsChannelCategory } from '../../components/Statistics/RingStatisticsChannelCategory';
-import Filter from '../../components/Dashboard/Filter';
-import TvCard from '../../components/Dashboard/TvCard';
-import UptimeChart from '../../components/Dashboard/UptimeChart';
-import QuickAppLauncher from '../../components/Dashboard/QuickAppLauncher';
 import { PowerStateOption } from '../../models/power-state-option';
+import { UptimeLog } from '../../models/uptime-log';
+import { appActions, AppSliceState } from '../../store/app-slice';
+import { PowerState } from '../../models/power-state';
+
+const ONE_MINUTE_MILLIS = 1000 * 60;
 
 // Calculates that on a given day, how many minutes was the TV watched by every hour in 24 hours
 const calculateHowManyMinutesWatchedInAGivenHour = (
@@ -80,6 +86,33 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
       }
     }
   });
+
+  const lastChannelHistoryEntry = channelHistories[channelHistories.length - 1];
+  if (lastChannelHistoryEntry && !lastChannelHistoryEntry.end) {
+    const startDate = tz(moment.unix(lastChannelHistoryEntry.start), timezone);
+    const startDateHour = startDate.hour();
+
+    const now = moment();
+    const nowHour = now.hour();
+
+    if (startDateHour === nowHour) {
+      hours[startDateHour] += now.diff(startDate, 'minutes');
+    } else {
+      for (let i = startDateHour; i <= nowHour; i += 1) {
+        let duration: number;
+
+        if (startDateHour === i) {
+          duration = 60 - startDate.minute();
+        } else if (i < nowHour) {
+          duration = 60 - startDate.hour(i).minute(0).minutes();
+        } else {
+          duration = now.minute();
+        }
+
+        hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
+      }
+    }
+  }
 
   return hours;
 };
@@ -149,7 +182,9 @@ const DashboardPage: NextPage = () => {
     !isLoadingChannelList &&
     !isChannelsError &&
     (typeof isChannelsError !== 'undefined' || !isChannelsError) &&
-    channelList
+    channelList &&
+    typeof channelList.channelList !== 'undefined' &&
+    channelList.channelList !== null
   ) {
     dispatch(
       appActions.setDigitalTvChannelCount(
@@ -173,9 +208,9 @@ const DashboardPage: NextPage = () => {
       )
     );
     dispatch(appActions.setChannelList(channelList));
-  } //else if (typeof window !== 'undefined') {
-  //router.replace('/error/missing-state-information');
-  //}
+  } // else if (typeof window !== 'undefined') {
+  // router.replace(`/error/missing-state-information?reason=${StateError.CHANNEL_LIST_MISSING}`);
+  // }
 
   const {
     data: softwareInfo,
@@ -305,6 +340,38 @@ const DashboardPage: NextPage = () => {
     setCalculatedHourlyChannelView(formattedResult);
   }, [channelHistory]);
 
+  const shouldNotUptimeChartBeUpdated = (): boolean =>
+    !calculatedHourlyChannelView || !channelHistory;
+
+  const isLatestChannelHistoryWithoutEndDate = (
+    today: Date,
+    latestChannelHistoryEntry: ChannelHistory
+  ): boolean =>
+    latestChannelHistoryEntry &&
+    typeof latestChannelHistoryEntry.end === 'undefined' &&
+    latestChannelHistoryEntry.start > today.setHours(0, 0, 0, 0);
+
+  const addAMinuteToLastHourInHourlyChannelView = (today: Date) => {
+    const currentHour = today.getHours();
+    const newCalculatedHourlyChannelView = [...calculatedHourlyChannelView];
+    newCalculatedHourlyChannelView[currentHour].minutes += 1;
+
+    return newCalculatedHourlyChannelView;
+  };
+
+  setInterval(() => {
+    // If the TV is still turned on (the latest channel history entry does not have an end),
+    // add plus one minute to the current hour in calculated hourly channel view without recalculating the whole thing
+    if (shouldNotUptimeChartBeUpdated()) return;
+
+    const latestChannelHistoryEntry = channelHistory[channelHistory.length - 1];
+    const today = new Date();
+    if (isLatestChannelHistoryWithoutEndDate(today, latestChannelHistoryEntry)) {
+      const newCalculatedHourlyChannelView = addAMinuteToLastHourInHourlyChannelView(today);
+      setCalculatedHourlyChannelView(newCalculatedHourlyChannelView);
+    }
+  }, ONE_MINUTE_MILLIS);
+
   const setVolume = async (direction: 'up' | 'down'): Promise<void> => {
     await fetch(`http://localhost:8080/api/v1/media/volume/${direction}`, {
       method: 'POST',
@@ -317,45 +384,37 @@ const DashboardPage: NextPage = () => {
     });
   };
 
+  const setTvUptime = (uptimeLog: UptimeLog) => {
+    if (uptimeLog.turnOffTime) {
+      setCalculatedTvUptime(
+        formatUptime(
+          moment(moment.unix(uptimeLog.turnOffTime).diff(moment.unix(uptimeLog.turnOnTime)))
+            .subtract(1, 'hour')
+            .format('H:m:')
+        )
+      );
+    } else {
+      setCalculatedTvUptime(
+        formatUptime(
+          moment(moment().diff(moment.unix(uptimeLog.turnOnTime)) - ONE_MINUTE_MILLIS * 60).format(
+            'H:m:'
+          )
+        )
+      );
+    }
+  };
+
   useEffect(() => {
     if (tvUptime) {
-      if (tvUptime.turnOffTime) {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
-              'H:m:'
-            )
-          )
-        );
-      } else {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment().diff(moment.unix(tvUptime.turnOnTime)) - 1000 * 60 * 60).format('H:m:')
-          )
-        );
-      }
+      setTvUptime(tvUptime);
     }
   }, [tvUptime]);
 
   setInterval(() => {
     if (tvUptime) {
-      if (tvUptime.turnOffTime) {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
-              'H:m:'
-            )
-          )
-        );
-      } else {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment().diff(moment.unix(tvUptime.turnOnTime)) - 1000 * 60 * 60).format('H:m:')
-          )
-        );
-      }
+      setTvUptime(tvUptime);
     }
-  }, 1000 * 60);
+  }, ONE_MINUTE_MILLIS);
 
   const {
     data: epgData,
@@ -382,7 +441,7 @@ const DashboardPage: NextPage = () => {
             handleToggleTvState={handleToggleTvState}
             tvUptime={tvUptime}
             calculatedTvUptime={calculatedTvUptime}
-            powerState={powerState}
+            powerState={powerState as PowerState}
             isLoadingPowerState={isLoadingPowerState}
             tvIp={tvIp}
             digitalTvChannelCount={digitalTvChannelCount}

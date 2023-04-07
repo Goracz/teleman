@@ -2,6 +2,8 @@ package com.goracz.statsservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goracz.statsservice.component.RedisCacheProvider;
+import com.goracz.statsservice.constant.CacheKeys;
+import com.goracz.statsservice.constant.KafkaTopic;
 import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
 import com.goracz.statsservice.model.WebOSApplication;
@@ -26,11 +28,6 @@ import java.time.ZoneId;
 @Service
 public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     private static final int CACHE_WRITE_TRIES = 3;
-
-    private static final String TV_CHANNEL_HISTORY_KEY = "tv:channel:history";
-    private static final String POWER_STATE_CACHE_KEY = "system:power:state";
-    private static final String FOREGROUND_APP_CACHE_KEY = "system:foreground-app";
-
     private static final int RETRY_TRIES = 3;
 
     private final EventService<EventMessage<ChannelHistory>> channelHistoryEventService;
@@ -65,7 +62,9 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                         channelHistoryRequest
                                 .getEnd()
                                 .atStartOfDay(ZoneId.systemDefault()))
-                .flatMap(this::populateChannelHistoryWithMetadata);
+                .publishOn(Schedulers.newBoundedElastic(
+                        100, Integer.MAX_VALUE, "channel-history-service"));
+                // .flatMap(this::populateChannelHistoryWithMetadata);
     }
 
     private Mono<ChannelHistory> populateChannelHistoryWithMetadata(ChannelHistory channelHistory) {
@@ -82,7 +81,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         return this.channelHistoryRepository
                 .save(channelHistory)
                 .retry(RETRY_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.boundedElastic());
     }
 
     @Override
@@ -91,7 +91,8 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         return this.channelHistoryRepository
                 .deleteById(channelHistoryId)
                 .retry(RETRY_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -114,7 +115,7 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
      * @param message Message that is being received from the Kafka topic, ideally a CurrentTvChannelResponse object.
      * @throws KafkaConsumeFailException If the message cannot be parsed to a CurrentTvChannelResponse object.
      */
-    @KafkaListener(topics = "channel-change")
+    @KafkaListener(topics = KafkaTopic.CHANNEL_CHANGES)
     public void onChannelChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
            this.handleChannelChange(message).subscribe();
@@ -140,23 +141,20 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                                 // After that, the channel that has just been changed to also has to be processed.
                                 this.updateLatestChannelHistory(latestChannelHistoryEntry)
                                         .flatMap(ignored -> this.addNewChannelHistory(response))
-                                        .subscribeOn(Schedulers.parallel())
                                         .subscribe();
                             } else {
                                 // A channel is not in the cache yet, so the current channel's start
                                 // time has to be set to now.
                                 this.addNewChannelHistory(response)
-                                        .subscribeOn(Schedulers.parallel())
                                         .subscribe();
                             }
                         })
-                        .subscribeOn(Schedulers.parallel())
                         .subscribe())
                 .then();
     }
 
     private Mono<ChannelHistory> readLatestChannelHistoryFromCache() {
-        return this.cacheProvider.getChannelHistoryCache().get(TV_CHANNEL_HISTORY_KEY);
+        return this.cacheProvider.getChannelHistoryCache().get(CacheKeys.TV_CHANNEL_HISTORY_KEY);
     }
 
     private Mono<ChannelHistory> readLatestChannelHistoryFromDatabase() {
@@ -193,7 +191,6 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
             if (channelHistory.getChannelName() == null) {
                 this.readForegroundApplicationFromCache()
                         .map(channelHistory::setForegroundAppTo)
-                        .subscribeOn(Schedulers.parallel())
                         .subscribe();
             }
             return channelHistory;
@@ -203,14 +200,14 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     private Mono<ForegroundAppChangeResponse> readForegroundApplicationFromCache() {
         return this.cacheProvider
                 .getForegroundAppChangeResponseCache()
-                .get(FOREGROUND_APP_CACHE_KEY);
+                .get(CacheKeys.FOREGROUND_APP_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
-    @KafkaListener(topics = "power_state_changes")
+    @KafkaListener(topics = KafkaTopic.POWER_STATE_CHANGES, containerFactory = "kafkaListenerContainerFactory")
     public void onPowerStateChange(ConsumerRecord<String, String> mqMessage) throws KafkaConsumeFailException {
         try {
             this.handlePowerStateChange(mqMessage)
-                    .subscribeOn(Schedulers.parallel())
                     .subscribe();
         } catch (Exception exception) {
             throw new KafkaConsumeFailException(exception.getMessage());
@@ -223,7 +220,6 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
                 .doOnNext((powerStateResponse) -> {
                     if (this.shouldUpdateChannelHistory(powerStateResponse)) {
                         this.updateLatestChannelHistory()
-                                .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     }
                 });
@@ -237,21 +233,24 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
 
     private Mono<PowerStateResponse> readPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
         return Mono.fromCallable(() -> this.objectMapper
-                .readValue(message.value(), PowerStateResponse.class));
+                .readValue(message.value(), PowerStateResponse.class))
+                .publishOn(Schedulers.parallel());
     }
 
     private Mono<PowerStateResponse> writePowerStateToCache(PowerStateResponse powerState) {
         return this.cacheProvider.getPowerStateResponseCache()
-                .set(POWER_STATE_CACHE_KEY, powerState)
+                .set(CacheKeys.POWER_STATE_CACHE_KEY, powerState)
                 .map(response -> powerState)
                 .retry(CACHE_WRITE_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutNewPowerState(PowerStateResponse powerState) {
         return Mono.fromCallable(() -> EventMessage.fromPowerStateResponse(powerState))
                 .flatMap(this.powerStateEventService::emit)
-                .log();
+                .log()
+                .publishOn(Schedulers.immediate());
     }
 
     private boolean shouldUpdateChannelHistory(PowerStateResponse response) {
@@ -262,15 +261,15 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         return Mono.fromCallable(() -> {
             if (channelHistory.isNew()) {
                 channelHistory.endViewNow();
-                this.channelHistoryRepository.save(channelHistory)
-                        .subscribeOn(Schedulers.parallel())
+                this.channelHistoryRepository
+                        .save(channelHistory)
                         .subscribe();
             }
             return channelHistory;
         });
     }
 
-    @KafkaListener(topics = "foreground-app-change")
+    @KafkaListener(topics = KafkaTopic.FOREGROUND_APP_CHANGES)
     public void onForegroundAppChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
             this.handleForegroundAppChange(message).subscribe();
@@ -283,24 +282,26 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
         // TODO: appId is an empty string just before the TV turns off
         //  - the same would happen when the TV state changes to an inactive state as below
         return this.readForegroundAppChangeMessageFromMq(message)
-                .doOnNext(this::writeForegroudApplicationToCache)
+                .doOnNext(this::writeForegroundApplicationToCache)
                 .flatMap(event -> isTvRunningThirdPartyApplication(event)
-                        ? this.updateLatestChannelHistory()
+                        ? this.updateLatestChannelHistory() // TODO: and create a new one with  the curently running application
                         : this.createNewChannelHistoryWithCurrentlyRunningApplication(event));
     }
 
-    private Mono<ForegroundAppChangeResponse> writeForegroudApplicationToCache(ForegroundAppChangeResponse response) {
+    private Mono<ForegroundAppChangeResponse> writeForegroundApplicationToCache(ForegroundAppChangeResponse response) {
         return this.cacheProvider.getForegroundAppChangeResponseCache()
-                .set(FOREGROUND_APP_CACHE_KEY, response)
+                .set(CacheKeys.FOREGROUND_APP_CACHE_KEY, response)
                 .map(ignored -> response)
                 .retry(CACHE_WRITE_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<ForegroundAppChangeResponse> readForegroundAppChangeMessageFromMq(
             ConsumerRecord<String, String> message) {
         return Mono.fromCallable(() -> this.objectMapper
-                .readValue(message.value(), ForegroundAppChangeResponse.class));
+                .readValue(message.value(), ForegroundAppChangeResponse.class))
+                .publishOn(Schedulers.parallel());
     }
 
     private boolean isTvRunningThirdPartyApplication(ForegroundAppChangeResponse response) {
@@ -332,12 +333,14 @@ public class ChannelHistoryServiceImpl implements ChannelHistoryService {
     private Mono<ChannelHistory> writeChannelHistoryToCache(ChannelHistory channelHistory) {
         return this.cacheProvider
                 .getChannelHistoryCache()
-                .set(TV_CHANNEL_HISTORY_KEY, channelHistory)
-                .map(result -> channelHistory);
+                .set(CacheKeys.TV_CHANNEL_HISTORY_KEY, channelHistory)
+                .map(result -> channelHistory)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<Sinks.EmitResult> notifyListeners(ChannelHistory channelHistory) {
         return Mono.fromCallable(() -> EventMessage.fromChannelHistoryChange(channelHistory))
-                .flatMap(this.channelHistoryEventService::emit);
+                .flatMap(this.channelHistoryEventService::emit)
+                .publishOn(Schedulers.immediate());
     }
 }

@@ -2,13 +2,17 @@ package com.goracz.statsservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goracz.statsservice.component.RedisCacheProvider;
+import com.goracz.statsservice.constant.CacheKeys;
+import com.goracz.statsservice.constant.KafkaTopic;
 import com.goracz.statsservice.entity.UptimeLog;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
 import com.goracz.statsservice.model.response.EventMessage;
+import com.goracz.statsservice.model.response.ForegroundAppChangeResponse;
 import com.goracz.statsservice.model.response.PowerStateResponse;
 import com.goracz.statsservice.repository.ReactiveUptimeRepository;
 import com.goracz.statsservice.service.EventService;
 import com.goracz.statsservice.service.UptimeService;
+import com.goracz.statsservice.service.WebForegroundApplicationService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -20,24 +24,25 @@ import reactor.core.scheduler.Schedulers;
 @Service
 public class UptimeServiceImpl implements UptimeService {
     private static final int CACHE_WRITE_TRIES = 3;
-    private static final String POWER_STATE_RESPONSE_CACHE_KEY = "system:power:state";
-    private static final String LATEST_UPTIME_LOG_CACHE_KEY = "uptime-log:latest";
     private final ReactiveUptimeRepository uptimeRepository;
     private final RedisCacheProvider cacheProvider;
     private final EventService<EventMessage<PowerStateResponse>> powerStateEventService;
     private final EventService<EventMessage<UptimeLog>> uptimeLogEventService;
     private final ObjectMapper objectMapper;
+    private final WebForegroundApplicationService foregroundApplicationService;
 
     public UptimeServiceImpl(ReactiveUptimeRepository uptimeRepository,
                              RedisCacheProvider cacheProvider,
                              EventService<EventMessage<PowerStateResponse>> powerStateEventService,
                              EventService<EventMessage<UptimeLog>> uptimeLogEventService,
-                             ObjectMapper objectMapper) {
+                             ObjectMapper objectMapper,
+                             WebForegroundApplicationService foregroundApplicationService) {
         this.uptimeRepository = uptimeRepository;
         this.cacheProvider = cacheProvider;
         this.powerStateEventService = powerStateEventService;
         this.uptimeLogEventService = uptimeLogEventService;
         this.objectMapper = objectMapper;
+        this.foregroundApplicationService = foregroundApplicationService;
     }
 
     @Override
@@ -50,14 +55,17 @@ public class UptimeServiceImpl implements UptimeService {
     private Mono<UptimeLog> readLatestUptimeLogFromCache() {
         return this.cacheProvider
                 .getUptimeLogCache()
-                .get(LATEST_UPTIME_LOG_CACHE_KEY);
+                .get(CacheKeys.LATEST_UPTIME_LOG_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<UptimeLog> readLatestUptimeLogFromDatabase() {
-        return this.uptimeRepository.findFirstByOrderByTurnOnTimeDesc();
+        return this.uptimeRepository
+                .findFirstByOrderByTurnOnTimeDesc()
+                .publishOn(Schedulers.boundedElastic());
     }
 
-    @KafkaListener(topics = "power-state-change")
+    @KafkaListener(topics = KafkaTopic.POWER_STATE_CHANGES, containerFactory = "kafkaListenerContainerFactory2")
     public void onPowerStateChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
             this.handlePowerStateChange(message).subscribe();
@@ -69,12 +77,12 @@ public class UptimeServiceImpl implements UptimeService {
     private Mono<PowerStateResponse> handlePowerStateChange(ConsumerRecord<String, String> message) {
         return this.readPowerStateFromMqMessage(message)
                 .doOnNext(powerStateResponse -> {
-                    // FIXME: Logic is not 100% correct here, hence power state is not updated across the system
                     if (powerStateResponse.hasTvTurnedOn() && !this.systemRecoveredFromError(powerStateResponse)) {
                         // The power state has changed to ON, so we need to create a new UptimeLog
                         // with the current time as the turn on time
                         this.writeNewUptimeLogEntry()
                                 .doOnNext(this::notifyListenersAboutUptimeChange)
+                                .doOnNext(this::writeCurrentlyRunningApplicationToCache)
                                 .subscribeOn(Schedulers.parallel())
                                 .subscribe();
                     } else if (powerStateResponse.hasTvTurnedOff()) {
@@ -98,25 +106,30 @@ public class UptimeServiceImpl implements UptimeService {
     }
 
     private Mono<PowerStateResponse> readPowerStateFromMqMessage(ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), PowerStateResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), PowerStateResponse.class))
+                .publishOn(Schedulers.parallel());
     }
 
     private Mono<UptimeLog> writeToCache(UptimeLog uptimeLog) {
         return this.cacheProvider
                 .getUptimeLogCache()
-                .set(LATEST_UPTIME_LOG_CACHE_KEY, uptimeLog)
+                .set(CacheKeys.LATEST_UPTIME_LOG_CACHE_KEY, uptimeLog)
                 .map(result -> uptimeLog)
-                .retry(CACHE_WRITE_TRIES);
+                .retry(CACHE_WRITE_TRIES)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<UptimeLog> readLastFromCache() {
         return this.cacheProvider
                 .getUptimeLogCache()
-                .get(LATEST_UPTIME_LOG_CACHE_KEY);
+                .get(CacheKeys.LATEST_UPTIME_LOG_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<UptimeLog> readLastFromDatabase() {
-        return this.uptimeRepository.findFirstByOrderByTurnOnTimeDesc();
+        return this.uptimeRepository
+                .findFirstByOrderByTurnOnTimeDesc()
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private boolean systemRecoveredFromError(PowerStateResponse powerStateResponse) {
@@ -144,17 +157,38 @@ public class UptimeServiceImpl implements UptimeService {
     private Mono<Boolean> writePowerStateToCache(PowerStateResponse powerStateResponse) {
         return this.cacheProvider
                 .getPowerStateResponseCache()
-                .set(POWER_STATE_RESPONSE_CACHE_KEY, powerStateResponse)
-                .retry(CACHE_WRITE_TRIES);
+                .set(CacheKeys.POWER_STATE_CACHE_KEY, powerStateResponse)
+                .retry(CACHE_WRITE_TRIES)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutPowerStateChange(PowerStateResponse powerStateResponse) {
         return Mono.fromCallable(() -> EventMessage.fromPowerStateResponse(powerStateResponse))
-                .flatMap(this.powerStateEventService::emit);
+                .flatMap(this.powerStateEventService::emit)
+                .publishOn(Schedulers.immediate());
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutUptimeChange(UptimeLog uptimeLog) {
         return Mono.fromCallable(() -> EventMessage.fromUptimeLog(uptimeLog))
-                .flatMap(this.uptimeLogEventService::emit);
+                .flatMap(this.uptimeLogEventService::emit)
+                .publishOn(Schedulers.immediate());
+    }
+
+    private Mono<ForegroundAppChangeResponse> writeCurrentlyRunningApplicationToCache(UptimeLog uptimeLog) {
+        return this.getForegroundApplication()
+                .doOnNext(this::writeForegroundApplicationToCache);
+    }
+
+    private Mono<ForegroundAppChangeResponse> getForegroundApplication() {
+        return this.foregroundApplicationService.getForegroundApplication();
+    }
+
+    private Mono<Void> writeForegroundApplicationToCache(ForegroundAppChangeResponse foregroundAppChangeResponse) {
+        return this.cacheProvider
+                .getForegroundAppChangeResponseCache()
+                .set(CacheKeys.FOREGROUND_APP_CACHE_KEY, foregroundAppChangeResponse)
+                .retry(CACHE_WRITE_TRIES)
+                .then()
+                .publishOn(Schedulers.boundedElastic());
     }
 }

@@ -5,22 +5,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Mono;import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
 public class WebTvControlServiceImpl implements WebTvControlService {
-    @Value(("${tvControlService.baseUrl}"))
-    private final String baseUrl;
-
     private final WebClient webClient;
+    @Value(("${tvControlService.uri}"))
+    private String baseUrl;
 
     @Override
     public Mono<Void> turnOnTv() {
         return this.webClient.post()
                 .uri("%s/system/power/on", baseUrl)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .bodyToMono(Void.class)
+                .publishOn(Schedulers.immediate());
     }
 
     @Override
@@ -28,7 +28,8 @@ public class WebTvControlServiceImpl implements WebTvControlService {
         return this.webClient.post()
                 .uri("%s/system/power/off", baseUrl)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .bodyToMono(Void.class)
+                .publishOn(Schedulers.immediate());
     }
 
     @Override
@@ -37,7 +38,8 @@ public class WebTvControlServiceImpl implements WebTvControlService {
                 .uri("%s/tv/channels", baseUrl)
                 .bodyValue(Void.class)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .bodyToMono(Void.class)
+                .publishOn(Schedulers.immediate());
     }
 
     @Override
@@ -46,7 +48,8 @@ public class WebTvControlServiceImpl implements WebTvControlService {
                 .uri("%s/media/volume", baseUrl)
                 .bodyValue(Void.class)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .bodyToMono(Void.class)
+                .publishOn(Schedulers.immediate());
     }
 
     @Override
@@ -55,6 +58,7 @@ public class WebTvControlServiceImpl implements WebTvControlService {
                 .uri("%s/app/open", baseUrl)
                 .bodyValue(Void.class)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .bodyToMono(Void.class)
+                .publishOn(Schedulers.immediate());
     }
 }

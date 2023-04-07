@@ -15,7 +15,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks;import reactor.core.scheduler.Schedulers;
 
 @Service
 public class MediaControlServiceImpl implements MediaControlService {
@@ -62,7 +62,8 @@ public class MediaControlServiceImpl implements MediaControlService {
         return this.cacheProvider
                 .getVolumeResponseCache()
                 .set(MEDIA_VOLUME_CACHE_KEY, volume)
-                .map(response -> volume);
+                .map(response -> volume)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     @Override
@@ -112,11 +113,13 @@ public class MediaControlServiceImpl implements MediaControlService {
     }
 
     private Mono<GetVolumeResponse> getVolumeFromMqMessage(ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), GetVolumeResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), GetVolumeResponse.class))
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<Sinks.EmitResult> notifyListenersAboutVolumeChange(GetVolumeResponse volume) {
         return Mono.fromCallable(() -> new EventMessage<>(EventCategory.VOLUME_CHANGED, volume))
-                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()));
+                .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()))
+                .publishOn(Schedulers.immediate());
     }
 }

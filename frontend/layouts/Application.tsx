@@ -1,4 +1,4 @@
-import { AppShell, Button, Code, Group, Header, Navbar, Skeleton, Text } from '@mantine/core';
+import { AppShell, Button, Group, Header, Navbar, Skeleton, Text } from '@mantine/core';
 import { NextPage } from 'next';
 import { IconPlug, IconPlugOff } from '@tabler/icons';
 import React, { useEffect, useState } from 'react';
@@ -80,9 +80,6 @@ const ApplicationLayout: NextPage<any> = ({ children }) => {
                   Teleman
                 </Text>
               </Group>
-              <Code sx={{ fontWeight: 700 }} mt={6}>
-                v2023.02.05.dev
-              </Code>
               {!pageName && <Skeleton height={10} width={80} radius="xl" />}
               {pageName && (
                 <Text ml={0} weight="bold">

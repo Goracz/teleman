@@ -58,6 +58,7 @@ public class AutomationRuleServiceImpl implements AutomationRuleService {
     private void notifyListenersAboutCreation(AutomationRule rule) {
         this.eventService
                 .emit(rule, EventCategory.AUTOMATION_RULE_ADDED)
+                .publishOn(Schedulers.immediate())
                 .subscribe();
     }
 
@@ -75,6 +76,7 @@ public class AutomationRuleServiceImpl implements AutomationRuleService {
     private void notifyListenersAboutModification(AutomationRule rule) {
         this.eventService
                 .emit(rule, EventCategory.AUTOMATION_RULE_MODIFIED)
+                .publishOn(Schedulers.immediate())
                 .subscribe();
     }
 
@@ -90,12 +92,14 @@ public class AutomationRuleServiceImpl implements AutomationRuleService {
     private Mono<AutomationRule> deleteFromDatabase(AutomationRule rule) {
         return this.automationRuleRepository
                 .delete(rule)
-                .map(result -> rule);
+                .map(result -> rule)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private void notifyListenersAboutDeletion(AutomationRule rule) {
         this.eventService
                 .emit(rule, EventCategory.AUTOMATION_RULE_REMOVED)
+                .publishOn(Schedulers.immediate())
                 .subscribe();
     }
 }
