@@ -3,10 +3,12 @@ package com.goracz.metaservice.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.goracz.metaservice.entity.ChannelMetadata;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;

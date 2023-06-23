@@ -1,7 +1,7 @@
 import moment from 'moment';
 import { tz } from 'moment-timezone';
 import { NextPage } from 'next';
-import React, { useEffect } from 'react';
+import React, { memo, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { Col, Grid, Skeleton, useMantineColorScheme } from '@mantine/core';
@@ -19,6 +19,7 @@ import {
   useChannels,
   useCurrentChannel,
   useEGP,
+  useLaunchPoints,
   useSoftwareInformation,
   useSystemPower,
   useTvIp,
@@ -42,13 +43,11 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
   day: Date
 ) => {
   const dayChannelHistories = channelHistories.filter(
-    (channelHistory) =>
-      (moment.unix(channelHistory.start).isSame(day, 'day') && channelHistory.end) ||
-      moment.unix(channelHistory.end).isSame(day, 'day')
+    (channelHistory) => moment.unix(channelHistory.start).isSame(day, 'day') && channelHistory.end
   );
 
   const hours = new Array(24).fill(0);
-  const timezone = tz('Europe/London').format();
+  const timezone = tz.guess();
 
   dayChannelHistories.forEach((channelHistory) => {
     const startDate = tz(moment.unix(channelHistory.start), timezone);
@@ -56,68 +55,25 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
     const endDate = tz(moment.unix(channelHistory.end), timezone);
     const endDateHour = endDate.hour();
 
-    if (endDateHour < startDateHour) {
-      for (let i = 0; i <= endDateHour; i += 1) {
-        let duration: number;
+    for (let i = startDateHour; i <= endDateHour; i += 1) {
+      let duration: number;
 
-        if (startDateHour === i) {
-          duration = 60 - startDate.minute();
-        } else if (i < endDateHour) {
-          duration = 60 - startDate.hour(i).minute(0).minutes();
-        } else {
-          duration = endDate.minute();
-        }
-
-        hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
+      if (startDateHour === i) {
+        duration = startDate.minute();
+      } else if (endDateHour > startDateHour && i < endDateHour) {
+        duration = 60 - startDate.hour(i).minute(0).minutes();
+      } else {
+        duration = endDate.minute();
       }
-    } else {
-      for (let i = startDateHour; i <= endDateHour; i += 1) {
-        let duration: number;
 
-        if (startDateHour === i) {
-          duration = 60 - startDate.minute();
-        } else if (endDateHour > startDateHour && i < endDateHour) {
-          duration = 60 - startDate.hour(i).minute(0).minutes();
-        } else {
-          duration = endDate.minute();
-        }
-
-        hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
-      }
+      hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
     }
   });
-
-  const lastChannelHistoryEntry = channelHistories[channelHistories.length - 1];
-  if (lastChannelHistoryEntry && !lastChannelHistoryEntry.end) {
-    const startDate = tz(moment.unix(lastChannelHistoryEntry.start), timezone);
-    const startDateHour = startDate.hour();
-
-    const now = moment();
-    const nowHour = now.hour();
-
-    if (startDateHour === nowHour) {
-      hours[startDateHour] += now.diff(startDate, 'minutes');
-    } else {
-      for (let i = startDateHour; i <= nowHour; i += 1) {
-        let duration: number;
-
-        if (startDateHour === i) {
-          duration = 60 - startDate.minute();
-        } else if (i < nowHour) {
-          duration = 60 - startDate.hour(i).minute(0).minutes();
-        } else {
-          duration = now.minute();
-        }
-
-        hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
-      }
-    }
-  }
 
   return hours;
 };
 
-const DashboardPage: NextPage = () => {
+const DashboardPage: NextPage = memo(() => {
   const [calculatedTvUptime, setCalculatedTvUptime] = React.useState<string>('-');
   const [calculatedChannelHistory, setCalculatedChannelHistory] = React.useState<
     {
@@ -236,7 +192,7 @@ const DashboardPage: NextPage = () => {
     dispatch(appActions.setUptime(tvUptime));
   }
 
-  const handleToggleTvState = async () => {
+  const handleToggleTvState = useCallback(async () => {
     isLoadingTvStateToggle = true;
     const desiredState: 'on' | 'off' = ![
       PowerStateOption.ActiveStandby,
@@ -266,7 +222,7 @@ const DashboardPage: NextPage = () => {
         icon: <IconX size={16} />,
       });
     }
-  };
+  }, [powerState, showNotification]);
 
   const formatUptime = (textToFormat: string): string =>
     textToFormat === 'Invalid date' ? '-' : textToFormat.replace(':', 'h ').replace(':', 'm ');
@@ -340,37 +296,35 @@ const DashboardPage: NextPage = () => {
     setCalculatedHourlyChannelView(formattedResult);
   }, [channelHistory]);
 
-  const shouldNotUptimeChartBeUpdated = (): boolean =>
-    !calculatedHourlyChannelView || !channelHistory;
+  const shouldNotUptimeChartBeUpdated = useCallback(
+    (): boolean =>
+      (powerState && powerState.state !== PowerStateOption.Active) ||
+      !Array.isArray(calculatedHourlyChannelView),
+    [powerState, calculatedHourlyChannelView]
+  );
 
-  const isLatestChannelHistoryWithoutEndDate = (
-    today: Date,
-    latestChannelHistoryEntry: ChannelHistory
-  ): boolean =>
-    latestChannelHistoryEntry &&
-    typeof latestChannelHistoryEntry.end === 'undefined' &&
-    latestChannelHistoryEntry.start > today.setHours(0, 0, 0, 0);
-
-  const addAMinuteToLastHourInHourlyChannelView = (today: Date) => {
-    const currentHour = today.getHours();
+  const addAMinuteToLastHourInHourlyChannelView = useCallback(() => {
+    const currentHour = new Date().getHours();
     const newCalculatedHourlyChannelView = [...calculatedHourlyChannelView];
     newCalculatedHourlyChannelView[currentHour].minutes += 1;
 
     return newCalculatedHourlyChannelView;
-  };
+  }, [calculatedHourlyChannelView]);
 
-  setInterval(() => {
-    // If the TV is still turned on (the latest channel history entry does not have an end),
-    // add plus one minute to the current hour in calculated hourly channel view without recalculating the whole thing
-    if (shouldNotUptimeChartBeUpdated()) return;
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // If the TV is still turned on (the latest channel history entry does not have an end),
+      // add plus one minute to the current hour in calculated hourly channel view without recalculating the whole thing
+      if (shouldNotUptimeChartBeUpdated()) return;
 
-    const latestChannelHistoryEntry = channelHistory[channelHistory.length - 1];
-    const today = new Date();
-    if (isLatestChannelHistoryWithoutEndDate(today, latestChannelHistoryEntry)) {
-      const newCalculatedHourlyChannelView = addAMinuteToLastHourInHourlyChannelView(today);
+      const newCalculatedHourlyChannelView = addAMinuteToLastHourInHourlyChannelView();
       setCalculatedHourlyChannelView(newCalculatedHourlyChannelView);
-    }
-  }, ONE_MINUTE_MILLIS);
+    }, ONE_MINUTE_MILLIS);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const setVolume = async (direction: 'up' | 'down'): Promise<void> => {
     await fetch(`http://localhost:8080/api/v1/media/volume/${direction}`, {
@@ -378,31 +332,34 @@ const DashboardPage: NextPage = () => {
     });
   };
 
-  const setChannel = async (direction: 'next' | 'previous'): Promise<void> => {
+  const setChannel = useCallback(async (direction: 'next' | 'previous'): Promise<void> => {
     await fetch(`http://localhost:8080/api/v1/tv/channels/${direction}`, {
       method: 'POST',
     });
-  };
+  }, []);
 
-  const setTvUptime = (uptimeLog: UptimeLog) => {
-    if (uptimeLog.turnOffTime) {
-      setCalculatedTvUptime(
-        formatUptime(
-          moment(moment.unix(uptimeLog.turnOffTime).diff(moment.unix(uptimeLog.turnOnTime)))
-            .subtract(1, 'hour')
-            .format('H:m:')
-        )
-      );
-    } else {
-      setCalculatedTvUptime(
-        formatUptime(
-          moment(moment().diff(moment.unix(uptimeLog.turnOnTime)) - ONE_MINUTE_MILLIS * 60).format(
-            'H:m:'
+  const setTvUptime = useCallback(
+    (uptimeLog: UptimeLog) => {
+      if (uptimeLog.turnOffTime) {
+        setCalculatedTvUptime(
+          formatUptime(
+            moment(moment.unix(uptimeLog.turnOffTime).diff(moment.unix(uptimeLog.turnOnTime)))
+              .subtract(1, 'hour')
+              .format('H:m:')
           )
-        )
-      );
-    }
-  };
+        );
+      } else {
+        setCalculatedTvUptime(
+          formatUptime(
+            moment(
+              moment().diff(moment.unix(uptimeLog.turnOnTime)) - ONE_MINUTE_MILLIS * 60
+            ).format('H:m:')
+          )
+        );
+      }
+    },
+    [formatUptime]
+  );
 
   useEffect(() => {
     if (tvUptime) {
@@ -410,19 +367,22 @@ const DashboardPage: NextPage = () => {
     }
   }, [tvUptime]);
 
-  setInterval(() => {
-    if (tvUptime) {
-      setTvUptime(tvUptime);
-    }
-  }, ONE_MINUTE_MILLIS);
-
   const {
     data: epgData,
     isLoading: isLoadingEpgData,
     isError: isEpgDataError,
   } = useEGP(softwareInfo ? (softwareInfo as any).country.toLowerCase() : 'hu');
   if (!isLoadingEpgData && !isEpgDataError) {
-    dispatch(appActions.setEgpData(epgData));
+    dispatch(appActions.setEgpData(epgData.tv));
+  }
+
+  const {
+    data: launchPoints,
+    isLoading: isLoadingLaunchPoints,
+    isError: isLaunchPointsError,
+  } = useLaunchPoints();
+  if (!isLoadingLaunchPoints && !isLaunchPointsError) {
+    dispatch(appActions.setLaunchPoints(launchPoints));
   }
 
   return (
@@ -469,7 +429,9 @@ const DashboardPage: NextPage = () => {
             </Col>
 
             <Col lg={12}>
-              <QuickAppLauncher />
+              <QuickAppLauncher
+                launchPoints={!isLoadingLaunchPoints && launchPoints.launchPoints}
+              />
             </Col>
             <Col lg={12}>
               <UptimeChart
@@ -483,6 +445,6 @@ const DashboardPage: NextPage = () => {
       </Grid>
     </ApplicationLayout>
   );
-};
+});
 
 export default DashboardPage;

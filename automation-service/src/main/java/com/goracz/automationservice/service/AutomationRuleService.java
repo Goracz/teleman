@@ -2,6 +2,7 @@ package com.goracz.automationservice.service;
 
 import com.goracz.automationservice.entity.AutomationRule;
 import com.goracz.automationservice.model.request.AddAutomationRuleRequest;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

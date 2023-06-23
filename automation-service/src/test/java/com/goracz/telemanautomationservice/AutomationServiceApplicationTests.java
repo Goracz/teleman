@@ -1,7 +1,8 @@
 package com.goracz.telemanautomationservice;
 
-import com.mongodb.assertions.Assertions;import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.mongodb.assertions.Assertions;
+
+import org.junit.jupiter.api.Test;
 
 // @SpringBootTest
 class AutomationServiceApplicationTests {

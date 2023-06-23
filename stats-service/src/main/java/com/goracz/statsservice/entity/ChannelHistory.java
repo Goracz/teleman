@@ -5,12 +5,15 @@ import com.goracz.statsservice.model.WebOSApplication;
 import com.goracz.statsservice.model.response.ChannelMetadataResponse;
 import com.goracz.statsservice.model.response.CurrentTvChannelResponse;
 import com.goracz.statsservice.model.response.ForegroundAppChangeResponse;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import reactor.core.publisher.Mono;
 
 import java.time.ZoneId;
@@ -90,13 +93,14 @@ public class ChannelHistory {
                 .build();
     }
 
-    public static ChannelHistory fromCurrentChannelAndMetadata(CurrentTvChannelResponse channelHistory,
+    public static ChannelHistory fromCurrentChannelAndMetadata(CurrentTvChannelResponse currentChannel,
                                                                ChannelMetadataResponse metadata) {
         return ChannelHistory
                 .builder()
-                .channelId(channelHistory.getChannelId())
-                .channelName(channelHistory.getChannelName())
+                .channelId(currentChannel.getChannelId())
+                .channelName(currentChannel.getChannelName())
                 .channelCategory(metadata.getChannelCategory())
+                .channelLogoUrl(metadata.getChannelLogoUrl())
                 .start(ZonedDateTime.now(ZoneId.of("UTC")))
                 .build();
     }

@@ -2,14 +2,17 @@ package com.goracz.controlservice.controller.system;
 
 import com.goracz.controlservice.model.response.PowerStateResponse;
 import com.goracz.controlservice.service.SystemControlService;
+
 import io.swagger.v3.oas.annotations.Operation;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 @RestController

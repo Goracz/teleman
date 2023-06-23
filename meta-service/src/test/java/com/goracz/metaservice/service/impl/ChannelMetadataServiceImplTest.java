@@ -4,16 +4,14 @@ import com.goracz.metaservice.component.RedisCacheProvider;
 import com.goracz.metaservice.entity.ChannelCategory;
 import com.goracz.metaservice.entity.ChannelMetadata;
 import com.goracz.metaservice.repository.ReactiveSortingChannelMetadataRepository;
-import com.goracz.metaservice.service.ChannelMetadataService;
+
 import org.junit.jupiter.api.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.reactivestreams.Publisher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import reactor.core.publisher.Flux;
+
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

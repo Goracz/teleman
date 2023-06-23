@@ -2,6 +2,7 @@ package com.goracz.statsservice.model.response;
 
 import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.entity.UptimeLog;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +16,8 @@ public class EventMessage<T> {
     private EventCategory category;
     private T payload;
 
-    public static EventMessage<PowerStateResponse> fromPowerStateResponse(PowerStateResponse powerStateResponse) {
+    public static EventMessage<PowerStateResponse> fromPowerStateResponse(
+            PowerStateResponse powerStateResponse) {
         return EventMessage.<PowerStateResponse>builder()
                 .category(EventCategory.POWER_STATE_CHANGED)
                 .payload(powerStateResponse)
@@ -29,10 +31,19 @@ public class EventMessage<T> {
                 .build();
     }
 
-    public static EventMessage<ChannelHistory> fromChannelHistoryChange(ChannelHistory channelHistory) {
+    public static EventMessage<ChannelHistory> fromChannelHistoryChange(
+            ChannelHistory channelHistory) {
         return EventMessage.<ChannelHistory>builder()
                 .category(EventCategory.CHANNEL_HISTORY_CHANGED)
                 .payload(channelHistory)
+                .build();
+    }
+
+    public static EventMessage<ForegroundAppChangeResponse> fromForegroundAppChange(
+            ForegroundAppChangeResponse foregroundApp) {
+        return EventMessage.<ForegroundAppChangeResponse>builder()
+                .category(EventCategory.FOREGROUND_APP_CHANGED)
+                .payload(foregroundApp)
                 .build();
     }
 }

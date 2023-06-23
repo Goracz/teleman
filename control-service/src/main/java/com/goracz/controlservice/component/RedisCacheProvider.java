@@ -1,13 +1,13 @@
 package com.goracz.controlservice.component;
 
 import com.goracz.controlservice.model.response.*;
+
 import lombok.Getter;
+
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.*;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,8 +22,9 @@ public class RedisCacheProvider {
     private final ReactiveValueOperations<String, ApplicationListResponse> applicationListCache;
     private final ReactiveValueOperations<String, LaunchPointsResponse> launchPointsCache;
     private final ReactiveValueOperations<String, ForegroundAppChangeResponse> foregroundAppCache;
+    private final ReactiveValueOperations<String, byte[]> launchPointImageCache;
 
-    public RedisCacheProvider(ReactiveRedisConnectionFactory factory) {
+    public RedisCacheProvider(final ReactiveRedisConnectionFactory factory) {
         this.volumeResponseCache = this.reactiveVolumeResponseRedisTemplate(factory).opsForValue();
         this.tvChannelListResponseCache = this.reactiveTvChannelListResponseRedisTemplate(factory).opsForValue();
         this.currentTvChannelCache = this.reactiveCurrentTvChannelResponseRedisTemplate(factory).opsForValue();
@@ -33,10 +34,11 @@ public class RedisCacheProvider {
         this.applicationListCache = this.reactiveApplicationListRedisTemplate(factory).opsForValue();
         this.launchPointsCache = this.reactiveLaunchPointsRedisTemplate(factory).opsForValue();
         this.foregroundAppCache = this.reactiveForegroundAppRedisTemplate(factory).opsForValue();
+        this.launchPointImageCache = this.reactiveLaunchPointImageCache(factory).opsForValue();
     }
 
     private ReactiveRedisTemplate<String, GetVolumeResponse> reactiveVolumeResponseRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<GetVolumeResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 GetVolumeResponse.class);
@@ -48,7 +50,7 @@ public class RedisCacheProvider {
     }
     
     private ReactiveRedisTemplate<String, TvChannelListResponse> reactiveTvChannelListResponseRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<TvChannelListResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 TvChannelListResponse.class);
@@ -60,7 +62,7 @@ public class RedisCacheProvider {
     }
 
     private ReactiveRedisTemplate<String, CurrentTvChannelResponse> reactiveCurrentTvChannelResponseRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<CurrentTvChannelResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 CurrentTvChannelResponse.class);
@@ -73,7 +75,7 @@ public class RedisCacheProvider {
     }
 
     private ReactiveRedisTemplate<String, SoftwareInformationResponse> reactiveSoftwareInformationResponseRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<SoftwareInformationResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 SoftwareInformationResponse.class);
@@ -86,7 +88,7 @@ public class RedisCacheProvider {
     }
 
     private ReactiveRedisTemplate<String, ServiceDescription> reactiveServiceDescriptionRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<ServiceDescription> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 ServiceDescription.class);
@@ -99,7 +101,7 @@ public class RedisCacheProvider {
     }
 
     private ReactiveRedisTemplate<String, PowerStateResponse> reactivePowerStateResponseRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<PowerStateResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 PowerStateResponse.class);
@@ -112,7 +114,7 @@ public class RedisCacheProvider {
     }
 
     private ReactiveRedisTemplate<String, ApplicationListResponse> reactiveApplicationListRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<ApplicationListResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 ApplicationListResponse.class);
@@ -125,7 +127,7 @@ public class RedisCacheProvider {
     }
 
     private ReactiveRedisTemplate<String, LaunchPointsResponse> reactiveLaunchPointsRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<LaunchPointsResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 LaunchPointsResponse.class);
@@ -138,13 +140,35 @@ public class RedisCacheProvider {
     }
 
     private ReactiveRedisTemplate<String, ForegroundAppChangeResponse> reactiveForegroundAppRedisTemplate(
-            ReactiveRedisConnectionFactory factory) {
+            final ReactiveRedisConnectionFactory factory) {
         final StringRedisSerializer keySerializer = new StringRedisSerializer();
         final Jackson2JsonRedisSerializer<ForegroundAppChangeResponse> valueSerializer = new Jackson2JsonRedisSerializer<>(
                 ForegroundAppChangeResponse.class);
         final RedisSerializationContext.RedisSerializationContextBuilder<String, ForegroundAppChangeResponse> builder =
                 RedisSerializationContext.newSerializationContext(keySerializer);
         final RedisSerializationContext<String, ForegroundAppChangeResponse> context = builder.value(valueSerializer)
+                .build();
+
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
+
+    private ReactiveRedisTemplate<String, byte[]> reactiveLaunchPointImageCache(
+            final ReactiveRedisConnectionFactory factory) {
+        final StringRedisSerializer keySerializer = new StringRedisSerializer();
+        final RedisSerializer<byte[]> valueSerializer = new RedisSerializer<>() {
+            @Override
+            public byte[] serialize(final byte[] bytes) throws SerializationException {
+                return bytes;
+            }
+
+            @Override
+            public byte[] deserialize(final byte[] bytes) throws SerializationException {
+                return bytes;
+            }
+        };
+        final RedisSerializationContext.RedisSerializationContextBuilder<String, byte[]> builder =
+                RedisSerializationContext.newSerializationContext(keySerializer);
+        final RedisSerializationContext<String, byte[]> context = builder.value(valueSerializer)
                 .build();
 
         return new ReactiveRedisTemplate<>(factory, context);

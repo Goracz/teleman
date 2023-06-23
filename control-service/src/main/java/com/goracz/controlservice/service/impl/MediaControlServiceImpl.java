@@ -9,13 +9,17 @@ import com.goracz.controlservice.model.EventMessage;
 import com.goracz.controlservice.model.response.GetVolumeResponse;
 import com.goracz.controlservice.service.EventService;
 import com.goracz.controlservice.service.MediaControlService;
+
 import lombok.Getter;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;import reactor.core.scheduler.Schedulers;
+import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 public class MediaControlServiceImpl implements MediaControlService {
@@ -29,10 +33,10 @@ public class MediaControlServiceImpl implements MediaControlService {
     private final Sinks.Many<GetVolumeResponse> volumeStream = Sinks.many().multicast().onBackpressureBuffer();
 
     public MediaControlServiceImpl(
-            EventService<EventMessage<GetVolumeResponse>> eventService,
-            WebClient webClient,
-            RedisCacheProvider cacheProvider,
-            ObjectMapper objectMapper) {
+            final EventService<EventMessage<GetVolumeResponse>> eventService,
+            final WebClient webClient,
+            final RedisCacheProvider cacheProvider,
+            final ObjectMapper objectMapper) {
         this.eventService = eventService;
         this.webClient = webClient;
         this.cacheProvider = cacheProvider;
@@ -58,7 +62,7 @@ public class MediaControlServiceImpl implements MediaControlService {
                 .bodyToMono(GetVolumeResponse.class);
     }
 
-    private Mono<GetVolumeResponse> writeVolumeToCache(GetVolumeResponse volume) {
+    private Mono<GetVolumeResponse> writeVolumeToCache(final GetVolumeResponse volume) {
         return this.cacheProvider
                 .getVolumeResponseCache()
                 .set(MEDIA_VOLUME_CACHE_KEY, volume)
@@ -87,7 +91,7 @@ public class MediaControlServiceImpl implements MediaControlService {
     }
 
     @Override
-    public Mono<Object> setVolume(SetVolumeDto setVolumeDto) {
+    public Mono<Object> setVolume(final SetVolumeDto setVolumeDto) {
         return this.webClient
                 .post()
                 .uri("/media/volume")
@@ -98,7 +102,7 @@ public class MediaControlServiceImpl implements MediaControlService {
     }
 
     @KafkaListener(topics = "volume-change")
-    public void onVolumeChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
+    public void onVolumeChange(final ConsumerRecord<String, String> message) throws KafkaConsumeFailException {
         try {
             this.handleVolumeChange(message).subscribe();
         } catch (Exception exception) {
@@ -106,18 +110,18 @@ public class MediaControlServiceImpl implements MediaControlService {
         }
     }
 
-    private Mono<Sinks.EmitResult> handleVolumeChange(ConsumerRecord<String, String> message) {
+    private Mono<Sinks.EmitResult> handleVolumeChange(final ConsumerRecord<String, String> message) {
         return this.getVolumeFromMqMessage(message)
                 .flatMap(this::writeVolumeToCache)
                 .flatMap(this::notifyListenersAboutVolumeChange);
     }
 
-    private Mono<GetVolumeResponse> getVolumeFromMqMessage(ConsumerRecord<String, String> message) {
+    private Mono<GetVolumeResponse> getVolumeFromMqMessage(final ConsumerRecord<String, String> message) {
         return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), GetVolumeResponse.class))
                 .publishOn(Schedulers.boundedElastic());
     }
 
-    private Mono<Sinks.EmitResult> notifyListenersAboutVolumeChange(GetVolumeResponse volume) {
+    private Mono<Sinks.EmitResult> notifyListenersAboutVolumeChange(final GetVolumeResponse volume) {
         return Mono.fromCallable(() -> new EventMessage<>(EventCategory.VOLUME_CHANGED, volume))
                 .flatMap(eventMessage -> this.eventService.emit(eventMessage, eventMessage.getCategory()))
                 .publishOn(Schedulers.immediate());

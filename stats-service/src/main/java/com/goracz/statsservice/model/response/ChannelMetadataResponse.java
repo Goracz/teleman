@@ -1,6 +1,7 @@
 package com.goracz.statsservice.model.response;
 
 import com.goracz.statsservice.entity.ChannelCategory;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

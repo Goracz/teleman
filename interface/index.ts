@@ -31,7 +31,11 @@ require("./tracing");
 // Kafka Stuff
 const kafka: Kafka = new Kafka({
   clientId: Meta.serviceId,
-  brokers: [process.env.KAFKA_BOOTSTRAP_SERVERS as string] || config.brokers,
+  brokers:
+    process.env.KAFKA_BOOTSTRAP_SERVERS &&
+    Array.isArray(process.env.KAFKA_BOOTSTRAP_SERVERS)
+      ? process.env.KAFKA_BOOTSTRAP_SERVERS
+      : config.brokers,
   logCreator: kafkajsLogCreator,
 });
 const producer: Producer = kafka.producer();
@@ -103,6 +107,14 @@ const onForegroundAppChange = async (_: any, res: any) => {
   });
 };
 
+const onLaunchPointChange = async (_: any, res: any) => {
+  logger.debug(`Launch points changed to: ${JSON.stringify(res)}.`);
+  await producer.send({
+    topic: BrokerTopics.LAUNCH_POINT_CHANGE,
+    messages: [{ value: JSON.stringify(res) }],
+  });
+};
+
 connection.on("prompt", () => {
   console.log("prompt requested...");
 });
@@ -132,13 +144,20 @@ connection.on("connect", () => {
     onForegroundAppChange
   );
   logger.debug(`Listening to foreground application changes...`);
+
+  // For testing purposes
+  connection.subscribe(
+    WebOSStreams.LAUNCH_POINT_CHANGE_STREAM,
+    onLaunchPointChange
+  );
+  logger.debug("Listening to ...");
 });
 
 // ExpressJS Stuff
 dotenv.config();
 
 const app: Express = express();
-const port: number = 5000 || process.env.PORT;
+const port: string = process.env.PORT || "5000";
 
 // Sentry initialization
 if (EnvironmentLocal.sentryDsn) {
@@ -147,8 +166,16 @@ if (EnvironmentLocal.sentryDsn) {
     integrations: [
       new Sentry.Integrations.Http({ tracing: false }),
       new ProfilingIntegration(),
+      // enable Express.js middleware tracing
+      new Sentry.Integrations.Express({
+        // to trace all requests to the default router
+        app,
+        // alternatively, you can specify the routes you want to trace:
+        // router: someRouter,
+      }),
     ],
     profilesSampleRate: 1.0,
+    tracesSampleRate: 1.0,
   });
   logger.info("Sentry initialized.");
 }
@@ -160,7 +187,11 @@ const corsOptions = {
 // Middleware
 app.use(bodyParser.json());
 app.use(cors(corsOptions));
-app.use(Sentry.Handlers.requestHandler());
+
+if (EnvironmentLocal.sentryDsn) {
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
 
 // Metrics
 app.use("/metrics", metrics);

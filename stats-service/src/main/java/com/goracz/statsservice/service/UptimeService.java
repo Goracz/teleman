@@ -2,9 +2,14 @@ package com.goracz.statsservice.service;
 
 import com.goracz.statsservice.entity.UptimeLog;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+
 import reactor.core.publisher.Mono;
 
+/**
+ * Uptime Service specification
+ */
 public interface UptimeService {
     /**
      * Gets the latest uptime log entry.

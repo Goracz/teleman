@@ -1,15 +1,16 @@
-import { GetServerSidePropsContext } from 'next';
-import React, { useState } from 'react';
-import { AppProps } from 'next/app';
-import { getCookie, setCookie } from 'cookies-next';
-import Head from 'next/head';
-import { ColorScheme, ColorSchemeProvider, Global, MantineProvider } from '@mantine/core';
-import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
-import { NavigationProgress } from '@mantine/nprogress';
-import { NotificationsProvider } from '@mantine/notifications';
-import { Provider } from 'react-redux';
 import '../styles.css';
 
+import { getCookie, setCookie } from 'cookies-next';
+import { GetServerSidePropsContext } from 'next';
+import { AppProps } from 'next/app';
+import Head from 'next/head';
+import React, { useState } from 'react';
+import { Provider } from 'react-redux';
+
+import { ColorScheme, ColorSchemeProvider, Global, MantineProvider } from '@mantine/core';
+import { NotificationsProvider } from '@mantine/notifications';
+import { NavigationProgress } from '@mantine/nprogress';
+import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
 import {
   IconArrowLeft,
   IconArrowRight,
@@ -19,8 +20,9 @@ import {
   IconVolume2,
   IconVolumeOff,
 } from '@tabler/icons';
-import store from '../store';
+
 import { EventsProvider } from '../components/EventsProvider';
+import store from '../store';
 
 const actions: SpotlightAction[] = [
   {
@@ -61,7 +63,7 @@ const actions: SpotlightAction[] = [
   },
 ];
 
-export default function App(props: AppProps & { colorScheme: ColorScheme }) {
+export const App = (props: AppProps & { colorScheme: ColorScheme }) => {
   const { Component, pageProps } = props;
   const [colorScheme, setColorScheme] = useState<ColorScheme>(props.colorScheme);
 
@@ -110,7 +112,7 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
                   name="viewport"
                   content="minimum-scale=1, initial-scale=1, width=device-width"
                 />
-                <link rel="shortcut icon" href="/favicon.svg" />
+                <link rel="shortcut icon" href="/favicon.jpeg" />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" />
                 <link
@@ -136,8 +138,10 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
       </Provider>
     </>
   );
-}
+};
 
 App.getInitialProps = ({ ctx }: { ctx: GetServerSidePropsContext }) => ({
   colorScheme: getCookie('mantine-color-scheme', ctx) || 'light',
 });
+
+export default App;

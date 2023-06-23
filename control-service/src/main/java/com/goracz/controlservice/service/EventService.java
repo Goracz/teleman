@@ -1,6 +1,7 @@
 package com.goracz.controlservice.service;
 
 import com.goracz.controlservice.model.EventCategory;
+
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 

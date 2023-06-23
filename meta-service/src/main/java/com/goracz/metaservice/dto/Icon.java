@@ -1,14 +1,14 @@
 package com.goracz.metaservice.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
-@Builder
+@NoArgsConstructor
 public class Icon {
+    @JsonAlias("src")
     private String src;
 }

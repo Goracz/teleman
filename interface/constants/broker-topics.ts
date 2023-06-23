@@ -3,4 +3,5 @@ export const BrokerTopics = {
   VOLUME_CHANGE: "volume-change",
   POWER_STATE_CHANGE: "power-state-change",
   FOREGROUND_APP_CHANGE: "foreground-app-change",
+  LAUNCH_POINT_CHANGE: "launch-point-change",
 };

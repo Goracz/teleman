@@ -1,15 +1,18 @@
 package com.goracz.metaservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.domain.Persistable;
+
 import reactor.core.publisher.Mono;
 
 import java.io.Serializable;
@@ -46,6 +49,17 @@ public class ChannelMetadata implements Serializable, Persistable<String> {
     @LastModifiedDate
     private ZonedDateTime updatedAt;
 
+    /**
+     * Creates a new channel metadata object with a given channel name and category as other
+     */
+    public static Mono<ChannelMetadata> withChannelName(String channelName) {
+        return Mono.just(ChannelMetadata
+                .builder()
+                .channelName(channelName)
+                .channelCategory(ChannelCategory.OTHER)
+                .build());
+    }
+
     @Override
     @JsonIgnore
     public boolean isNew() {
@@ -78,16 +92,5 @@ public class ChannelMetadata implements Serializable, Persistable<String> {
             result.add(this.channelName + " TV");
         }
         return result;
-    }
-
-    /**
-     * Creates a new channel metadata object with a given channel name and category as other
-     */
-    public static Mono<ChannelMetadata> withChannelName(String channelName) {
-        return Mono.just(ChannelMetadata
-                .builder()
-                .channelName(channelName)
-                .channelCategory(ChannelCategory.OTHER)
-                .build());
     }
 }

@@ -1,6 +1,9 @@
 package com.goracz.controlservice.model.request;
 
-import com.goracz.controlservice.model.WebOSApplication;
+
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,5 +14,6 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class LaunchAppRequest {
-    private WebOSApplication application;
+    @JsonProperty("id")
+    private String applicationId;
 }

@@ -3,10 +3,14 @@ package com.goracz.automationservice.controller;
 import com.goracz.automationservice.entity.AutomationRule;
 import com.goracz.automationservice.model.request.AddAutomationRuleRequest;
 import com.goracz.automationservice.service.AutomationRuleService;
+
 import io.swagger.v3.oas.annotations.Operation;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

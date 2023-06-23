@@ -17,8 +17,10 @@ import {
   useEpg,
   useProgram,
 } from 'planby';
-import React, { MouseEventHandler, useMemo } from 'react';
+import jaroWinkler from 'jaro-winkler';
+import React, { memo, MouseEventHandler, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { useViewportSize } from '@mantine/hooks';
 import ApplicationLayout from '../../layouts/Application';
 import { AppSliceState } from '../../store/app-slice';
 
@@ -27,51 +29,86 @@ interface ChannelItemProps {
   channel: Channel;
 }
 
-const ProgramItem = ({ onClick, program, ...rest }: ProgramItem & { onClick: Function }) => {
-  const { styles, formatTime, isLive, isMinWidth } = useProgram({ program, ...rest });
+const parseDateString = (dateString: string): Date => {
+  const year = parseInt(dateString.slice(0, 4), 10);
+  const month = parseInt(dateString.slice(4, 6), 10) - 1;
+  const day = parseInt(dateString.slice(6, 8), 10);
+  const hours = parseInt(dateString.slice(8, 10), 10);
+  const minutes = parseInt(dateString.slice(10, 12), 10);
+  const seconds = parseInt(dateString.slice(12, 14), 10);
+  const timezoneOffset = dateString.slice(15);
 
-  const { data } = program;
-  const { title, since, till } = data;
+  const date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
 
-  const sinceTime = formatTime(since);
-  const tillTime = formatTime(till);
+  // Adjust the date based on the provided timezone offset
+  const offsetSign = timezoneOffset[0];
+  const offsetHours = parseInt(timezoneOffset.slice(1, 3), 10);
+  const offsetMinutes = parseInt(timezoneOffset.slice(3, 5), 10);
+  const totalOffsetMinutes = (offsetSign === '+' ? 1 : -1) * (offsetHours * 60 + offsetMinutes);
 
-  return (
-      <Tooltip label={<><Text>{title}</Text><Text>{sinceTime} - {tillTime}</Text></>}>
-        <ProgramBox
-          onClick={onClick as MouseEventHandler}
-          width={styles.width}
-          style={styles.position}
-        >
-          <ProgramContent width={styles.width} isLive={isLive}>
-            <ProgramFlex>
-              {isLive && isMinWidth && <></>}
-              <ProgramStack>
-                <ProgramTitle>{title}</ProgramTitle>
-                <ProgramText>
-                  {sinceTime} - {tillTime}
-                </ProgramText>
-              </ProgramStack>
-            </ProgramFlex>
-          </ProgramContent>
-        </ProgramBox>
-      </Tooltip>
-  );
+  date.setMinutes(date.getMinutes() - totalOffsetMinutes);
+
+  return date;
 };
 
-const ChannelItem = ({ channel, onClick }: ChannelItemProps) => {
-  const { position, logo } = channel;
+const ProgramItem = memo(({ onClick, program, ...rest }: ProgramItem & { onClick: Function }) => {
+  const { styles, formatTime, isLive, isMinWidth } = useProgram({ program, ...rest });
+
+  const { data } = useMemo(() => program, [program]);
+  const { title, since, till } = useMemo(() => data, [data]);
+
+  const sinceTime = useMemo(() => formatTime(since), [since]);
+  const tillTime = useMemo(() => formatTime(till), [till]);
+
   return (
-      <Tooltip label={channel.name}>
+    <Tooltip
+      label={
+        <>
+          <Text>{title}</Text>
+          <Text>
+            {sinceTime} - {tillTime}
+          </Text>
+        </>
+      }
+    >
+      <ProgramBox
+        onClick={onClick as MouseEventHandler}
+        width={styles.width}
+        style={styles.position}
+      >
+        <ProgramContent width={styles.width} isLive={isLive}>
+          <ProgramFlex>
+            {isLive && isMinWidth && <></>}
+            <ProgramStack>
+              <ProgramTitle>{title}</ProgramTitle>
+              <ProgramText>
+                {sinceTime} - {tillTime}
+              </ProgramText>
+            </ProgramStack>
+          </ProgramFlex>
+        </ProgramContent>
+      </ProgramBox>
+    </Tooltip>
+  );
+});
+
+const ChannelItem = memo(({ channel, onClick }: ChannelItemProps) => {
+  const { position, logo } = useMemo(() => channel, [channel]);
+  return (
+    <Tooltip label={channel.displayName}>
       <ChannelBox onClick={onClick} {...position}>
         {logo && (
           <ChannelLogo onClick={() => console.log('channel', channel)} src={logo} alt="Logo" />
         )}
-        {!logo && <Text p="xl"><Text>{channel.name}</Text></Text>}
+        {!logo && (
+          <Text p="xl">
+            <Text>{channel.displayName}</Text>
+          </Text>
+        )}
       </ChannelBox>
-      </Tooltip>
+    </Tooltip>
   );
-};
+});
 
 const darkTheme: Theme = {
   primary: {
@@ -159,150 +196,99 @@ const lightTheme: Theme = {
   },
 };
 
-// const findEPGData = (channel: any, epgData: { channels: any[]; programs: any[] }): any => {
-//   const epgChannelMeta = epgData.channels.find(
-//       (epgChannel: any) => epgChannel.name
-//           .toLowerCase()
-//           .slice(0, 4) === channel.channelName.toLowerCase().slice(0, 4)
-//   );
-//   return {
-//     // program: epgProgramMeta ? formatProgram(epgChannelMeta) : null,
-//     ...channel,
-//     ...epgChannelMeta,
-//   };
-// };
+const normalizeChannelName = (name: string): string =>
+  name
+    .toLowerCase()
+    .replace(/[öóő]/g, 'o')
+    .replace(/[üúű]/g, 'u')
+    .replace(/é/g, 'e')
+    .replace(/á/g, 'a')
+    .replace(/í/g, 'i');
 
-const ChannelsPage: NextPage = () => {
+const setChannel = async (channelId: string) => {
+  await fetch('http://localhost:8080/api/v1/tv/channels', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      channelId,
+    }),
+  });
+};
+
+const ChannelsPage: NextPage = memo(() => {
   const channelList = useSelector((state: { app: AppSliceState }) => state.app.channelList);
   const egp = useSelector((state: { app: AppSliceState }) => state.app.egpData);
-  // const softwareInfo = useSelector((state: { app: AppSliceState }) => state.app.softwareInfo);
-
-  // const dispatch = useDispatch();
-
-  // const {
-  //   data: epgData,
-  //   isLoading: isLoadingEpgData,
-  //   isError: isEpgDataError,
-  // } = useEGP(softwareInfo ? (softwareInfo as any).country.toLowerCase() : 'hu');
-  // if (!isLoadingEpgData && !isEpgDataError) {
-  //   dispatch(appActions.setEgpData(epgData));
-  // }
 
   const { colorScheme } = useMantineColorScheme();
+  const { width, height } = useViewportSize();
 
   const [programModalOpen, setProgramModalOpen] = React.useState(false);
-  const [selectedProgram, setSelectedProgram] = React.useState<ProgramItem | null>(null);
+  const [selectedProgram, setSelectedProgram] = React.useState<{
+    data: ProgramItem & { title: string; description: string };
+  } | null>(null);
 
-  // const egpData = egp.programs.map((program: any) => ({
-  //   ...program,
-  //   channelUuid: egp.channels.find((channel: any) => channel.id === program.channel).channelUuid,
-  //   since: new Date(program.start),
-  //   till: new Date(program.stop),
-  //   title: program.titles[0].value,
-  //   description: program.descriptions.length > 0 ? program.descriptions[0].value : '',
-  // }));
-  // console.log(egpData);
-  //
-  // // TODO! It is VERY important to improve this filtering logic as soon as possible.
-  // const channelsData = useMemo(
-  //   () =>
-  //     (channelList as any).channelList
-  //       .map((channel: any) => findEPGData(channel, egp))
-  //       .sort((a: any, b: any) => b.logo && !a.logo)
-  //       .sort((a: any, b: any) => a.name > b.name),
-  //   []
-  // );
-  // console.log(channelsData);
+  const minSimilarity = 0.7;
 
-  // const egpData = channelsData
-  //   .filter((channel: any) => channel.program)
-  //   .map((channel: any) => channel.program);
-  //
-  // console.log(channelsData);
-  const channelsData = useMemo(
-    () =>
-      egp.channels
-        .map((channel: any) => ({
-          ...channel,
-          uuid: channel.id,
-        }))
-        .filter((channel: any) =>
-          (channelList as any).channelList.find((existingChannel: any) => {
-            if (
-              channel.name.toLowerCase().startsWith(
-                existingChannel.channelName
-                  .toLowerCase()
-                  .replace('ö', 'o')
-                  .replace('ü', 'u')
-                  .replace('ó', 'o')
-                  .replace('ő', 'o')
-                  .replace('ú', 'u')
-                  .replace('é', 'e')
-                  .replace('á', 'a')
-                  .replace('ű', 'u')
-                  .replace('í', 'i')
-                  .slice(0, Math.max(existingChannel.channelName.length - 1, 1))
-              ) ||
-              existingChannel.channelName
-                .toLowerCase()
-                .replace('ö', 'o')
-                .replace('ü', 'u')
-                .replace('ó', 'o')
-                .replace('ő', 'o')
-                .replace('ú', 'u')
-                .replace('é', 'e')
-                .replace('á', 'a')
-                .replace('ű', 'u')
-                .replace('í', 'i')
-                .startsWith(
-                  channel.name.toLowerCase().slice(0, Math.max(channel.name.length - 1, 1))
-                )
-            ) {
-              return true;
+  const channelsData = useMemo(() => {
+    const addedChannelNames = new Set();
+
+    const filteredChannels = egp.channels
+      .map((channel: any) => ({
+        ...channel,
+        uuid: channel.id,
+      }))
+      .filter((channel: any) => {
+        const normalizedEgpChannelName = normalizeChannelName(channel.displayName);
+
+        return channelList.channelList.some((existingChannel: any) => {
+          const normalizedExistingChannelName = normalizeChannelName(existingChannel.channelName);
+          const similarity = jaroWinkler(normalizedEgpChannelName, normalizedExistingChannelName);
+          const isSimilar = similarity >= minSimilarity;
+          const isTvCase =
+            normalizedEgpChannelName.replace(' TV', '') === normalizedExistingChannelName ||
+            normalizedEgpChannelName === normalizedExistingChannelName.replace(' TV', '');
+
+          if ((isSimilar || isTvCase) && !addedChannelNames.has(normalizedEgpChannelName)) {
+            if (isTvCase && normalizedEgpChannelName.includes('TV')) {
+              return false;
             }
-            console.log(
-              `Did not match: ${channel.name.toLowerCase()} and ${existingChannel.channelName.toLowerCase()}`
-            );
-            return false;
-          })
-        ),
-    []
-  );
-  // const egpData = channelsData
-  //   .filter((channel: any) => channel.program)
-  //   .map((channel: any) => channel.program);
-  // console.log(egpData);
-  // console.log(channelsData);
+            addedChannelNames.add(normalizedEgpChannelName);
+            return true;
+          }
 
-  const egpData = egp.programs.map((program: any) => ({
-    ...program,
-    channelUuid: egp.channels.find((channel: any) => channel.id === program.channel).id,
-    since: new Date(program.start),
-    till: new Date(program.stop),
-    title: program.titles[0].value,
-    description: program.descriptions.length > 0 ? program.descriptions[0].value : '',
-  }));
+          return false;
+        });
+      });
+
+    return filteredChannels.sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
+  }, [channelList]);
+
+  const egpData = useMemo(
+    () =>
+      egp.programmes.map((program: any) => ({
+        ...program,
+        channelUuid: egp.channels.find((channel: any) => channel.id === program.channel).id,
+        since: parseDateString(program.start),
+        till: parseDateString(program.stop),
+        title: program.title.text,
+        description: program.description ? program.description.text : '',
+      })),
+    [egp]
+  );
 
   const { getEpgProps, getLayoutProps } = useEpg({
     theme: colorScheme === 'dark' ? darkTheme : lightTheme,
     epg: egpData,
     channels: channelsData,
-    startDate: new Date(new Date().setHours(0, 0, 0, 0)), // or 2022-02-02T00:00:00
+    width: width * 0.87,
+    height: height * 0.9,
   });
 
-  const setChannel = async (channelId: string) => {
-    await fetch('http://localhost:8080/api/v1/tv/channels', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        channelId,
-      }),
-    });
-  };
-
-  const handleProgramClick = (program: ProgramItem | null) => {
+  const handleProgramClick = (
+    program: { data: ProgramItem & { title: string; description: string } } | null
+  ) => {
     console.log(program);
     setSelectedProgram(program);
     setProgramModalOpen(true);
@@ -310,19 +296,6 @@ const ChannelsPage: NextPage = () => {
 
   return (
     <ApplicationLayout>
-      {/* <MultiSelect
-        placeholder="Filter Channels"
-        itemComponent={SelectItem}
-        data={channelsData}
-        searchable
-        nothingFound="No such channel"
-        maxDropdownHeight={400}
-        filter={(value, selected, item) =>
-          !selected &&
-          (item.name.toLowerCase().includes(value.toLowerCase().trim()) ||
-            item.description.toLowerCase().includes(value.toLowerCase().trim()))
-        }
-      /> */}
       <Modal
         opened={programModalOpen}
         onClose={() => setProgramModalOpen(false)}
@@ -330,37 +303,38 @@ const ChannelsPage: NextPage = () => {
       >
         {selectedProgram && (
           <>
-            <Text>{(selectedProgram as any).data.title}</Text>
-            <Text>{selectedProgram as any}.data.description</Text>
+            <Text pb="sm" weight={600}>
+              {selectedProgram.data.title}
+            </Text>
+            <Text>{selectedProgram.data.description}</Text>
           </>
         )}
-      </Modal>
-
+      </Modal>{' '}
       <Space h="md" />
       <Paper style={{ maxWidth: '87vw' }}>
-        <Epg {...getEpgProps()}>
+        <Epg {...getEpgProps()} isLoading={!egpData}>
           <Layout
             {...getLayoutProps()}
             renderChannel={({ channel }) => (
               <ChannelItem
-                onClick={() => setChannel(channel.channelId)}
                 key={channel.uuid}
                 channel={channel}
+                onClick={() => setChannel(channel.channelId)}
               />
             )}
-            renderProgram={({ program, ...rest }) =>
-              program && <ProgramItem
-                onClick={() => handleProgramClick(program as any)}
+            renderProgram={({ program, ...rest }) => (
+              <ProgramItem
                 key={program.data.id}
                 program={program}
                 {...rest}
+                onClick={() => handleProgramClick(program as any)}
               />
-            }
+            )}
           />
         </Epg>
       </Paper>
     </ApplicationLayout>
   );
-};
+});
 
 export default ChannelsPage;

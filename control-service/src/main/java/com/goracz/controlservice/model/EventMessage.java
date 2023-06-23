@@ -1,6 +1,7 @@
 package com.goracz.controlservice.model;
 
 import com.goracz.controlservice.model.response.CurrentTvChannelResponse;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

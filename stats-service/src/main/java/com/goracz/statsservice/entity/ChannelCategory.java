@@ -17,5 +17,5 @@ public enum ChannelCategory {
 
     // Unused channel categories
     VARIOUS,
-    OTHER;
+    OTHER
 }

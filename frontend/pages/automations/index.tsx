@@ -25,7 +25,7 @@ import { useForm } from '@mantine/form';
 import { IconCalendar, IconClock } from '@tabler/icons';
 import Lottie from 'lottie-react';
 import { NextPage } from 'next';
-import React, { forwardRef, useEffect, useState } from 'react';
+import React, { forwardRef, memo, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AutomationCard } from '../../components/AutomationCard';
 import { useAutomationRules } from '../../hooks';
@@ -93,7 +93,7 @@ const SelectItem = forwardRef<HTMLDivElement, ItemProps>(
   )
 );
 
-const AutomationsPage: NextPage = () => {
+const AutomationsPage: NextPage = memo(() => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
 
@@ -159,7 +159,7 @@ const AutomationsPage: NextPage = () => {
   const handleRemoveAutomationAction = (index: number): void => {
     form.values.automationRule.automationActions.splice(index, 1);
   };
-  const handleAddAutomationRule = async (): Promise<void> => {
+  const handleAddAutomationRule = useCallback(async (): Promise<void> => {
     setIsLoadingAutomationRuleSubmission(true);
     const automationRule: AutomationRule = {
       title: form.values.automationRule.title as unknown as string,
@@ -184,7 +184,7 @@ const AutomationsPage: NextPage = () => {
     });
     if (response.ok) setDrawerOpened(false);
     setIsLoadingAutomationRuleSubmission(false);
-  };
+  }, [form.values.automationRule]);
 
   const handleCloseDrawer = () => {
     form.reset();
@@ -417,6 +417,7 @@ const AutomationsPage: NextPage = () => {
             automations.map((rule: AutomationRule) => (
               <Col sm={6} md={4} lg={3}>
                 <AutomationCard
+                  key={rule.id}
                   id={rule.id!}
                   title={rule.title}
                   description={rule.description || ''}
@@ -430,6 +431,6 @@ const AutomationsPage: NextPage = () => {
       </>
     </ApplicationLayout>
   );
-};
+});
 
 export default AutomationsPage;

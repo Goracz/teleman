@@ -7,9 +7,12 @@ import com.goracz.metaservice.model.request.PopulateChannelsRequest;
 import com.goracz.metaservice.model.response.PopulateChannelsResponse;
 import com.goracz.metaservice.service.ChannelMetadataService;
 import com.goracz.metaservice.service.MetadataScraperService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import reactor.core.publisher.Mono;
 
 @RestController

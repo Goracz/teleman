@@ -1,9 +1,11 @@
 package com.goracz.controlservice.model.response;
 
+import com.goracz.controlservice.model.Channel;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;import reactor.core.publisher.Flux;
+import lombok.NoArgsConstructor;
 
 import java.util.Collection;
 
@@ -12,5 +14,5 @@ import java.util.Collection;
 @Data
 @Builder
 public class PopulateChannelsResponse {
-    private Flux<LgChannel> channels;
+    private Collection<Channel> channels;
 }

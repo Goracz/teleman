@@ -1,16 +1,18 @@
 package com.goracz.controlservice.controller;
 
+import com.goracz.controlservice.model.EventMessage;
 import com.goracz.controlservice.service.EventService;
+
 import io.swagger.v3.oas.annotations.Operation;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.goracz.controlservice.model.EventMessage;
-
-import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
 @RestController

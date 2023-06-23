@@ -1,9 +1,9 @@
 package com.goracz.controlservice.service;
 
-import com.goracz.controlservice.model.WebOSApplication;
 import com.goracz.controlservice.model.response.ApplicationListResponse;
 import com.goracz.controlservice.model.response.ForegroundAppChangeResponse;
 import com.goracz.controlservice.model.response.LaunchPointsResponse;
+
 import reactor.core.publisher.Mono;
 
 public interface AppControlService {
@@ -15,9 +15,9 @@ public interface AppControlService {
 
     /**
      * Launches an application on the TV
-     * @param application Application to launch
+     * @param applicationId ID of the application to launch
      */
-    Mono<Void> launchApp(WebOSApplication application);
+    Mono<Void> launchApp(String applicationId);
 
     /**
      * Gets the currently running application on the TV

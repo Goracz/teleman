@@ -2,7 +2,9 @@ package com.goracz.metaservice.component;
 
 import com.goracz.metaservice.dto.IPTVResponse;
 import com.goracz.metaservice.entity.ChannelMetadata;
+
 import lombok.Getter;
+
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;

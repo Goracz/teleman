@@ -1,8 +1,8 @@
 package com.goracz.controlservice.service;
 
-import com.goracz.controlservice.model.WebOSApplication;
 import com.goracz.controlservice.model.response.ApplicationListResponse;
 import com.goracz.controlservice.model.response.LaunchPointsResponse;
+
 import reactor.core.publisher.Mono;
 
 /**
@@ -24,5 +24,5 @@ public interface WebApplicationControlService {
     /**
      * Opens an application on the TV
      */
-    Mono<Void> openApplication(WebOSApplication identifier);
+    Mono<Void> openApplication(String identifier);
 }

@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux';
 import useSWR from 'swr';
 import { AppSliceState } from '../store/app-slice';
-import { WebOSApplication } from '../models/web-os-application';
+import { LaunchPoint } from '../models/launch-point';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 const channelHistoryFetcher = (url: string, start: Date, end: Date) =>
@@ -178,21 +178,17 @@ const useTvIp = () => {
   };
 };
 
-const useLaunchApp = (application: WebOSApplication) =>
-  fetch('http://localhost:5000/api/v1/app/launch', {
-    body: JSON.stringify({ application }),
+const useLaunchApp = (launchPoint: LaunchPoint) =>
+  fetch('http://localhost:8080/api/v1/app/launch', {
+    body: JSON.stringify({ id: launchPoint.id }),
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-  } as any)
-    .then((r) => r.json())
-    .catch(() => {
-      throw new Error(`Error launching application: ${application}.`);
-    });
+  } as any).then();
 
 const useForegroundApp = () => {
-  const { data, error } = useSWR('http://localhost:5000/api/v1/app/foreground', fetcher);
+  const { data, error } = useSWR('http://localhost:8080/api/v1/app/foreground', fetcher);
 
   return {
     data,
@@ -202,12 +198,19 @@ const useForegroundApp = () => {
 };
 
 const useLaunchPoints = () => {
-  const { data, error } = useSWR('http://localhost:5000/api/v1/app/launch-points', fetcher);
+  const launchPoints = useSelector((state: { app: AppSliceState }) => state.app.launchPoints);
+  const isCached =
+    launchPoints && launchPoints.launchPoints && launchPoints.launchPoints.length > 0;
+
+  const { data, error } = useSWR(
+    isCached ? null : 'http://localhost:8080/api/v1/app/launch-points',
+    fetcher
+  );
 
   return {
-    data,
-    isLoading: data ? false : !error && !data,
-    isError: data ? false : error,
+    data: isCached ? launchPoints : data,
+    isLoading: isCached ? false : !error && !data,
+    isError: isCached ? false : error,
   };
 };
 

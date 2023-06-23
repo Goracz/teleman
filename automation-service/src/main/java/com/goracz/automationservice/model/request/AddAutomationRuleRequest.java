@@ -2,17 +2,20 @@ package com.goracz.automationservice.model.request;
 
 import com.goracz.automationservice.entity.AutomationAction;
 import com.goracz.automationservice.entity.AutomationScheduleKind;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import org.hibernate.validator.constraints.Length;
+
+import java.time.ZonedDateTime;
+import java.util.Collection;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import java.time.ZonedDateTime;
-import java.util.Collection;
 
 @AllArgsConstructor
 @NoArgsConstructor

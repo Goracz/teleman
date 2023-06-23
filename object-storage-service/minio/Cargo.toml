@@ -1,0 +1,21 @@
+[package]
+name = "minio"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "minio"
+path = "src/lib.rs"
+
+[dependencies]
+rusoto_core = "0.48.0"
+rusoto_s3 = "0.48.0"
+
+[dependencies.uuid]
+version = "1.2.2"
+features = [
+    "v4",
+    "fast-rng",
+    "macro-diagnostics",
+]

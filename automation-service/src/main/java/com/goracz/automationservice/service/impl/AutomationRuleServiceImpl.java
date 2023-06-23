@@ -7,7 +7,9 @@ import com.goracz.automationservice.repository.ReactiveSortingAutomationRuleRepo
 import com.goracz.automationservice.service.AutomationRuleService;
 import com.goracz.automationservice.service.AutomationSchedulerService;
 import com.goracz.automationservice.service.EventService;
+
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;

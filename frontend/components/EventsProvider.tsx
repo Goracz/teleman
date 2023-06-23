@@ -75,8 +75,8 @@ const handleStatisticsServiceEvent = (
   const response = JSON.parse(event.data);
 
   // TODO: Remove console logs when stable
-  console.log('Channel history event received (raw): ', event.data);
-  console.log('Channel history event received (parsed): ', response);
+  console.log('Statistics service event received (raw): ', event.data);
+  console.log('Statistics service event received (parsed): ', response);
 
   const eventCategory: StatisticsServiceEventCategory = response.category;
   const message = response.payload;

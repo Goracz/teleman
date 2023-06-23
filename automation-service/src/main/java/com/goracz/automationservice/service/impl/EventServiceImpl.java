@@ -3,11 +3,15 @@ package com.goracz.automationservice.service.impl;
 import com.goracz.automationservice.model.response.EventCategory;
 import com.goracz.automationservice.model.response.EventMessage;
 import com.goracz.automationservice.service.EventService;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;import reactor.core.scheduler.Schedulers;
+import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor

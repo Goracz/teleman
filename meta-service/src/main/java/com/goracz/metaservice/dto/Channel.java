@@ -1,19 +1,18 @@
 package com.goracz.metaservice.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
-@Builder
+@NoArgsConstructor
 public class Channel {
+    @JsonAlias("id")
     private String id;
-    private String name;
-    private String site;
-    private String lang;
-    private String logo;
+    @JsonAlias("displayName")
+    private String displayName;
+    @JsonAlias("url")
     private String url;
 }

@@ -3,6 +3,7 @@ package com.goracz.controlservice.model.response;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.goracz.controlservice.model.LgChannelType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

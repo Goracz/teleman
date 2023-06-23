@@ -1,6 +1,7 @@
 package com.goracz.controlservice.model.response;
 
 import com.goracz.controlservice.model.ChannelCategory;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

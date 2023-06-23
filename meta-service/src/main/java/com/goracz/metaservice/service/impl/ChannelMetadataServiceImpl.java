@@ -6,7 +6,9 @@ import com.goracz.metaservice.model.Channel;
 import com.goracz.metaservice.model.response.PopulateChannelsResponse;
 import com.goracz.metaservice.repository.ReactiveSortingChannelMetadataRepository;
 import com.goracz.metaservice.service.ChannelMetadataService;
+
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -120,21 +122,17 @@ public class ChannelMetadataServiceImpl implements ChannelMetadataService {
     @Override
     public Mono<PopulateChannelsResponse> populate(Collection<Channel> channels) {
         return Flux.fromIterable(channels)
-                .flatMap(channel -> {
-                    this.cacheProvider
-                            .getChannelMetadataCache()
-                            .get(channel.getChannelName())
-                            .switchIfEmpty(this.searchInDatabase(channel.getChannelName()))
-                            .flatMap(this::writeToCache)
-                            .flatMap(channel::populateChannelLogo)
-                            .subscribeOn(Schedulers.parallel())
-                            .subscribe();
-                    return Mono.just(channel);
-                    // If elements are not delayed, some objects won't have their meta-data assigned to them
-                }).delayElements(Duration.ofMillis(1))
+                .flatMap(channel -> this.cacheProvider
+                        .getChannelMetadataCache()
+                        .get(channel.getChannelName())
+                        .switchIfEmpty(this.searchInDatabase(channel.getChannelName()))
+                        .flatMap(this::writeToCache)
+                        .flatMap(channel::populateChannelLogo)
+                        .subscribeOn(Schedulers.boundedElastic()), Runtime.getRuntime().availableProcessors())
+                .delayElements(Duration.ofMillis(1))
                 .collectList()
-                .flatMap(populatedChannels -> Mono.just(PopulateChannelsResponse.builder()
+                .map(populatedChannels -> PopulateChannelsResponse.builder()
                         .channels(populatedChannels)
-                        .build()));
+                        .build());
     }
 }

@@ -1,6 +1,9 @@
 package com.goracz.controlservice.model.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +15,7 @@ import java.util.Collection;
 @NoArgsConstructor
 @Data
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class LaunchPoint {
     private String mediumLargeIcon;
     private String bgColor;
@@ -33,6 +37,7 @@ public class LaunchPoint {
     private String iconColor;
     private String tileSize;
     private String userData;
+    @JsonIgnore
     private Params params;
     private boolean unmovable;
     private String extraLargeIcon;

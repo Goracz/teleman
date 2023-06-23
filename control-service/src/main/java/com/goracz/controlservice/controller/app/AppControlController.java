@@ -5,9 +5,12 @@ import com.goracz.controlservice.model.response.ApplicationListResponse;
 import com.goracz.controlservice.model.response.ForegroundAppChangeResponse;
 import com.goracz.controlservice.model.response.LaunchPointsResponse;
 import com.goracz.controlservice.service.AppControlService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -22,7 +25,7 @@ public class AppControlController {
     }
     @PostMapping("launch")
     public ResponseEntity<Mono<Void>> launchApp(@RequestBody LaunchAppRequest launchAppRequest) {
-        return ResponseEntity.ok(this.appControlService.launchApp(launchAppRequest.getApplication()));
+        return ResponseEntity.ok(this.appControlService.launchApp(launchAppRequest.getApplicationId()));
     }
 
     @GetMapping("foreground")

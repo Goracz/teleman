@@ -1,15 +1,15 @@
 package com.goracz.metaservice.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Collection;
+import lombok.Data;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class IPTVResponse {
-    private Collection<Channel> channels;
-    private Collection<Program> programs;
+    @JsonProperty("tv")
+    private Tv tv;
+
+    public IPTVResponse() {
+        this.tv = new Tv();
+    }
 }

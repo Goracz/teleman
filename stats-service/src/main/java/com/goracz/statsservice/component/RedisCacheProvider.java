@@ -5,7 +5,9 @@ import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.entity.UptimeLog;
 import com.goracz.statsservice.model.response.ForegroundAppChangeResponse;
 import com.goracz.statsservice.model.response.PowerStateResponse;
+
 import lombok.Getter;
+
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
@@ -24,7 +26,7 @@ public class RedisCacheProvider {
     private final ReactiveValueOperations<String, PowerStateResponse> powerStateResponseCache;
     private final ReactiveValueOperations<String, ForegroundAppChangeResponse> foregroundAppChangeResponseCache;
 
-    public RedisCacheProvider(ObjectMapper objectMapper, ReactiveRedisConnectionFactory factory) {
+    public RedisCacheProvider(final ObjectMapper objectMapper, final ReactiveRedisConnectionFactory factory) {
         this.objectMapper = objectMapper;
         this.factory = factory;
         this.channelHistoryCache = this.channelHistoryReactiveRedisTemplate().opsForValue();

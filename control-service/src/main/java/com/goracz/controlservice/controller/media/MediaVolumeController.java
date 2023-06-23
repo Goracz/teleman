@@ -1,7 +1,13 @@
 package com.goracz.controlservice.controller.media;
 
+import com.goracz.controlservice.dto.media.volume.SetVolumeDto;
+import com.goracz.controlservice.model.response.GetVolumeResponse;
 import com.goracz.controlservice.service.MediaControlService;
+
 import io.swagger.v3.oas.annotations.Operation;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,10 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.goracz.controlservice.dto.media.volume.SetVolumeDto;
-import com.goracz.controlservice.model.response.GetVolumeResponse;
-
-import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 @RestController

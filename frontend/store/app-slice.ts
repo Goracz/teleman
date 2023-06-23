@@ -9,10 +9,11 @@ import { PowerState } from '../models/power-state-change';
 import { UptimeLog } from '../models/uptime-log';
 import { User } from '../models/user';
 import { Volume } from '../models/volume';
+import { LaunchPoint } from '../models/launch-point';
 
 export interface AppSliceState {
   user: User;
-  channelList: Channel[];
+  channelList: { channelList: Channel[] };
   currentChannel: Channel;
   digitalTvChannelCount: number;
   analogueTvChannelCount: number;
@@ -34,11 +35,12 @@ export interface AppSliceState {
   softwareInfo: {};
   tvIp: string | { ip: string };
   automationRules: AutomationRule[];
+  launchPoints: { launchPoints: LaunchPoint[] };
 }
 
 const initialState: AppSliceState = {
   user: undefined as any,
-  channelList: [],
+  channelList: [] as any,
   currentChannel: {} as Channel,
   digitalTvChannelCount: 0,
   analogueTvChannelCount: 0,
@@ -53,6 +55,7 @@ const initialState: AppSliceState = {
   softwareInfo: undefined as any,
   automationRules: undefined as any,
   tvIp: '',
+  launchPoints: undefined as any,
 };
 
 const appSlice = createSlice({
@@ -138,6 +141,9 @@ const appSlice = createSlice({
           moment(action.payload[0]).isSameOrBefore(moment.unix(entry.start)) &&
           moment(action.payload[1]).isSameOrAfter(moment.unix(entry.end))
       );
+    },
+    setLaunchPoints(state, action) {
+      state.launchPoints = action.payload;
     },
   },
 });

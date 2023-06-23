@@ -1,0 +1,19 @@
+[package]
+name = "object-storage-service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = [
+    ".",
+    "controller",
+    "minio",
+]
+
+[dependencies]
+controller = { path = "controller" }
+minio = { path = "minio" }
+actix-web = "4"
+actix-cors = "0.6.4"

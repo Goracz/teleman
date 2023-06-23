@@ -3,7 +3,9 @@ package com.goracz.statsservice.service;
 import com.goracz.statsservice.entity.ChannelHistory;
 import com.goracz.statsservice.exception.KafkaConsumeFailException;
 import com.goracz.statsservice.model.request.ChannelHistoryRequest;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,6 +30,4 @@ public interface ChannelHistoryService {
     Mono<Void> delete(String channelHistoryId);
 
     void onChannelChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException;
-
-    void onPowerStateChange(ConsumerRecord<String, String> message) throws KafkaConsumeFailException;
 }

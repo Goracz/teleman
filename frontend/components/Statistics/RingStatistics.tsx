@@ -14,7 +14,7 @@ import {
 import { IconDeviceTv } from '@tabler/icons';
 import moment from 'moment';
 import { NextPage } from 'next';
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { useViewportSize } from '@mantine/hooks';
 import { ChannelCategory, ChannelCategoryLegend } from '../../models/channel-category';
 
@@ -42,28 +42,32 @@ const pieColors = [
   '#6b34e0',
 ];
 
-export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
+const formatTime = (input: any) => {
+  const dur = moment.duration(input, 'seconds');
+  const hours = Math.floor(dur.asHours());
+  const mins = Math.floor(dur.asMinutes()) - hours * 60;
+  const sec = Math.floor(dur.asSeconds()) - hours * 60 * 60 - mins * 60;
+
+  return `${hours > 9 ? hours : `0${hours}`}:${mins > 9 ? mins : `0${mins}`}:${
+    sec > 9 ? sec : `0${sec}`
+  }`;
+};
+
+export const RingStatistics: NextPage<StatsRingProps> = memo(({ data }) => {
   const { height, width } = useViewportSize();
 
-  const sumOfWatchTime = data.reduce((acc, curr) => acc + curr.watchTime, 0);
-  const finalData = data
-    .sort((a, b) => b.watchTime - a.watchTime)
-    .map((d, index) => ({
-      ...d,
-      watchTimePercentage: (d.watchTime / sumOfWatchTime) * 100,
-      color: pieColors[index],
-    }));
-
-  const formatTime = (input: any) => {
-    const dur = moment.duration(input, 'seconds');
-    const hours = Math.floor(dur.asHours());
-    const mins = Math.floor(dur.asMinutes()) - hours * 60;
-    const sec = Math.floor(dur.asSeconds()) - hours * 60 * 60 - mins * 60;
-
-    return `${hours > 9 ? hours : `0${hours}`}:${mins > 9 ? mins : `0${mins}`}:${
-      sec > 9 ? sec : `0${sec}`
-    }`;
-  };
+  const sumOfWatchTime = useMemo(() => data.reduce((acc, curr) => acc + curr.watchTime, 0), [data]);
+  const finalData = useMemo(
+    () =>
+      data
+        .sort((a, b) => b.watchTime - a.watchTime)
+        .map((d, index) => ({
+          ...d,
+          watchTimePercentage: (d.watchTime / sumOfWatchTime) * 100,
+          color: pieColors[index],
+        })),
+    [data, sumOfWatchTime]
+  );
 
   return (
     <Card style={{ minHeight: '25vh', height: '100%' }} shadow="md" radius="xl" p="sm">
@@ -178,4 +182,4 @@ export const RingStatistics: NextPage<StatsRingProps> = ({ data }) => {
       </Group>
     </Card>
   );
-};
+});

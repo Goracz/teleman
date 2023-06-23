@@ -4,9 +4,12 @@ import com.goracz.controlservice.component.RedisCacheProvider;
 import com.goracz.controlservice.model.response.PowerStateResponse;
 import com.goracz.controlservice.model.response.SoftwareInformationResponse;
 import com.goracz.controlservice.service.SystemControlService;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;import reactor.core.scheduler.Schedulers;
+
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 public class SystemControlServiceImpl implements SystemControlService {
@@ -31,8 +34,8 @@ public class SystemControlServiceImpl implements SystemControlService {
     private final RedisCacheProvider cacheProvider;
 
 
-    public SystemControlServiceImpl(WebClient webClient,
-                                    RedisCacheProvider cacheProvider) {
+    public SystemControlServiceImpl(final WebClient webClient,
+                                    final RedisCacheProvider cacheProvider) {
         this.webClient = webClient;
         this.cacheProvider = cacheProvider;
     }
@@ -93,7 +96,7 @@ public class SystemControlServiceImpl implements SystemControlService {
     }
 
     private Mono<SoftwareInformationResponse> writeSoftwareInformationToCache(
-            SoftwareInformationResponse softwareInformation) {
+            final SoftwareInformationResponse softwareInformation) {
         return this.cacheProvider
                 .getSoftwareInformationResponseCache()
                 .set(SOFTWARE_INFORMATION_CACHE_KEY, softwareInformation)
@@ -121,7 +124,7 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .publishOn(Schedulers.immediate());
     }
 
-    private Mono<PowerStateResponse> writePowerStateToCache(PowerStateResponse powerState) {
+    private Mono<PowerStateResponse> writePowerStateToCache(final PowerStateResponse powerState) {
         return this.cacheProvider.getPowerStateResponseCache()
                 .set(POWER_STATE_CACHE_KEY, powerState)
                 .map(response -> powerState)

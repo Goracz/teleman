@@ -4,9 +4,13 @@ import com.goracz.controlservice.component.RedisCacheProvider;
 import com.goracz.controlservice.model.response.ComponentKind;
 import com.goracz.controlservice.model.response.ServiceDescription;
 import com.goracz.controlservice.service.MetaService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;import reactor.core.scheduler.Schedulers;
+
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +41,7 @@ public class MetaServiceImpl implements MetaService {
                 .build());
     }
 
-    private Mono<ServiceDescription> writeToCache(ServiceDescription serviceDescription) {
+    private Mono<ServiceDescription> writeToCache(final ServiceDescription serviceDescription) {
         return this.cacheProvider
                 .getServiceDescriptionCache()
                 .set(CACHE_KEY, serviceDescription)
