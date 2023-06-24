@@ -1,0 +1,4 @@
+*::after {
+    @apply absolute inset-x-0 bottom-0 h-px bg-black;
+    content: "";
+}

@@ -4,7 +4,16 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        accent: '#1C49EC',
+      },
+    }
   },
   plugins: [],
+  variants: {
+    extend: {
+      content: ['responsive'],
+    },
+  },
 }
