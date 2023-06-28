@@ -26,13 +26,13 @@
 
 ![screenshot](https://pbs.twimg.com/media/Fk58TonXgAE8ooB?format=jpg)
 
-## Key Features
+## Primary Functions
 
-* Control volume
-* Change channels
-* View Electronic Program Guide
-* Statistics about watched Channels and CHannel Categories
-* Defining Automation Rules
+* Adjust audio levels
+* Switch between channels
+* Access Electronic Program Guide
+* Obtain statistics related to viewed channels and channel categories
+* Set up automation rules
 
 ## How To Use
 
