@@ -7,7 +7,14 @@ export default {
     extend: {
       colors: {
         accent: '#1C49EC',
+        'accent-red': '#FF1A1A',
+        'accent-orange': '#FF8A00',
+        'accent-purple': '#9E00FF',
+        'accent-green': '#1ED760',
       },
+      gridTemplateRows: {
+        'layout': 'auto 1fr auto'
+      }
     }
   },
   plugins: [],

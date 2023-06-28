@@ -1,5 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .uptime-chart-bar {
-    background-color: white !important;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+  background-color: white !important;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
 }

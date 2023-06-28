@@ -1,17 +1,20 @@
 import { cva } from 'class-variance-authority';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useActive } from '../../../hooks/active';
 
-export interface MenuButtonProps {
+export interface ButtonProps {
     title: string;
-    link: string;
+    link?: string;
     active?: boolean;
-}
+    className?: string
+    variant?: 'default' | 'action';
+};
 
 const outerStyles = cva(
     [
-        'font-medium',
+        'font-medium transition duration-100',
     ],
     {
         variants: {
@@ -22,6 +25,9 @@ const outerStyles = cva(
             variant: {
                 default: [
                     'px-4 py-0.5 font-medium text-lg cursor-pointer',
+                ],
+                action: [
+                    'px-1 py-1.5 font-medium text-md cursor-pointer bg-black text-white focus:outline-dotted'
                 ],
             },
         },
@@ -44,18 +50,23 @@ const innerStyles = cva(
     }
 );
 
-const MenuButton: React.FC<MenuButtonProps> = ({ title, link, ...props }: MenuButtonProps) => {
-    const active = props.active || useActive(link);
+const Button: React.FC<ButtonProps> = memo(({ title, link, variant, className, ...props }: ButtonProps) => {
+    const active = link ? (props.active || useActive(link)) : false;
 
     return (
         <>
-            <div className={outerStyles({ active })}>
-                <Link to={link} className={innerStyles({ active })}>
-                    {title}
-                </Link>
+            <div className={`${outerStyles({ active, variant })} ${className}`} {...props}>
+                {link && (
+                    <Link to={link} className={innerStyles({ active })}>
+                        {title}
+                    </Link>
+                )}
+                {!link && (
+                    <span>{title}</span>
+                )}
             </div>
         </>
     );
-};
+});
 
-export default MenuButton;
+export default Button;

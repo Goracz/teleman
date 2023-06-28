@@ -1,29 +1,40 @@
-import MenuButton, { MenuButtonProps } from './MenuButton/MenuButton';
+import { memo, useEffect, useRef } from 'react';
+
+import Button, { ButtonProps } from './MenuButton/MenuButton';
 
 interface HeaderProps {
-    menuItems?: MenuButtonProps[];
+    menuItems?: ButtonProps[];
+    onHeightChange: (height: number) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ menuItems }: HeaderProps) => {
+const Header: React.FC<HeaderProps> = memo(({ menuItems, onHeightChange }) => {
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (ref.current) {
+            onHeightChange(ref.current.offsetHeight);
+        }
+    }, []);
+
     return (
         <>
-            <div className="w-screen border-black border-4 px-5 py-3">
+            <div ref={ref} className="flex-none w-screen border-black border-4 px-5 py-3">
                 <div className='flex justify-between items-center'>
                     <div className="flex items-center gap-5">
                         <span className="text-4xl font-black mr-8">Teleman</span>
                             {menuItems?.map((item) => (
-                                <MenuButton key={item.link} title={item.title} link={item.link} />
+                                <Button key={item.link} title={item.title} link={item.link} />
                             ))}
                     </div>
                     <div>
                         <div className="flex items-center gap-5">
-                            <MenuButton title="Connected" link="#" active />
+                            <Button title="Connected" link="#" active />
                         </div>
                     </div>
                 </div>
             </div>
         </>
     );
-};
+});
 
 export default Header;
