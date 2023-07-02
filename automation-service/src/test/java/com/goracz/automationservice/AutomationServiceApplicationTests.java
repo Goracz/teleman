@@ -1,11 +1,13 @@
-package com.goracz.lgwebostvmetaservice;
+package com.goracz.automationservice;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-class LgwebosTvMetaServiceApplicationTests {
+@ActiveProfiles("test")
+class AutomationServiceApplicationTests {
 	@Test
 	void contextLoads() {
 		Assertions.assertTrue(true);
