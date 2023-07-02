@@ -21,6 +21,18 @@
     <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white">
     <img src="https://img.shields.io/badge/redis-%23DD0031.svg?&style=for-the-badge&logo=redis&logoColor=white">
 </p>
+
+<p align="center">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/authentication-service-ci.yml/badge.svg">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/automation-service-ci.yml/badge.svg">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/control-service-ci.yml/badge.svg">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/frontend-ci.yml/badge.svg">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/interface-ci.yml/badge.svg">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/meta-data-service-ci.yml/badge.svg">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/statistics-service-ci.yml/badge.svg">
+  <img src="https://github.com/Goracz/teleman/actions/workflows/github-code-scanning/codeql/badge.svg">
+</p>
+
 <p align="center">
   <a href="#key-features">Key Features</a> •
   <a href="#architecture">Architecture</a> •
