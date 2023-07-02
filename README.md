@@ -26,6 +26,7 @@
   <a href="#architecture">Architecture</a> •
   <a href="#components">Components</a> •
   <a href="#how-to-use">How To Use</a> •
+  <a href="#screenshots">Screenshots</a> •
   <a href="#license">License</a>
 </p>
 
@@ -124,6 +125,34 @@ A running instance of the following:
     * In case of `authentication-service`, execute `cargo run`
     * In case of `interface` and `frontend`, execute `yarn dev`
 4. **Register a user, then log in with it**
+
+## Screenshots
+
+### Current Version
+
+#### EPG
+
+<img src="https://i.imgur.com/Satsp9O.png">
+
+#### Automation Rules
+
+<p align="center">
+  <img src="https://i.imgur.com/zmlCNry.png">
+</p>
+
+<p align="center">
+  <img src="https://i.imgur.com/Cz5s71J.png">
+</p>
+
+### Next Version (In-Development)
+
+#### Dashboard (with randomized mock data)
+
+<img src="https://i.imgur.com/fvSBGwN.png">
+
+#### Dashboard - Channel Picker (with randomized mock data)
+
+<img src="https://i.imgur.com/jfkBOpm.png">
 
 ## License
 
