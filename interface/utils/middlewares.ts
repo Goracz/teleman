@@ -4,11 +4,11 @@ import { Express, NextFunction, Request, Response } from 'express';
 
 import * as Sentry from '@sentry/node';
 
-import config, { corsOptions } from '../environments/environment.local';
+import config from '../environments/environment';
 
 export const registerMiddlewares = (app: Express): void => {
     app.use(bodyParser.json());
-    app.use(cors(corsOptions));
+    app.use(cors(config.corsOptions));
     if (config.sentryDsn) {
         app.use(Sentry.Handlers.requestHandler());
         app.use(Sentry.Handlers.tracingHandler());

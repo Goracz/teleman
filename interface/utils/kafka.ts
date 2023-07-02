@@ -1,7 +1,7 @@
 import { Kafka, Producer } from 'kafkajs';
 
 import { Meta } from '../constants/meta';
-import config from '../environments/environment.local';
+import config from '../environments/environment';
 import { logger } from './logger';
 
 export const initializeKafka = (): Producer => {

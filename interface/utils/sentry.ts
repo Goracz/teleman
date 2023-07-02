@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import * as Tracing from '@sentry/tracing';
 
-import config from '../environments/environment.local';
+import config from '../environments/environment';
 import { logger } from './logger';
 
 export const initializeSentry = (app: Express): void => {

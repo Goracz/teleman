@@ -1,13 +1,14 @@
-import winston from "winston";
+import ip from 'ip';
 // @ts-ignore
-import logdnaWinston from "logdna-winston";
-import ip from "ip";
-import { Meta } from "../constants/meta";
-import EnvironmentLocal from "../environments/environment.local";
+import logdnaWinston from 'logdna-winston';
+import winston from 'winston';
+
+import { Meta } from '../constants/meta';
+import config from '../environments/environment';
 
 const logDNAOptions = {
-  key: EnvironmentLocal.logDnaConfiguration.ingestionKey,
-  hostname: EnvironmentLocal.logDnaConfiguration.host,
+  key: config.logDnaConfiguration?.ingestionKey,
+  hostname: config.logDnaConfiguration?.host,
   ip: ip.address(),
   app: Meta.serviceId,
   env: "Development",
@@ -30,8 +31,8 @@ export const logger = winston.createLogger({
   ],
 });
 if (
-  EnvironmentLocal.logDnaConfiguration.host &&
-  EnvironmentLocal.logDnaConfiguration.ingestionKey
+  config.logDnaConfiguration?.host &&
+  config.logDnaConfiguration?.ingestionKey
 ) {
   logger.add(new logdnaWinston(logDNAOptions));
 }

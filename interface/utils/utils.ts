@@ -3,7 +3,7 @@ import lgtv from 'lgtv2';
 import arp from '@network-utils/arp-lookup';
 
 import { WebOSEndpoints } from '../constants/webos-endpoints';
-import config from '../environments/environment.local';
+import config from '../environments/environment';
 
 /**
  * Sends a request to the TV over a WebSocket Secure connection

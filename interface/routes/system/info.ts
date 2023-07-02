@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 
 import { connection } from '../..';
 import { WebOSEndpoints } from '../../constants/webos-endpoints';
-import EnvironmentLocal from '../../environments/environment.local';
+import config from '../../environments/environment';
 import { SoftwareInformation } from '../../models/system/SoftwareInformation';
 import { sendRequestToTv } from '../../utils/utils';
 
@@ -15,7 +15,7 @@ router.get("/", (_: Request, res: Response): Response<SoftwareInformation> => {
 
 router.get("/ip", (_: Request, res: Response): Response<{ ip: string }> => {
   return res.status(200).json({
-    ip: EnvironmentLocal.tvIpAddress,
+    ip: config.tvIpAddress,
   });
 });
 

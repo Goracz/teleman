@@ -4,7 +4,7 @@ import lgtv from 'lgtv2';
 import { resetConnection } from '../';
 import { BrokerTopics } from '../constants/broker-topics';
 import { WebOSStreams } from '../constants/webos-streams';
-import { connectionConfig } from '../environments/environment.local';
+import config from '../environments/environment';
 import { CurrentChannel } from '../models/channels/CurrentChannel';
 import { logger } from './logger';
 
@@ -81,7 +81,7 @@ export const reconnect = async (): Promise<void> => {
         let numberOfAttempts = 1;
         const initConnection = setInterval(() => {
             logger.info(`Reconnecting to TV... (${numberOfAttempts}. attempt)`);
-            connection = lgtv(connectionConfig);
+            connection = lgtv(config.connectionConfig);
             numberOfAttempts += 1;
         }, 3000);
         clearInterval(initConnection);
