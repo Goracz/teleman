@@ -5,13 +5,13 @@ import { resetConnection } from '../';
 import { BrokerTopics } from '../constants/broker-topics';
 import { WebOSStreams } from '../constants/webos-streams';
 import { connectionConfig } from '../environments/environment.local';
-import { TvChannel } from '../models/TvChannel';
+import { CurrentChannel } from '../models/channels/CurrentChannel';
 import { logger } from './logger';
 
 export const registerEventListeners = (connection: lgtv, producer: Producer): void => {
     reconnect();
 
-    const onChannelChange = async (_: any, res: TvChannel) => {
+    const onChannelChange = async (_: any, res: CurrentChannel) => {
         logger.debug(`Channel changed to: ${res.channelName}.`);
         await producer.send({
             topic: BrokerTopics.CHANNEL_CHANGE,

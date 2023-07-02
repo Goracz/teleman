@@ -9,7 +9,7 @@ import { reconnect } from '../../utils/webos-connection';
 
 const router: Router = Router();
 
-router.post("/on", (_: Request, res: Response) => {
+router.post("/on", (_: Request, res: Response): Response<{ response: { message: string } }> => {
   getTvMacAddress(tvIpAddress)
     .then((macAddress: string | null) => {
       if (!macAddress) return res.status(500).json({ error: "No MAC address found for TV" });
@@ -22,17 +22,18 @@ router.post("/on", (_: Request, res: Response) => {
             },
           });
         })
-    })
+    });
+  return res.status(500).json({ response: { message: "Couldn't turn on TV." } });
 });
 
-router.post("/off", (_: Request, res: Response) => {
-  const response = sendRequestToTv(connection, WebOSEndpoints.TURN_OFF_SYSTEM);
-  return res.status(200).json(response);
+router.post("/off", (_: Request, res: Response): Response<void> => {
+  sendRequestToTv<void>(connection, WebOSEndpoints.TURN_OFF_SYSTEM);
+  return res.status(200).send();
 });
 
-router.get("/state", (_: Request, res: Response) => {
-  const response = sendRequestToTv(connection, WebOSEndpoints.POWER_STATE);
-  return res.status(200).json(response);
+router.get("/state", (_: Request, res: Response): Response<void> => {
+  sendRequestToTv<void>(connection, WebOSEndpoints.POWER_STATE);
+  return res.status(200).send();
 });
 
 export default router;

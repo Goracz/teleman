@@ -1,6 +1,6 @@
-import { DualChannel } from "./DualChannel";
+import { DualChannel } from './ChannelChangeChannelDualChannel';
 
-export interface TvChannel {
+export interface CurrentChannel {
   subscribed: boolean;
   channelTypeName: string;
   channelNumber: string;
