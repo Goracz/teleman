@@ -16,11 +16,11 @@ export interface TvChannel {
   isScrambled: boolean;
   signalChannelId: string;
   physicalNumber: number;
-  hybridtvType?: any;
+  hybridtvType?: string;
   isDescrambled: boolean;
   channelModeName: string;
   channelId: string;
-  favoriteGroup?: any;
+  favoriteGroup?: string;
   channelTypeId: number;
   isFineTuned: boolean;
   dualChannel: DualChannel;

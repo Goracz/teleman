@@ -1,6 +1,6 @@
 export interface DualChannel {
-  dualChannelTypeName?: any;
-  dualChannelNumber?: any;
-  dualChannelId?: any;
+  dualChannelTypeName?: string;
+  dualChannelNumber?: number;
+  dualChannelId?: number;
   dualChannelTypeId: number;
 }

@@ -1,119 +1,37 @@
 import { Router, Request, Response } from "express";
 import { connection } from "../..";
-import {WebOSEndpoints} from "../../constants/webos-endpoints";
-import {logger} from "../../utils/logger";
+import { WebOSEndpoints } from "../../constants/webos-endpoints";
+import { sendRequestToTv } from "../../utils/utils";
 
 const router: Router = Router();
 
-router.get("/", async (req: Request, res: Response) => {
-  let response;
-
-  response = await new Promise((resolve, reject) => {
-    connection.subscribe(WebOSEndpoints.GET_VOLUME, (err, res) => {
-      if (!err) resolve(res);
-      else reject(err);
-    });
-  });
-
-  res.json(response);
+router.get("/", (_: Request, res: Response) => {
+  const volume = sendRequestToTv(connection, WebOSEndpoints.GET_VOLUME);
+  return res.status(200).json(volume);
 });
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", (req: Request, res: Response) => {
   const desiredVolume: number = req.body.volume;
-  let response;
-
-  response = await new Promise((resolve, reject) => {
-    connection.request(
-      WebOSEndpoints.SET_VOLUME,
-      { volume: desiredVolume },
-      (err, res) => {
-        if (!err) resolve(res);
-        else reject(err);
-      }
-    );
+  const response = sendRequestToTv(connection, WebOSEndpoints.SET_VOLUME, {
+    volume: desiredVolume,
   });
-
-  res.json(response);
+  return res.status(200).json(response);
 });
 
-router.post("/up", async (req: Request, res: Response) => {
-  try {
-    let response;
-
-    response = await new Promise((resolve, reject) => {
-      connection.subscribe(WebOSEndpoints.VOLUME_UP, (err, res) => {
-        if (!err) resolve(res);
-        else reject(err);
-      });
-    });
-
-    res.json({
-      response,
-    });
-  } catch (err: any) {
-    logger.error(`Could not turn up volume: ${err.message}`);
-
-    return res.status(500).json({
-      response: {
-        message: "Could not turn up volume.",
-      },
-    });
-  }
+router.post("/up", (_: Request, res: Response) => {
+  const response = sendRequestToTv(connection, WebOSEndpoints.VOLUME_UP);
+  return res.status(200).json(response);
 });
 
-router.post("/down", async (req: Request, res: Response) => {
-  try {
-    let response;
-
-    response = await new Promise((resolve, reject) => {
-      connection.subscribe(WebOSEndpoints.VOLUME_DOWN, (err, res) => {
-        if (!err) resolve(res);
-        else reject(err);
-      });
-    });
-
-    res.json({
-      response,
-    });
-  } catch (err: any) {
-    logger.error(`Could not turn down volume: ${err.message}`);
-
-    return res.status(500).json({
-      response: {
-        message: "Could not turn down volume.",
-      },
-    });
-  }
+router.post("/down", (_: Request, res: Response) => {
+  const response = sendRequestToTv(connection, WebOSEndpoints.VOLUME_DOWN);
+  return res.status(200).json(response);
 });
 
-router.post("/mute", async (req: Request, res: Response) => {
-  try {
-    const desiredState: boolean = req.body.mute;
-    let response;
-
-    response = await new Promise((resolve, reject) => {
-      connection.request(
-        WebOSEndpoints.SET_MUTE,
-        { mute: desiredState },
-        (err, res) => {
-          if (!err) resolve(res);
-          else reject(err);
-        }
-      );
-    });
-
-    res.json({
-      response,
-    });
-  } catch (err: any) {
-    logger.error(`Could not (un)mute volume: ${err.message}`);
-
-    return res.status(500).json({
-      response: {
-        message: "Could not (un)mute volume.",
-      },
-    });
-  }
+router.post("/mute", (req: Request, res: Response) => {
+  const desiredState: boolean = req.body.mute;
+  const response = sendRequestToTv(connection, WebOSEndpoints.SET_MUTE, { mute: desiredState });
+  return res.status(200).json(response);
 });
 
 export default router;

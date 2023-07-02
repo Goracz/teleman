@@ -1,66 +1,23 @@
-import { Router, Request, Response } from "express";
-import { connection } from "../..";
-import {WebOSEndpoints} from "../../constants/webos-endpoints";
-import {logger} from "../../utils/logger";
+import { Request, Response, Router } from 'express';
+
+import { connection } from '../..';
+import { WebOSEndpoints } from '../../constants/webos-endpoints';
+import { sendRequestToTv } from '../../utils/utils';
 
 const router: Router = Router();
 
-router.post("/on", async (_: Request, res: Response) => {
-  try {
-    let response;
-
-    response = await new Promise((resolve, reject) => {
-      connection.subscribe(
-        WebOSEndpoints.TURN_ON_SCREEN,
-        { standByMode: "active" },
-        (err, res) => {
-          if (!err) resolve(res);
-          else reject(err);
-        }
-      );
-    });
-
-    res.json({
-      response,
-    });
-  } catch (err: any) {
-    logger.error(`Could not turn on TV: ${err.message}`);
-
-    return res.status(500).json({
-      response: {
-        message: "Could not turn on TV.",
-      },
-    });
-  }
+router.post("/on", (_: Request, res: Response) => {
+  const response = sendRequestToTv(connection, WebOSEndpoints.TURN_ON_SCREEN, {
+    standByMode: "active",
+  });
+  return res.status(200).json(response);
 });
 
-router.post("/off", async (_: Request, res: Response) => {
-  try {
-    let response;
-
-    response = await new Promise((resolve, reject) => {
-      connection.subscribe(
-        WebOSEndpoints.TURN_OFF_SCREEN,
-        { standByMode: "active" },
-        (err, res) => {
-          if (!err) resolve(res);
-          else reject(err);
-        }
-      );
-    });
-
-    res.json({
-      response,
-    });
-  } catch (err: any) {
-    logger.error(`Could not turn on TV: ${err.message}`);
-
-    return res.status(500).json({
-      response: {
-        message: "Could not turn on TV.",
-      },
-    });
-  }
+router.post("/off", (_: Request, res: Response) => {
+  const response = sendRequestToTv(connection, WebOSEndpoints.TURN_OFF_SCREEN, {
+    standByMode: "active",
+  });
+  return res.status(200).json(response);
 });
 
 export default router;
