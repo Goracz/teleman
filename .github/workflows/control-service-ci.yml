@@ -3,8 +3,12 @@ name: CI / Control Service
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'control-service/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'control-service/**'
 
 permissions:
   contents: read

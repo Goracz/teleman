@@ -3,8 +3,12 @@ name: CI / Automation Service
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'automation-service/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'automation-service/**'
 
 permissions:
   contents: read

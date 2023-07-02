@@ -3,8 +3,12 @@ name: CI / Statistics Service
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'stats-service/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'stats-service/**'
 
 permissions:
   contents: read

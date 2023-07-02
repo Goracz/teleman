@@ -3,8 +3,12 @@ name: CI / Interface
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'interface/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'interface/**'
 
 jobs:
   build:

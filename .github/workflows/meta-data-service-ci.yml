@@ -3,8 +3,12 @@ name: CI / Meta-Data Service
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'meta-service/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'meta-service/**'
 
 permissions:
   contents: read

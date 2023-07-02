@@ -3,8 +3,12 @@ name: CI / Authentication Service
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'authentication-service/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'authentication-service/**'
 
 permissions:
   contents: read
