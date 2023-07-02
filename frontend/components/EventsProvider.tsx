@@ -1,16 +1,18 @@
+import EventSource from 'eventsource';
 import { NextPage } from 'next';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import EventSource from 'eventsource';
-import { IconCheck } from '@tabler/icons';
+
 import { showNotification } from '@mantine/notifications';
-import { Dispatch } from 'redux';
+import { Dispatch } from '@reduxjs/toolkit';
+import { IconCheck } from '@tabler/icons';
+
+import { AutomationServiceEventCategory } from '../models/automation-service-event-category';
+import { ChannelHistory } from '../models/channel-history';
 import { ControlServiceEventCategory } from '../models/control-service-event-category';
 import { EventMessage } from '../models/event-message';
-import { appActions, AppSliceState } from '../store/app-slice';
-import { ChannelHistory } from '../models/channel-history';
-import { AutomationServiceEventCategory } from '../models/automation-service-event-category';
 import { StatisticsServiceEventCategory } from '../models/statistics-service-event-category';
+import { appActions, AppSliceState } from '../store/app-slice';
 
 const onlineStates = ['Active', 'Active Standby'];
 const offlineStates = ['Suspend'];
@@ -142,7 +144,13 @@ const handleAutomationServiceEvent = (event: EventMessage, dispatch: Dispatch): 
   }
 };
 
-export const EventsProvider: NextPage<any> = ({ children }) => {
+interface EventsProviderProps {
+  children: React.ReactNode;
+}
+
+export const EventsProvider: NextPage<EventsProviderProps> = ({
+  children,
+}: EventsProviderProps) => {
   const dispatch = useDispatch();
 
   const connectionStatus = useSelector(

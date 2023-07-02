@@ -1,4 +1,4 @@
 export enum AutomationScheduleKind {
-  DATE_TIME,
-  CRON,
+  DATE_TIME = 'Date Time',
+  CRON = 'Cron',
 }

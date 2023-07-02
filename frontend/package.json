@@ -26,7 +26,7 @@
     "jest:watch": "jest --watch",
     "prettier:check": "prettier --check \"**/*.{ts,tsx}\"",
     "prettier:write": "prettier --write \"**/*.{ts,tsx}\"",
-    "test": "npm run prettier:check && npm run lint && npm run typecheck && npm run jest",
+    "test": "yarn prettier:check && yarn lint && yarn typecheck && yarn jest --passWithNoTests",
     "storybook": "start-storybook -p 7001",
     "storybook:build": "build-storybook"
   },

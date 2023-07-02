@@ -1,15 +1,19 @@
-import { Col, Grid, Skeleton, useMantineColorScheme } from '@mantine/core';
-import { showNotification } from '@mantine/notifications';
-import { IconCheck, IconX } from '@tabler/icons';
+import moment from 'moment';
+import { tz } from 'moment-timezone';
 import { NextPage } from 'next';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import moment from 'moment';
-import { tz } from 'moment-timezone';
-import ApplicationLayout from '../../layouts/Application';
-import { Channel } from '../../models/channel';
-import { ChannelCategory } from '../../models/channel-category';
-import { appActions, AppSliceState } from '../../store/app-slice';
+
+import { Col, Grid, Skeleton, useMantineColorScheme } from '@mantine/core';
+import { showNotification } from '@mantine/notifications';
+import { IconCheck, IconX } from '@tabler/icons';
+
+import Filter from '../../components/Dashboard/Filter';
+import QuickAppLauncher from '../../components/Dashboard/QuickAppLauncher';
+import TvCard from '../../components/Dashboard/TvCard';
+import UptimeChart from '../../components/Dashboard/UptimeChart';
+import { RingStatistics } from '../../components/Statistics/RingStatistics';
+import { RingStatisticsChannelCategory } from '../../components/Statistics/RingStatisticsChannelCategory';
 import {
   useChannelHistory,
   useChannels,
@@ -21,14 +25,12 @@ import {
   useUptime,
   useVolume,
 } from '../../hooks';
+import ApplicationLayout from '../../layouts/Application';
+import { Channel } from '../../models/channel';
+import { ChannelCategory } from '../../models/channel-category';
 import { ChannelHistory } from '../../models/channel-history';
-import { RingStatistics } from '../../components/Statistics/RingStatistics';
-import { RingStatisticsChannelCategory } from '../../components/Statistics/RingStatisticsChannelCategory';
-import Filter from '../../components/Dashboard/Filter';
-import TvCard from '../../components/Dashboard/TvCard';
-import UptimeChart from '../../components/Dashboard/UptimeChart';
-import QuickAppLauncher from '../../components/Dashboard/QuickAppLauncher';
-import { PowerStateOption } from '../../models/power-state-option';
+import { PowerState } from '../../models/power-state-change';
+import { appActions, AppSliceState } from '../../store/app-slice';
 
 // Calculates that on a given day, how many minutes was the TV watched by every hour in 24 hours
 const calculateHowManyMinutesWatchedInAGivenHour = (
@@ -203,10 +205,9 @@ const DashboardPage: NextPage = () => {
 
   const handleToggleTvState = async () => {
     isLoadingTvStateToggle = true;
-    const desiredState: 'on' | 'off' = ![
-      PowerStateOption.ActiveStandby,
-      PowerStateOption.Suspend,
-    ].includes(powerState.state)
+    const desiredState: 'on' | 'off' = ![PowerState['Active Standby'], PowerState.Suspend].includes(
+      powerState.state
+    )
       ? 'off'
       : 'on';
 

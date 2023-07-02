@@ -1,3 +1,8 @@
+import Lottie from 'lottie-react';
+import { NextPage } from 'next';
+import React, { forwardRef, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+
 import {
   Avatar,
   Button,
@@ -11,6 +16,7 @@ import {
   Input,
   NumberInput,
   Select,
+  SelectItem,
   SimpleGrid,
   Skeleton,
   Space,
@@ -22,10 +28,7 @@ import {
 import { DatePicker, TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { IconCalendar, IconClock } from '@tabler/icons';
-import Lottie from 'lottie-react';
-import { NextPage } from 'next';
-import React, { forwardRef, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+
 import { AutomationCard } from '../../components/AutomationCard';
 import { useAutomationRules } from '../../hooks';
 import ApplicationLayout from '../../layouts/Application';
@@ -302,7 +305,7 @@ const AutomationsPage: NextPage = () => {
                 {(action.type as unknown as string) ===
                   AutomationActionType.SetVolume.valueOf().toString() && (
                   <NumberInput
-                    defaultValue={volume > -1 ? volume : 6}
+                    defaultValue={typeof volume === 'number' && volume > -1 ? volume : 6}
                     placeholder="Desired TV Volume"
                     label="Volume"
                     withAsterisk
@@ -317,8 +320,7 @@ const AutomationsPage: NextPage = () => {
                     data={(channels as any).channelList}
                     nothingFound="No such channel"
                     maxDropdownHeight={400}
-                    filter={(value: string, selected: any, item: { channelName: string }) =>
-                      !selected &&
+                    filter={(value: string, item: SelectItem) =>
                       item.channelName.toLowerCase().includes(value.toLowerCase().trim())
                     }
                     {...form.getInputProps(`automationRule.automationActions.${index}.channelId`)}
@@ -417,11 +419,11 @@ const AutomationsPage: NextPage = () => {
             automations.map((rule: AutomationRule) => (
               <Col sm={6} md={4} lg={3}>
                 <AutomationCard
+                  key={rule.id}
                   id={rule.id!}
                   title={rule.title}
                   description={rule.description || ''}
                   cronSchedule={rule.cronSchedule}
-                  executionTime={rule.executionTime}
                   actions={rule.actions}
                 />
               </Col>

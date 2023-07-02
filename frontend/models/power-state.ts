@@ -1,5 +1,6 @@
-import { PowerStateOption } from './power-state-option';
+import { PowerState } from './power-state-change';
 
 export interface PowerState {
-  state: PowerStateOption;
+  state: keyof typeof PowerState;
+  [key: string]: any;
 }

@@ -1,6 +1,6 @@
 import { Button, createStyles, Group, Paper, Space, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { IconAdjustmentsAlt, IconApps, IconPlugOff, IconPower, IconVolume2 } from '@tabler/icons';
-import Link from 'next/link';
+
 import { AutomationAction } from '../models/automation-action';
 
 const useStyles = createStyles((theme) => ({
@@ -33,7 +33,6 @@ interface CardGradientProps {
   id: string;
   title: string;
   description: string;
-  executionTime?: Date;
   cronSchedule?: string;
   actions: AutomationAction[];
 }
@@ -42,7 +41,6 @@ export const AutomationCard = ({
   id,
   title,
   description,
-  executionTime,
   cronSchedule,
   actions,
 }: CardGradientProps) => {

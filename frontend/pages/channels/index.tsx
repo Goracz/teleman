@@ -37,39 +37,52 @@ const ProgramItem = ({ onClick, program, ...rest }: ProgramItem & { onClick: Fun
   const tillTime = formatTime(till);
 
   return (
-      <Tooltip label={<><Text>{title}</Text><Text>{sinceTime} - {tillTime}</Text></>}>
-        <ProgramBox
-          onClick={onClick as MouseEventHandler}
-          width={styles.width}
-          style={styles.position}
-        >
-          <ProgramContent width={styles.width} isLive={isLive}>
-            <ProgramFlex>
-              {isLive && isMinWidth && <></>}
-              <ProgramStack>
-                <ProgramTitle>{title}</ProgramTitle>
-                <ProgramText>
-                  {sinceTime} - {tillTime}
-                </ProgramText>
-              </ProgramStack>
-            </ProgramFlex>
-          </ProgramContent>
-        </ProgramBox>
-      </Tooltip>
+    <Tooltip
+      label={
+        <>
+          <Text>{title}</Text>
+          <Text>
+            {sinceTime} - {tillTime}
+          </Text>
+        </>
+      }
+    >
+      <ProgramBox
+        onClick={onClick as MouseEventHandler}
+        width={styles.width}
+        style={styles.position}
+      >
+        <ProgramContent width={styles.width} isLive={isLive}>
+          <ProgramFlex>
+            {isLive && isMinWidth && <></>}
+            <ProgramStack>
+              <ProgramTitle>{title}</ProgramTitle>
+              <ProgramText>
+                {sinceTime} - {tillTime}
+              </ProgramText>
+            </ProgramStack>
+          </ProgramFlex>
+        </ProgramContent>
+      </ProgramBox>
+    </Tooltip>
   );
 };
 
 const ChannelItem = ({ channel, onClick }: ChannelItemProps) => {
   const { position, logo } = channel;
   return (
-      <Tooltip label={channel.name}>
+    <Tooltip label={channel.name}>
       <ChannelBox onClick={onClick} {...position}>
         {logo && (
           <ChannelLogo onClick={() => console.log('channel', channel)} src={logo} alt="Logo" />
         )}
-        {!logo && <Text p="xl"><Text>{channel.name}</Text></Text>}
+        {!logo && (
+          <Text p="xl">
+            <Text>{channel.name}</Text>
+          </Text>
+        )}
       </ChannelBox>
-      </Tooltip>
+    </Tooltip>
   );
 };
 
@@ -349,12 +362,14 @@ const ChannelsPage: NextPage = () => {
               />
             )}
             renderProgram={({ program, ...rest }) =>
-              program && <ProgramItem
-                onClick={() => handleProgramClick(program as any)}
-                key={program.data.id}
-                program={program}
-                {...rest}
-              />
+              program && (
+                <ProgramItem
+                  onClick={() => handleProgramClick(program as any)}
+                  key={program.data.id}
+                  program={program}
+                  {...rest}
+                />
+              )
             }
           />
         </Epg>

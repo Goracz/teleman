@@ -1,3 +1,7 @@
+import EventSource from 'eventsource';
+import moment from 'moment/moment';
+import React from 'react';
+
 import {
   Badge,
   Button,
@@ -13,7 +17,6 @@ import {
   Tooltip,
   Transition,
 } from '@mantine/core';
-import moment from 'moment/moment';
 import {
   IconCaretLeft,
   IconCaretRight,
@@ -22,11 +25,10 @@ import {
   IconVolume,
   IconVolume2,
 } from '@tabler/icons';
-import EventSource from 'eventsource';
-import React from 'react';
-import { Volume } from '../../models/volume';
-import { PowerState } from '../../models/power-state';
+
 import { Channel } from '../../models/channel';
+import { PowerState } from '../../models/power-state';
+import { Volume } from '../../models/volume';
 
 export interface TvCardProps {
   softwareInfo: any;
