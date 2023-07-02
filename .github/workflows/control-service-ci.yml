@@ -26,3 +26,12 @@ jobs:
       with:
         arguments: build
         build-root-directory: control-service
+      env:
+        KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+        SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        SENTRY_TRACES_SAMPLE_RATE: ${{ secrets.SENTRY_TRACES_SAMPLE_RATE }}
+        REDIS_HOST: ${{ secrets.REDIS_HOST }}
+        REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+        INTERFACE_URI: ${{ secrets.INTERFACE_URI }}
+        META_SERVICE_URI: ${{ secrets.META_SERVICE_URI }}
