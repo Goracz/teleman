@@ -1,4 +1,4 @@
-name: Build and test authentication-service
+name: CI / Authentication Service
 
 on:
   push:
