@@ -18,18 +18,18 @@ router.post("/launch", (req: Request, res: Response): Response<{ response: { mes
   });
 });
 
-router.get("/", (_: Request, res: Response): Response<ApplicationList> => {
-  const apps = sendRequestToTv<ApplicationList>(connection, WebOSEndpoints.LIST_APPS);
+router.get("/", <T extends ApplicationList>(_: Request, res: Response): Response<T> => {
+  const apps = sendRequestToTv<T>(connection, WebOSEndpoints.LIST_APPS);
   return res.status(200).json(apps);
 });
 
-router.get("/foreground", (_: Request, res: Response): Response<ForegroundApplication> => {
-  const foregroundApp = sendRequestToTv<ForegroundApplication>(connection, WebOSEndpoints.GET_FOREGROUND_APP);
+router.get("/foreground", <T extends ForegroundApplication>(_: Request, res: Response): Response<T> => {
+  const foregroundApp = sendRequestToTv<T>(connection, WebOSEndpoints.GET_FOREGROUND_APP);
   return res.status(200).json(foregroundApp);
 });
 
-router.get("/launch-points", (_: Request, res: Response): Response<LaunchPoints> => {
-  const appLaunchPoints = sendRequestToTv<LaunchPoints>(connection, WebOSEndpoints.LIST_APP_LAUNCH_POINTS);
+router.get("/launch-points",<T extends LaunchPoints> (_: Request, res: Response): Response<T> => {
+  const appLaunchPoints = sendRequestToTv<T>(connection, WebOSEndpoints.LIST_APP_LAUNCH_POINTS);
   return res.status(200).json(appLaunchPoints);
 });
 

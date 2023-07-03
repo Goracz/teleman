@@ -9,36 +9,36 @@ import { sendRequestToTv } from '../../utils/utils';
 
 const router = Router();
 
-router.get("/", (_: Request, res: Response): Response<ChannelList> => {
-  const channels = sendRequestToTv<ChannelList>(connection, WebOSEndpoints.CHANNEL_LIST);
+router.get("/", <T extends ChannelList>(_: Request, res: Response): Response<T> => {
+  const channels = sendRequestToTv<T>(connection, WebOSEndpoints.CHANNEL_LIST);
   return res.status(200).json(channels);
 });
 
-router.get("/current", (_: Request, res: Response): Response<CurrentChannel> => {
-  const currentChannel = sendRequestToTv<CurrentChannel>(connection, WebOSEndpoints.CURRENT_CHANNEL);
+router.get("/current", <T extends CurrentChannel>(_: Request, res: Response): Response<T> => {
+  const currentChannel = sendRequestToTv<T>(connection, WebOSEndpoints.CURRENT_CHANNEL);
   return res.status(200).json(currentChannel);
 });
 
-router.get("/current/program", (_: Request, res: Response): Response<Program> => {
-  const currentProgram = sendRequestToTv<Program>(connection, WebOSEndpoints.CHANNEL_PROGRAM_INFO);
+router.get("/current/program", <T extends Program>(_: Request, res: Response): Response<T> => {
+  const currentProgram = sendRequestToTv<T>(connection, WebOSEndpoints.CHANNEL_PROGRAM_INFO);
   return res.status(200).json({
     response: currentProgram,
   });
 });
 
-router.post("/next", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.CHANNEL_UP);
+router.post("/next", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.CHANNEL_UP);
   return res.status(200).send();
 });
 
-router.post("/previous", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.CHANNEL_DOWN);
+router.post("/previous", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.CHANNEL_DOWN);
   return res.status(200).send();
 });
 
-router.post("/", (req: Request, res: Response): Response<void> => {
+router.post("/", <T = void>(req: Request, res: Response): Response<T> => {
   const targetChannel: string = req.body.channelId;
-  sendRequestToTv<void>(connection, WebOSEndpoints.OPEN_CHANNEL, {
+  sendRequestToTv<T>(connection, WebOSEndpoints.OPEN_CHANNEL, {
     channelId: targetChannel,
   });
   return res.status(200).send();

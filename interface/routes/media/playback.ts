@@ -6,23 +6,23 @@ import { sendRequestToTv } from '../../utils/utils';
 
 const router: Router = Router();
 
-router.post("/pause", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.PAUSE_PLAYBACK);
+router.post("/pause", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.PAUSE_PLAYBACK);
   return res.status(200).send();
 });
 
-router.post("/play", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.START_PLAYBACK);
+router.post("/play", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.START_PLAYBACK);
   return res.status(200).send();
 });
 
-router.post("/fast-forward", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.FAST_FORWARD_PLAYBACK);
+router.post("/fast-forward", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.FAST_FORWARD_PLAYBACK);
   return res.status(200).send();
 });
 
-router.post("/rewind", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.REWIND_PLAYBACK);
+router.post("/rewind", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.REWIND_PLAYBACK);
   return res.status(200).send();
 });
 

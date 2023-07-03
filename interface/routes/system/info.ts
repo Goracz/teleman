@@ -8,8 +8,8 @@ import { sendRequestToTv } from '../../utils/utils';
 
 const router: Router = Router();
 
-router.get("/", (_: Request, res: Response): Response<SoftwareInformation> => {
-  const currentSoftwareInformation = sendRequestToTv<SoftwareInformation>(connection, WebOSEndpoints.CURRENT_SOFTWARE_INFORMATION);
+router.get("/", <T extends SoftwareInformation>(_: Request, res: Response): Response<T> => {
+  const currentSoftwareInformation = sendRequestToTv<T>(connection, WebOSEndpoints.CURRENT_SOFTWARE_INFORMATION);
   return res.status(200).json(currentSoftwareInformation);
 });
 

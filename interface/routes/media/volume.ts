@@ -7,32 +7,32 @@ import { sendRequestToTv } from '../../utils/utils';
 
 const router: Router = Router();
 
-router.get("/", (_: Request, res: Response): Response<Volume> => {
-  const volume = sendRequestToTv<Volume>(connection, WebOSEndpoints.GET_VOLUME);
+router.get("/", <T extends Volume>(_: Request, res: Response): Response<T> => {
+  const volume = sendRequestToTv<T>(connection, WebOSEndpoints.GET_VOLUME);
   return res.status(200).json(volume);
 });
 
-router.post("/", (req: Request, res: Response): Response<void> => {
+router.post("/", <T = void>(req: Request, res: Response): Response<T> => {
   const desiredVolume: number = req.body.volume;
-  sendRequestToTv<void>(connection, WebOSEndpoints.SET_VOLUME, {
+  sendRequestToTv<T>(connection, WebOSEndpoints.SET_VOLUME, {
     volume: desiredVolume,
   });
   return res.status(200).send();
 });
 
-router.post("/up", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.VOLUME_UP);
+router.post("/up", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.VOLUME_UP);
   return res.status(200).send();
 });
 
-router.post("/down", (_: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.VOLUME_DOWN);
+router.post("/down", <T = void>(_: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.VOLUME_DOWN);
   return res.status(200).send();
 });
 
-router.post("/mute", (req: Request, res: Response): Response<void> => {
+router.post("/mute",<T = void> (req: Request, res: Response): Response<T> => {
   const desiredState: boolean = req.body.mute;
-  sendRequestToTv<void>(connection, WebOSEndpoints.SET_MUTE, { mute: desiredState });
+  sendRequestToTv<T>(connection, WebOSEndpoints.SET_MUTE, { mute: desiredState });
   return res.status(200).send();
 });
 
