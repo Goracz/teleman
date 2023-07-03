@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { AppProps } from 'next/app';
 import { getCookie, setCookie } from 'cookies-next';
 import Head from 'next/head';
-import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
+import { ColorScheme, ColorSchemeProvider, Global, MantineProvider } from '@mantine/core';
 import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
 import { NavigationProgress } from '@mantine/nprogress';
 import { NotificationsProvider } from '@mantine/notifications';
@@ -76,10 +76,33 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
       <Provider store={store}>
         <EventsProvider>
           <MantineProvider
-            theme={{ colorScheme, fontFamily: 'Poppins', transitionTimingFunction: 'ease' }}
+            theme={{
+              colorScheme,
+              fontFamily: 'Poppins',
+              transitionTimingFunction: 'ease',
+            }}
             withGlobalStyles
             withNormalizeCSS
           >
+            <Global
+              styles={(theme) => ({
+                '.mantine-Paper-root': {
+                  color: theme.colorScheme === 'dark' ? theme.colors.indigo[5] : undefined,
+                  backgroundColor: theme.colorScheme === 'dark' ? '#1c153a' : undefined,
+                },
+                '.mantine-Navbar-root': {
+                  color: theme.colorScheme === 'dark' ? theme.colors.indigo[5] : undefined,
+                  backgroundColor: theme.colorScheme === 'dark' ? '#15102b' : undefined,
+                  '.mantine-UnstyledButton-root': {
+                    color: theme.colorScheme === 'dark' ? theme.colors.indigo[6] : undefined,
+                  },
+                },
+                '.mantine-Header-root': {
+                  color: theme.colorScheme === 'dark' ? theme.colors.indigo[6] : undefined,
+                  backgroundColor: theme.colorScheme === 'dark' ? '#15102b' : undefined,
+                },
+              })}
+            />
             <NotificationsProvider>
               <Head>
                 <title>Teleman</title>

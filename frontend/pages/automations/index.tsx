@@ -226,8 +226,8 @@ const AutomationsPage: NextPage = () => {
             label="Schedule Kind"
             placeholder="Pick a Schedule Kind"
             data={[
-              { value: AutomationScheduleKind.DATE_TIME, label: 'Date Time' },
-              { value: AutomationScheduleKind.CRON, label: 'Cron' },
+              { value: AutomationScheduleKind.DATE_TIME as unknown as string, label: 'Date Time' },
+              { value: AutomationScheduleKind.CRON as unknown as string, label: 'Cron' },
             ]}
             {...form.getInputProps('automationRule.scheduleKind')}
           />
@@ -305,7 +305,7 @@ const AutomationsPage: NextPage = () => {
                 {(action.type as unknown as string) ===
                   AutomationActionType.SetVolume.valueOf().toString() && (
                   <NumberInput
-                    defaultValue={typeof volume === 'number' && volume > -1 ? volume : 6}
+                    defaultValue={volume > -1 ? (volume as number) : 6}
                     placeholder="Desired TV Volume"
                     label="Volume"
                     withAsterisk

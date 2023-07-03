@@ -1,18 +1,19 @@
-import { AppShell, Button, Code, Group, Header, Navbar, Skeleton, Text } from '@mantine/core';
 import { NextPage } from 'next';
-import { IconPlug, IconPlugOff } from '@tabler/icons';
+import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useRouter } from 'next/router';
-import { DropdownWithIcon } from '../components/Dropdown/DropdownWithIcon';
 
+import { AppShell, Button, Group, Header, Navbar, Skeleton, Text } from '@mantine/core';
+import { IconPlug, IconPlugOff } from '@tabler/icons';
+
+import { ColorSchemeToggleButton } from '../components/ColorSchemeToggleButton/ColorSchemeToggleButton';
+import { DropdownWithIcon } from '../components/Dropdown/DropdownWithIcon';
+import { useLogout } from '../hooks/auth';
+import { useUser } from '../hooks/user';
+import { appActions, AppSliceState } from '../store/app-slice';
 import { Logo } from './_logo';
 import { MainLinks } from './_mainLinks';
 import { User } from './_user';
-import { ColorSchemeToggleButton } from '../components/ColorSchemeToggleButton/ColorSchemeToggleButton';
-import { appActions, AppSliceState } from '../store/app-slice';
-import { useUser } from '../hooks/user';
-import { useLogout } from '../hooks/auth';
 
 const onlinePowerStates = ['Active', 'Active Standby'];
 const offlinePowerStates = ['Suspend'];
@@ -80,9 +81,6 @@ const ApplicationLayout: NextPage<any> = ({ children }) => {
                   Teleman
                 </Text>
               </Group>
-              <Code sx={{ fontWeight: 700 }} mt={6}>
-                v2023.02.05.dev
-              </Code>
               {!pageName && <Skeleton height={10} width={80} radius="xl" />}
               {pageName && (
                 <Text ml={0} weight="bold">

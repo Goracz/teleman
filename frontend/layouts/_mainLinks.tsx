@@ -1,4 +1,7 @@
+import Link from 'next/link';
 import React from 'react';
+
+import { Group, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
 import {
   Icon3dCubeSphere,
   IconCode,
@@ -9,8 +12,6 @@ import {
   IconSettingsAutomation,
   IconTool,
 } from '@tabler/icons';
-import { Group, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
-import Link from 'next/link';
 
 interface MainLinkProps {
   icon: React.ReactNode;
@@ -31,8 +32,7 @@ function MainLink({ icon, color, label, link }: MainLinkProps) {
           color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
 
           '&:hover': {
-            backgroundColor:
-              theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[1],
+            backgroundColor: theme.colorScheme === 'dark' ? '#231a49' : theme.colors.gray[1],
             transition: 'background-color 300ms ease',
           },
         })}

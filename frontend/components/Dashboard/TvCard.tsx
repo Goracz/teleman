@@ -79,7 +79,7 @@ const TvCard = ({
       <Group spacing="sm">
         LG {softwareInfo && softwareInfo.model_name === 'HE_DTV_W22O_AFABATAA' ? 'C2' : 'TV'}{' '}
         {isLoadingPowerState && <Skeleton height={20} width="10%" radius="xl" />}
-        {!isLoadingPowerState && (
+        {!isLoadingPowerState && powerState && (
           <Badge
             variant="gradient"
             gradient={
@@ -210,7 +210,11 @@ const TvCard = ({
             <Button
               onClick={() => setVolume('down')}
               disabled={
-                !(!isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state))
+                !(
+                  !isLoadingPowerState &&
+                  powerState &&
+                  !['Active Standby', 'Suspend'].includes(powerState.state)
+                )
               }
               fullWidth
               leftIcon={<IconVolume2 size={20} />}
@@ -228,7 +232,11 @@ const TvCard = ({
             <Button
               onClick={() => setVolume('up')}
               disabled={
-                !(!isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state))
+                !(
+                  !isLoadingPowerState &&
+                  powerState &&
+                  !['Active Standby', 'Suspend'].includes(powerState.state)
+                )
               }
               fullWidth
               leftIcon={<IconVolume size={20} />}
@@ -246,7 +254,11 @@ const TvCard = ({
             <Button
               onClick={() => setChannel('previous')}
               disabled={
-                !(!isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state))
+                !(
+                  !isLoadingPowerState &&
+                  powerState &&
+                  !['Active Standby', 'Suspend'].includes(powerState.state)
+                )
               }
               fullWidth
               leftIcon={<IconCaretLeft size={26} />}
@@ -264,7 +276,11 @@ const TvCard = ({
             <Button
               onClick={() => setChannel('next')}
               disabled={
-                !(!isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state))
+                !(
+                  !isLoadingPowerState &&
+                  powerState &&
+                  !['Active Standby', 'Suspend'].includes(powerState.state)
+                )
               }
               fullWidth
               leftIcon={<IconCaretRight size={26} />}
@@ -284,7 +300,9 @@ const TvCard = ({
           <Button
             style={styles}
             leftIcon={
-              !isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state) ? (
+              !isLoadingPowerState &&
+              powerState &&
+              !['Active Standby', 'Suspend'].includes(powerState.state) ? (
                 <IconPlugOff size={16} />
               ) : (
                 <IconPlug size={16} />
@@ -297,13 +315,17 @@ const TvCard = ({
             variant="gradient"
             radius="xl"
             gradient={
-              !isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state)
+              !isLoadingPowerState &&
+              powerState &&
+              !['Active Standby', 'Suspend'].includes(powerState.state)
                 ? { from: 'orange', to: 'red' }
                 : { from: 'teal', to: 'lime', deg: 105 }
             }
           >
             Turn{' '}
-            {!isLoadingPowerState && !['Active Standby', 'Suspend'].includes(powerState.state)
+            {!isLoadingPowerState &&
+            powerState &&
+            !['Active Standby', 'Suspend'].includes(powerState.state)
               ? 'Off'
               : 'On'}
           </Button>

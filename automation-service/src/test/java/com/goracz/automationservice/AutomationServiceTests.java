@@ -8,8 +8,8 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @ActiveProfiles("test")
 class AutomationServiceApplicationTests {
-	@Test
-	void contextLoads() {
-		Assertions.assertTrue(true);
-	}
+    @Test
+    void contextLoads() {
+        Assertions.assertTrue(true);
+    }
 }

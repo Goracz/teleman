@@ -6,7 +6,7 @@ import com.goracz.controlservice.model.response.ServiceDescription;
 import com.goracz.controlservice.service.MetaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Mono;import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +24,8 @@ public class MetaServiceImpl implements MetaService {
     private Mono<ServiceDescription> readFromCache() {
         return this.cacheProvider
                 .getServiceDescriptionCache()
-                .get(CACHE_KEY);
+                .get(CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<ServiceDescription> buildDescription() {
@@ -40,6 +41,7 @@ public class MetaServiceImpl implements MetaService {
         return this.cacheProvider
                 .getServiceDescriptionCache()
                 .set(CACHE_KEY, serviceDescription)
-                .map(result -> serviceDescription);
+                .map(result -> serviceDescription)
+                .publishOn(Schedulers.boundedElastic());
     }
 }

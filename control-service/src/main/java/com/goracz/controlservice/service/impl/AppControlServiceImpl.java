@@ -11,7 +11,7 @@ import com.goracz.controlservice.service.AppControlService;
 import com.goracz.controlservice.service.WebService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.beans.factory.annotation.Value;import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -26,6 +26,8 @@ public class AppControlServiceImpl extends WebService implements AppControlServi
     private final ObjectMapper objectMapper;
     private final WebClient webClient;
     private final RedisCacheProvider redisCacheProvider;
+    @Value("${interface.uri}")
+    private String interfaceUri;
 
     @Override
     public Mono<ApplicationListResponse> getApplications() {
@@ -36,26 +38,29 @@ public class AppControlServiceImpl extends WebService implements AppControlServi
     private Mono<ApplicationListResponse> getApplicationsFromCache() {
         return this.redisCacheProvider
                 .getApplicationListCache()
-                .get(APPLICATION_LIST_CACHE_KEY);
+                .get(APPLICATION_LIST_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<ApplicationListResponse> getApplicationsFromInterface() {
         return this.webClient
                 .get()
-                .uri("http://localhost:5001/api/v1/apps")
+                .uri(String.format("%s/api/v1/apps", interfaceUri))
                 .retrieve()
                 .bodyToMono(ApplicationListResponse.class)
-                .retry(this.retriesCount);
+                .retry(this.retriesCount)
+                .publishOn(Schedulers.immediate());
     }
 
     @Override
     public Mono<Void> launchApp(WebOSApplication application) {
         return this.webClient
                 .post()
-                .uri("http://localhost:5001/api/v1/apps/launch")
+                .uri(String.format("%s/api/v1/apps/launch", interfaceUri))
                 .retrieve()
                 .bodyToMono(Void.class)
-                .retry(this.retriesCount);
+                .retry(this.retriesCount)
+                .publishOn(Schedulers.immediate());
     }
 
     public Mono<ForegroundAppChangeResponse> getForegroundApplication() {
@@ -66,16 +71,18 @@ public class AppControlServiceImpl extends WebService implements AppControlServi
     private Mono<ForegroundAppChangeResponse> getForegroundApplicationFromCache() {
         return this.redisCacheProvider
                 .getForegroundAppCache()
-                .get(FOREGROUND_APP_CACHE_KEY);
+                .get(FOREGROUND_APP_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<ForegroundAppChangeResponse> getForegroundApplicationFromInterface() {
         return this.webClient
                 .get()
-                .uri("http://localhost:5001/api/v1/apps/foreground")
+                .uri(String.format("%s/api/v1/apps/foreground", interfaceUri))
                 .retrieve()
                 .bodyToMono(ForegroundAppChangeResponse.class)
-                .retry(this.retriesCount);
+                .retry(this.retriesCount)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     @Override
@@ -87,16 +94,18 @@ public class AppControlServiceImpl extends WebService implements AppControlServi
     private Mono<LaunchPointsResponse> getLaunchPointsFromCache() {
         return this.redisCacheProvider
                 .getLaunchPointsCache()
-                .get(LAUNCH_POINTS_CACHE_KEY);
+                .get(LAUNCH_POINTS_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<LaunchPointsResponse> getLaunchPointsFromInterface() {
         return this.webClient
                 .get()
-                .uri("http://localhost:5001/api/v1/apps/launch-points")
+                .uri(String.format("%s/api/v1/apps/launch-points", interfaceUri))
                 .retrieve()
                 .bodyToMono(LaunchPointsResponse.class)
-                .retry(this.retriesCount);
+                .retry(this.retriesCount)
+                .publishOn(Schedulers.immediate());
     }
 
     @KafkaListener(topics = "channel-change")
@@ -120,11 +129,13 @@ public class AppControlServiceImpl extends WebService implements AppControlServi
         return this.redisCacheProvider
                 .getForegroundAppCache()
                 .set(FOREGROUND_APP_CACHE_KEY, response)
-                .map(ignored -> response);
+                .map(ignored -> response)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<ForegroundAppChangeResponse> getForegroundAppChangeResponseFromMqMessage(
             ConsumerRecord<String, String> message) {
-        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), ForegroundAppChangeResponse.class));
+        return Mono.fromCallable(() -> this.objectMapper.readValue(message.value(), ForegroundAppChangeResponse.class))
+                .publishOn(Schedulers.boundedElastic());
     }
 }

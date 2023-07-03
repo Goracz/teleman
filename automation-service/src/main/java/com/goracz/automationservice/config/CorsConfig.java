@@ -8,13 +8,11 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 @Configuration
 @EnableWebFlux
 public class CorsConfig implements WebFluxConfigurer {
-
     @Override
     public void addCorsMappings(CorsRegistry corsRegistry) {
         corsRegistry.addMapping("/**")
-                .allowedOrigins("http://localhost:3000")
+                .allowedOrigins("*")
                 .allowedMethods("*")
                 .maxAge(3600);
     }
-
 }

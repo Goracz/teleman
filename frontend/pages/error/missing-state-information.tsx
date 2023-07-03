@@ -1,3 +1,9 @@
+import Lottie from 'lottie-react';
+import { NextPage } from 'next';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+
 import {
   Button,
   Container,
@@ -10,15 +16,12 @@ import {
 } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { IconCheck, IconX } from '@tabler/icons';
-import Lottie from 'lottie-react';
-import { NextPage } from 'next';
-import { useRouter } from 'next/router';
-import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+
+import { useSystemPower } from '../../hooks';
 import ApplicationLayout from '../../layouts/Application';
+import { StateError } from '../../models/state-error';
 import tvAnimation from '../../public/lottie/tv.json';
 import { appActions } from '../../store/app-slice';
-import { useSystemPower } from '../../hooks';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -57,10 +60,25 @@ const useStyles = createStyles((theme) => ({
 
 const onlinePowerStates = ['Active', 'Active Standby'];
 
+const getReasonDescription = (reason: string | string[] | undefined): string => {
+  const defaultMessage = 'Unknown state information is missing.';
+  if (Array.isArray(reason) || !reason) return defaultMessage;
+
+  const errorReason = reason as keyof typeof StateError;
+  switch (errorReason) {
+    case StateError.CHANNEL_LIST_MISSING:
+      return 'TV channel list is missing.';
+    default:
+      return defaultMessage;
+  }
+};
+
 const TurnTvOnPage: NextPage = () => {
   const { classes } = useStyles();
   const router = useRouter();
   const dispatch = useDispatch();
+
+  const { reason } = router.query;
 
   const {
     data: powerState,
@@ -125,13 +143,12 @@ const TurnTvOnPage: NextPage = () => {
             </Text>
             <Space h="md" />
             <Text color="dimmed" size="md">
-              Reason: Reason of why the user has been redirected to this page (what kind of state
-              information is missing)...
+              <strong>Reason:</strong> {getReasonDescription(reason)}
             </Text>
             <Space h="md" />
             <Text color="dimmed" size="sm">
-              Tip: This usually happens when you try to use the application for the first time, or
-              when you restart the components of the application.
+              <strong>Tip:</strong> This usually happens when you try to use the application for the
+              first time, or when you restart the components of the application.
             </Text>
             <Tooltip
               label={

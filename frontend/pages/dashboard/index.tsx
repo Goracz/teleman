@@ -30,7 +30,10 @@ import { Channel } from '../../models/channel';
 import { ChannelCategory } from '../../models/channel-category';
 import { ChannelHistory } from '../../models/channel-history';
 import { PowerState } from '../../models/power-state-change';
+import { UptimeLog } from '../../models/uptime-log';
 import { appActions, AppSliceState } from '../../store/app-slice';
+
+const ONE_MINUTE_MILLIS = 1000 * 60;
 
 // Calculates that on a given day, how many minutes was the TV watched by every hour in 24 hours
 const calculateHowManyMinutesWatchedInAGivenHour = (
@@ -82,6 +85,33 @@ const calculateHowManyMinutesWatchedInAGivenHour = (
       }
     }
   });
+
+  const lastChannelHistoryEntry = channelHistories[channelHistories.length - 1];
+  if (lastChannelHistoryEntry && !lastChannelHistoryEntry.end) {
+    const startDate = tz(moment.unix(lastChannelHistoryEntry.start), timezone);
+    const startDateHour = startDate.hour();
+
+    const now = moment();
+    const nowHour = now.hour();
+
+    if (startDateHour === nowHour) {
+      hours[startDateHour] += now.diff(startDate, 'minutes');
+    } else {
+      for (let i = startDateHour; i <= nowHour; i += 1) {
+        let duration: number;
+
+        if (startDateHour === i) {
+          duration = 60 - startDate.minute();
+        } else if (i < nowHour) {
+          duration = 60 - startDate.hour(i).minute(0).minutes();
+        } else {
+          duration = now.minute();
+        }
+
+        hours[i] + duration > 60 ? (hours[i] = 60) : (hours[i] += duration);
+      }
+    }
+  }
 
   return hours;
 };
@@ -151,7 +181,9 @@ const DashboardPage: NextPage = () => {
     !isLoadingChannelList &&
     !isChannelsError &&
     (typeof isChannelsError !== 'undefined' || !isChannelsError) &&
-    channelList
+    channelList &&
+    typeof channelList.channelList !== 'undefined' &&
+    channelList.channelList !== null
   ) {
     dispatch(
       appActions.setDigitalTvChannelCount(
@@ -160,24 +192,10 @@ const DashboardPage: NextPage = () => {
         ).length
       )
     );
-    dispatch(
-      appActions.setAnalogueTvChannelCount(
-        channelList.channelList.filter(
-          (channel: Channel) => channel.channelType === 'Cable Analogue TV'
-        ).length
-      )
-    );
-    dispatch(
-      appActions.setDigitalRadioChannelCount(
-        channelList.channelList.filter(
-          (channel: Channel) => channel.channelType === 'Cable Digital Radio'
-        ).length
-      )
-    );
     dispatch(appActions.setChannelList(channelList));
-  } //else if (typeof window !== 'undefined') {
-  //router.replace('/error/missing-state-information');
-  //}
+  } // else if (typeof window !== 'undefined') {
+  // router.replace(`/error/missing-state-information?reason=${StateError.CHANNEL_LIST_MISSING}`);
+  // }
 
   const {
     data: softwareInfo,
@@ -306,10 +324,62 @@ const DashboardPage: NextPage = () => {
     setCalculatedHourlyChannelView(formattedResult);
   }, [channelHistory]);
 
+  const shouldNotUptimeChartBeUpdated = (): boolean =>
+    !calculatedHourlyChannelView || !channelHistory;
+
+  const isLatestChannelHistoryWithoutEndDate = (
+    today: Date,
+    latestChannelHistoryEntry: ChannelHistory
+  ): boolean =>
+    latestChannelHistoryEntry &&
+    typeof latestChannelHistoryEntry.end === 'undefined' &&
+    latestChannelHistoryEntry.start > today.setHours(0, 0, 0, 0);
+
+  const addAMinuteToLastHourInHourlyChannelView = (today: Date) => {
+    const currentHour = today.getHours();
+    const newCalculatedHourlyChannelView = [...calculatedHourlyChannelView];
+    newCalculatedHourlyChannelView[currentHour].minutes += 1;
+
+    return newCalculatedHourlyChannelView;
+  };
+
+  setInterval(() => {
+    // If the TV is still turned on (the latest channel history entry does not have an end),
+    // add plus one minute to the current hour in calculated hourly channel view without recalculating the whole thing
+    if (shouldNotUptimeChartBeUpdated()) return;
+
+    const latestChannelHistoryEntry = channelHistory[channelHistory.length - 1];
+    const today = new Date();
+    if (isLatestChannelHistoryWithoutEndDate(today, latestChannelHistoryEntry)) {
+      const newCalculatedHourlyChannelView = addAMinuteToLastHourInHourlyChannelView(today);
+      setCalculatedHourlyChannelView(newCalculatedHourlyChannelView);
+    }
+  }, ONE_MINUTE_MILLIS);
+
   const setVolume = async (direction: 'up' | 'down'): Promise<void> => {
     await fetch(`http://localhost:8080/api/v1/media/volume/${direction}`, {
       method: 'POST',
     });
+  };
+
+  const setTvUptime = (uptimeLog: UptimeLog) => {
+    if (uptimeLog.turnOffTime) {
+      setCalculatedTvUptime(
+        formatUptime(
+          moment(moment.unix(uptimeLog.turnOffTime).diff(moment.unix(uptimeLog.turnOnTime)))
+            .subtract(1, 'hour')
+            .format('H:m:')
+        )
+      );
+    } else {
+      setCalculatedTvUptime(
+        formatUptime(
+          moment(moment().diff(moment.unix(uptimeLog.turnOnTime)) - ONE_MINUTE_MILLIS * 60).format(
+            'H:m:'
+          )
+        )
+      );
+    }
   };
 
   const setChannel = async (direction: 'next' | 'previous'): Promise<void> => {
@@ -320,41 +390,13 @@ const DashboardPage: NextPage = () => {
 
   useEffect(() => {
     if (tvUptime) {
-      if (tvUptime.turnOffTime) {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
-              'H:m:'
-            )
-          )
-        );
-      } else {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment().diff(moment.unix(tvUptime.turnOnTime)) - 1000 * 60 * 60).format('H:m:')
-          )
-        );
-      }
+      setTvUptime(tvUptime);
     }
   }, [tvUptime]);
 
   setInterval(() => {
     if (tvUptime) {
-      if (tvUptime.turnOffTime) {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment.unix(tvUptime.turnOffTime).diff(moment.unix(tvUptime.turnOnTime))).format(
-              'H:m:'
-            )
-          )
-        );
-      } else {
-        setCalculatedTvUptime(
-          formatUptime(
-            moment(moment().diff(moment.unix(tvUptime.turnOnTime)) - 1000 * 60 * 60).format('H:m:')
-          )
-        );
-      }
+      setTvUptime(tvUptime);
     }
   }, 1000 * 60);
 

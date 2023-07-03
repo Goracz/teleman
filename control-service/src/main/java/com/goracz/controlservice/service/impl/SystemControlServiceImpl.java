@@ -6,7 +6,7 @@ import com.goracz.controlservice.model.response.SoftwareInformationResponse;
 import com.goracz.controlservice.service.SystemControlService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Mono;import reactor.core.scheduler.Schedulers;
 
 @Service
 public class SystemControlServiceImpl implements SystemControlService {
@@ -58,7 +58,8 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .retrieve()
                 .bodyToMono(Void.class)
                 .retry(INTERFACE_REQUEST_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.immediate());
     }
 
     @Override
@@ -69,7 +70,8 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .retrieve()
                 .bodyToMono(Void.class)
                 .retry(INTERFACE_REQUEST_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.immediate());
     }
 
     private Mono<SoftwareInformationResponse> getSoftwareInformationFromTv() {
@@ -79,11 +81,15 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .retrieve()
                 .bodyToMono(SoftwareInformationResponse.class)
                 .retry(INTERFACE_REQUEST_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.immediate());
     }
 
     private Mono<SoftwareInformationResponse> getSoftwareInformationFromCache() {
-        return this.cacheProvider.getSoftwareInformationResponseCache().get(SOFTWARE_INFORMATION_CACHE_KEY);
+        return this.cacheProvider
+                .getSoftwareInformationResponseCache()
+                .get(SOFTWARE_INFORMATION_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<SoftwareInformationResponse> writeSoftwareInformationToCache(
@@ -93,11 +99,15 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .set(SOFTWARE_INFORMATION_CACHE_KEY, softwareInformation)
                 .map(response -> softwareInformation)
                 .retry(CACHE_WRITE_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<PowerStateResponse> getPowerStateFromCache() {
-        return this.cacheProvider.getPowerStateResponseCache().get(POWER_STATE_CACHE_KEY);
+        return this.cacheProvider
+                .getPowerStateResponseCache()
+                .get(POWER_STATE_CACHE_KEY)
+                .publishOn(Schedulers.boundedElastic());
     }
 
     private Mono<PowerStateResponse> getPowerStateFromTv() {
@@ -107,7 +117,8 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .retrieve()
                 .bodyToMono(PowerStateResponse.class)
                 .retry(INTERFACE_REQUEST_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.immediate());
     }
 
     private Mono<PowerStateResponse> writePowerStateToCache(PowerStateResponse powerState) {
@@ -115,6 +126,7 @@ public class SystemControlServiceImpl implements SystemControlService {
                 .set(POWER_STATE_CACHE_KEY, powerState)
                 .map(response -> powerState)
                 .retry(CACHE_WRITE_TRIES)
-                .log();
+                .log()
+                .publishOn(Schedulers.boundedElastic());
     }
 }

@@ -43,7 +43,7 @@ const QuickAppLauncher = () => (
     </Text>
     <Grid columns={4} p={20}>
       {applications.map((application) => (
-        <Col xl={1} lg={2} md={1} sm={2} xs={1} p={20}>
+        <Col xl={1} lg={2} md={1} sm={2} xs={1} p={20} key={application.name}>
           <Card withBorder style={{ height: '8vh', cursor: 'pointer' }} radius="lg" shadow="xs">
             <Group px={20} pb={10} position="apart" style={{ height: '100%' }}>
               <Image width="2vw" alt={application.name} src={application.iconUrl} />

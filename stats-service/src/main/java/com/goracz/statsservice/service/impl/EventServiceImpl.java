@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks;import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +16,7 @@ public class EventServiceImpl<T extends EventMessage<?>> implements EventService
     @Override
     public Mono<Sinks.EmitResult> emit(T message) {
         return Mono.fromCallable(() -> new EventMessage<>(message.getCategory(), message))
-                .map(eventMessage -> this.getEventStream().tryEmitNext(message));
+                .map(eventMessage -> this.getEventStream().tryEmitNext(message))
+                .publishOn(Schedulers.immediate());
     }
 }
