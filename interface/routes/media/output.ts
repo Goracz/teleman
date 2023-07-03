@@ -6,13 +6,13 @@ import { sendRequestToTv } from '../../utils/utils';
 
 const router: Router = Router();
 
-router.get("/", (_: Request, res: Response): Response<unknown> => {
-  const soundOutput = sendRequestToTv<unknown>(connection, WebOSEndpoints.GET_SOUND_OUTPUT);
+router.get("/", <T = unknown>(_: Request, res: Response): Response<T> => {
+  const soundOutput = sendRequestToTv<T>(connection, WebOSEndpoints.GET_SOUND_OUTPUT);
   return res.status(200).json(soundOutput);
 });
 
-router.post("/", (req: Request, res: Response): Response<void> => {
-  sendRequestToTv<void>(connection, WebOSEndpoints.SET_SOUND_OUTPUT, { output: req.body.output });
+router.post("/", <T = void>(req: Request, res: Response): Response<T> => {
+  sendRequestToTv<T>(connection, WebOSEndpoints.SET_SOUND_OUTPUT, { output: req.body.output });
   return res.status(200).send();
 });
 
