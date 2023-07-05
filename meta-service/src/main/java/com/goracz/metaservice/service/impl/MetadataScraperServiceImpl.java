@@ -83,6 +83,14 @@ public class MetadataScraperServiceImpl implements MetadataScraperService {
                 this.genericWebClient
                         .get()
                         .uri("https://teleman-epg-demo.up.railway.app/tvmusor.hu.guide.json")
+                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
+                this.genericWebClient
+                        .get()
+                        .uri("https://teleman-epg-demo.up.railway.app/musor.tv.guide.json")
+                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
+                this.genericWebClient
+                        .get()
+                        .uri("https://teleman-epg-demo.up.railway.app/mediaklikk.hu.guide.json")
                         .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class))
         )
                 .flatMap(response -> response)
