@@ -1,15 +1,15 @@
-import { GetServerSidePropsContext } from 'next';
-import React, { useState } from 'react';
-import { AppProps } from 'next/app';
-import { getCookie, setCookie } from 'cookies-next';
-import Head from 'next/head';
-import { ColorScheme, ColorSchemeProvider, Global, MantineProvider } from '@mantine/core';
-import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
-import { NavigationProgress } from '@mantine/nprogress';
-import { NotificationsProvider } from '@mantine/notifications';
-import { Provider } from 'react-redux';
 import '../styles.css';
 
+import { getCookie, setCookie } from 'cookies-next';
+import { GetServerSidePropsContext } from 'next';
+import { AppProps } from 'next/app';
+import Head from 'next/head';
+import React, { useState } from 'react';
+import { Provider } from 'react-redux';
+
+import { ColorScheme, ColorSchemeProvider, Global, MantineProvider } from '@mantine/core';
+import { NavigationProgress } from '@mantine/nprogress';
+import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
 import {
   IconArrowLeft,
   IconArrowRight,
@@ -18,9 +18,10 @@ import {
   IconVolume,
   IconVolume2,
   IconVolumeOff,
-} from '@tabler/icons';
-import store from '../store';
+} from '@tabler/icons-react';
+
 import { EventsProvider } from '../components/EventsProvider';
+import store from '../store';
 
 const actions: SpotlightAction[] = [
   {
@@ -103,34 +104,32 @@ export default function App(props: AppProps & { colorScheme: ColorScheme }) {
                 },
               })}
             />
-            <NotificationsProvider>
-              <Head>
-                <title>Teleman</title>
-                <meta
-                  name="viewport"
-                  content="minimum-scale=1, initial-scale=1, width=device-width"
-                />
-                <link rel="shortcut icon" href="/favicon.svg" />
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" />
-                <link
-                  href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-                  rel="stylesheet"
-                />
-              </Head>
+            <Head>
+              <title>Teleman</title>
+              <meta
+                name="viewport"
+                content="minimum-scale=1, initial-scale=1, width=device-width"
+              />
+              <link rel="shortcut icon" href="/favicon.svg" />
+              <link rel="preconnect" href="https://fonts.googleapis.com" />
+              <link rel="preconnect" href="https://fonts.gstatic.com" />
+              <link
+                href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+                rel="stylesheet"
+              />
+            </Head>
 
-              <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-                <SpotlightProvider
-                  shortcut={['mod + P', 'mod + K', '/']}
-                  actions={actions}
-                  searchIcon={<IconSearch size={18} />}
-                  nothingFoundMessage="No actions found"
-                >
-                  <NavigationProgress />
-                  <Component {...pageProps} />
-                </SpotlightProvider>
-              </ColorSchemeProvider>
-            </NotificationsProvider>
+            <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+              <SpotlightProvider
+                shortcut={['mod + P', 'mod + K', '/']}
+                actions={actions}
+                searchIcon={<IconSearch size={18} />}
+                nothingFoundMessage="No actions found"
+              >
+                <NavigationProgress />
+                <Component {...pageProps} />
+              </SpotlightProvider>
+            </ColorSchemeProvider>
           </MantineProvider>
         </EventsProvider>
       </Provider>

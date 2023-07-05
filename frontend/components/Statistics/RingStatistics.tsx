@@ -1,3 +1,7 @@
+import moment from 'moment';
+import { NextPage } from 'next';
+import React from 'react';
+
 import {
   Badge,
   Card,
@@ -11,11 +15,9 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
-import { IconDeviceTv } from '@tabler/icons';
-import moment from 'moment';
-import { NextPage } from 'next';
-import React from 'react';
 import { useViewportSize } from '@mantine/hooks';
+import { IconDeviceTv } from '@tabler/icons-react';
+
 import { ChannelCategory, ChannelCategoryLegend } from '../../models/channel-category';
 
 interface StatsRingProps {

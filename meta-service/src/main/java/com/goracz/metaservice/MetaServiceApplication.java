@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.goracz.metaservice.decoder.XmlDecoder;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,6 +18,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
@@ -45,25 +46,6 @@ public class MetaServiceApplication {
 
 		final ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
 				.codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(maxBufferSize))
-				.build();
-		final HttpClient client = HttpClient.create(ConnectionProvider.builder("teleman-http-client")
-				.maxIdleTime(Duration.ofSeconds(30))
-				.build());
-		return WebClient.builder()
-				.clientConnector(new ReactorClientHttpConnector(client))
-				.exchangeStrategies(exchangeStrategies)
-				.build();
-	}
-
-	@Bean(name = "xmlIptvWebClient")
-	public WebClient xmlIptvWebClient() {
-		final int maxBufferSize = 16 * 1024 * 1024;
-
-		final XmlDecoder xmlDecoder = new XmlDecoder();
-		xmlDecoder.setMaxInMemorySize(maxBufferSize);
-
-		ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
-				.codecs(configurer -> configurer.customCodecs().register(xmlDecoder))
 				.build();
 		final HttpClient client = HttpClient.create(ConnectionProvider.builder("teleman-http-client")
 				.maxIdleTime(Duration.ofSeconds(30))

@@ -27,7 +27,7 @@ import {
 } from '@mantine/core';
 import { DatePicker, TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
-import { IconCalendar, IconClock } from '@tabler/icons';
+import { IconCalendar, IconClock } from '@tabler/icons-react';
 
 import { AutomationCard } from '../../components/AutomationCard';
 import { useAutomationRules } from '../../hooks';

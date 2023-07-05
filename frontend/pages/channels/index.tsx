@@ -1,4 +1,3 @@
-import { Modal, Paper, Space, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
 import { NextPage } from 'next';
 import {
   Channel,
@@ -6,6 +5,7 @@ import {
   ChannelLogo,
   Epg,
   Layout,
+  Program,
   ProgramBox,
   ProgramContent,
   ProgramFlex,
@@ -19,8 +19,13 @@ import {
 } from 'planby';
 import React, { MouseEventHandler, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+
+import { Modal, Paper, Space, Text, Tooltip, useMantineColorScheme } from '@mantine/core';
+
 import ApplicationLayout from '../../layouts/Application';
+import { EPGProgram } from '../../models/epg-program';
 import { AppSliceState } from '../../store/app-slice';
+import { parseDateString } from '../../utils/channels';
 
 interface ChannelItemProps {
   onClick: () => void;
@@ -71,14 +76,14 @@ const ProgramItem = ({ onClick, program, ...rest }: ProgramItem & { onClick: Fun
 const ChannelItem = ({ channel, onClick }: ChannelItemProps) => {
   const { position, logo } = channel;
   return (
-    <Tooltip label={channel.name}>
+    <Tooltip label={channel.displayName}>
       <ChannelBox onClick={onClick} {...position}>
         {logo && (
           <ChannelLogo onClick={() => console.log('channel', channel)} src={logo} alt="Logo" />
         )}
         {!logo && (
           <Text p="xl">
-            <Text>{channel.name}</Text>
+            <Text>{channel.displayName}</Text>
           </Text>
         )}
       </ChannelBox>
@@ -234,7 +239,7 @@ const ChannelsPage: NextPage = () => {
   // console.log(channelsData);
   const channelsData = useMemo(
     () =>
-      egp.channels
+      egp.tv.channel
         .map((channel: any) => ({
           ...channel,
           uuid: channel.id,
@@ -242,7 +247,7 @@ const ChannelsPage: NextPage = () => {
         .filter((channel: any) =>
           (channelList as any).channelList.find((existingChannel: any) => {
             if (
-              channel.name.toLowerCase().startsWith(
+              channel.displayName.toLowerCase().startsWith(
                 existingChannel.channelName
                   .toLowerCase()
                   .replace('ö', 'o')
@@ -268,13 +273,15 @@ const ChannelsPage: NextPage = () => {
                 .replace('ű', 'u')
                 .replace('í', 'i')
                 .startsWith(
-                  channel.name.toLowerCase().slice(0, Math.max(channel.name.length - 1, 1))
+                  channel.displayName
+                    .toLowerCase()
+                    .slice(0, Math.max(channel.displayName.length - 1, 1))
                 )
             ) {
               return true;
             }
             console.log(
-              `Did not match: ${channel.name.toLowerCase()} and ${existingChannel.channelName.toLowerCase()}`
+              `Did not match: ${channel.displayName.toLowerCase()} and ${existingChannel.channelName.toLowerCase()}`
             );
             return false;
           })
@@ -287,14 +294,18 @@ const ChannelsPage: NextPage = () => {
   // console.log(egpData);
   // console.log(channelsData);
 
-  const egpData = egp.programs.map((program: any) => ({
+  const egpData = egp.tv.programme.map((program: EPGProgram) => ({
     ...program,
-    channelUuid: egp.channels.find((channel: any) => channel.id === program.channel).id,
-    since: new Date(program.start),
-    till: new Date(program.stop),
-    title: program.titles[0].value,
-    description: program.descriptions.length > 0 ? program.descriptions[0].value : '',
-  }));
+    id: '',
+    image: '',
+    channelUuid: egp.tv.channel.find((channel: any) => channel.id === program.channel)?.id ?? '',
+    since: parseDateString(program.start),
+    till: parseDateString(program.stop),
+    title: program.title.text,
+    description: program.desc ?? '',
+  })) as Program[];
+
+  console.log(egpData);
 
   const { getEpgProps, getLayoutProps } = useEpg({
     theme: colorScheme === 'dark' ? darkTheme : lightTheme,
@@ -343,8 +354,8 @@ const ChannelsPage: NextPage = () => {
       >
         {selectedProgram && (
           <>
-            <Text>{(selectedProgram as any).data.title}</Text>
-            <Text>{selectedProgram as any}.data.description</Text>
+            <Text>{(selectedProgram as any).data.title.text}</Text>
+            <Text>{(selectedProgram as any).data.desc?.text}</Text>
           </>
         )}
       </Modal>

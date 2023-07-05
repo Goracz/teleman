@@ -1,5 +1,11 @@
 import { Button, createStyles, Group, Paper, Space, Text, ThemeIcon, Tooltip } from '@mantine/core';
-import { IconAdjustmentsAlt, IconApps, IconPlugOff, IconPower, IconVolume2 } from '@tabler/icons';
+import {
+  IconAdjustmentsAlt,
+  IconApps,
+  IconPlugOff,
+  IconPower,
+  IconVolume2,
+} from '@tabler/icons-react';
 
 import { AutomationAction } from '../models/automation-action';
 
