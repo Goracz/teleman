@@ -1,7 +1,8 @@
 import { useSelector } from 'react-redux';
 import useSWR from 'swr';
-import { AppSliceState } from '../store/app-slice';
+
 import { WebOSApplication } from '../models/web-os-application';
+import { AppSliceState } from '../store/app-slice';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 const channelHistoryFetcher = (url: string, start: Date, end: Date) =>
@@ -139,7 +140,7 @@ const useChannelHistory = (start: Date, end: Date) => {
 
 const useEGP = (countryCode: string) => {
   const egp = useSelector((state: { app: AppSliceState }) => state.app.egpData);
-  const isCached = egp && egp.length > 0;
+  const isCached = egp && Object.prototype.hasOwnProperty.call(egp, 'tv');
 
   const { data, error } = useSWR(
     isCached ? null : `http://localhost:8082/api/v1/channel-metadata?countryCode=${countryCode}`,
@@ -211,6 +212,18 @@ const useLaunchPoints = () => {
   };
 };
 
+const useSetChannel = async (direction: 'next' | 'previous'): Promise<void> => {
+  await fetch(`http://localhost:8080/api/v1/tv/channels/${direction}`, {
+    method: 'POST',
+  });
+};
+
+const useSetVolume = async (direction: 'up' | 'down'): Promise<void> => {
+  await fetch(`http://localhost:8080/api/v1/media/volume/${direction}`, {
+    method: 'POST',
+  });
+};
+
 export {
   useChannels,
   useCurrentChannel,
@@ -226,4 +239,6 @@ export {
   useLaunchApp,
   useForegroundApp,
   useLaunchPoints,
+  useSetChannel,
+  useSetVolume,
 };

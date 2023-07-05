@@ -11,7 +11,7 @@ import {
   IconSettings,
   IconSettingsAutomation,
   IconTool,
-} from '@tabler/icons';
+} from '@tabler/icons-react';
 
 interface MainLinkProps {
   icon: React.ReactNode;

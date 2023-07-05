@@ -19,7 +19,7 @@ import {
 import { useForm } from '@mantine/form';
 import { upperFirst, useToggle } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
-import { IconCheck } from '@tabler/icons';
+import { IconCheck } from '@tabler/icons-react';
 
 import { GoogleButton, TwitterButton } from '../../components/SocialButtons/SocialButtons';
 import { useLogin, useRegister } from '../../hooks/auth';

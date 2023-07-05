@@ -24,7 +24,7 @@ import {
   IconPlugOff,
   IconVolume,
   IconVolume2,
-} from '@tabler/icons';
+} from '@tabler/icons-react';
 
 import { Channel } from '../../models/channel';
 import { PowerState } from '../../models/power-state';

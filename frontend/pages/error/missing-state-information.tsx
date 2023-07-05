@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { IconCheck, IconX } from '@tabler/icons';
+import { IconCheck, IconX } from '@tabler/icons-react';
 
 import { useSystemPower } from '../../hooks';
 import ApplicationLayout from '../../layouts/Application';

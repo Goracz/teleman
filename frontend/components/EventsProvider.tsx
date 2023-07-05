@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { showNotification } from '@mantine/notifications';
 import { Dispatch } from '@reduxjs/toolkit';
-import { IconCheck } from '@tabler/icons';
+import { IconCheck } from '@tabler/icons-react';
 
 import { AutomationServiceEventCategory } from '../models/automation-service-event-category';
 import { ChannelHistory } from '../models/channel-history';

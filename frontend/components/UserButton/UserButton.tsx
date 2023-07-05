@@ -1,12 +1,12 @@
 import {
+  Avatar,
+  createStyles,
+  Group,
+  Text,
   UnstyledButton,
   UnstyledButtonProps,
-  Group,
-  Avatar,
-  Text,
-  createStyles,
 } from '@mantine/core';
-import { IconChevronRight } from '@tabler/icons';
+import { IconChevronRight } from '@tabler/icons-react';
 
 const useStyles = createStyles((theme) => ({
   user: {

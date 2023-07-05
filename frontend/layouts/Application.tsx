@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AppShell, Button, Group, Header, Navbar, Skeleton, Text } from '@mantine/core';
-import { IconPlug, IconPlugOff } from '@tabler/icons';
+import { IconPlug, IconPlugOff } from '@tabler/icons-react';
 
 import { ColorSchemeToggleButton } from '../components/ColorSchemeToggleButton/ColorSchemeToggleButton';
 import { DropdownWithIcon } from '../components/Dropdown/DropdownWithIcon';

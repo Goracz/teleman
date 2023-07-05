@@ -2,11 +2,13 @@ package com.goracz.metaservice.service.impl;
 
 import com.goracz.metaservice.component.RedisCacheProvider;
 import com.goracz.metaservice.dto.IPTVResponse;
+import com.goracz.metaservice.dto.TVResponse;
 import com.goracz.metaservice.service.MetadataScraperService;
-import org.springframework.beans.factory.annotation.Qualifier;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -20,15 +22,10 @@ public class MetadataScraperServiceImpl implements MetadataScraperService {
     private static final String CACHE_KEY = "iptv:%s";
 
     private final WebClient genericWebClient;
-    private final WebClient xmlWebClient;
     private final RedisCacheProvider cacheProvider;
 
-    public MetadataScraperServiceImpl(WebClient genericWebClient,
-                                      @Qualifier("xmlIptvWebClient")
-                                      WebClient xmlIptvWebClient,
-                                      RedisCacheProvider cacheProvider) {
+    public MetadataScraperServiceImpl(WebClient genericWebClient, RedisCacheProvider cacheProvider) {
         this.genericWebClient = genericWebClient;
-        this.xmlWebClient = xmlIptvWebClient;
         this.cacheProvider = cacheProvider;
 
         this.preWarmCache();
@@ -83,33 +80,9 @@ public class MetadataScraperServiceImpl implements MetadataScraperService {
      */
     private Mono<IPTVResponse> scrapeAllHungarianSources() {
         return Flux.just(
-                this.xmlWebClient
+                this.genericWebClient
                         .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/m.tv.sms.cz.xml")
-                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
-                this.xmlWebClient
-                        .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/mediaklikk.hu.xml")
-                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
-                this.xmlWebClient
-                        .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/mujtvprogram.cz.xml")
-                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
-                this.xmlWebClient
-                        .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/musor.tv.xml")
-                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
-//                this.xmlWebClient
-//                        .get()
-//                        .uri("https://iptv-org.github.io/epg/guides/hu/tv.blue.ch.xml")
-//                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
-                this.xmlWebClient
-                        .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/tv.yettel.hu.xml")
-                        .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class)),
-                this.xmlWebClient
-                        .get()
-                        .uri("https://iptv-org.github.io/epg/guides/hu/tvmusor.hu.xml")
+                        .uri("https://teleman-epg-demo.up.railway.app/tvmusor.hu.guide.json")
                         .exchangeToMono(response -> response.bodyToMono(IPTVResponse.class))
         )
                 .flatMap(response -> response)
@@ -118,21 +91,20 @@ public class MetadataScraperServiceImpl implements MetadataScraperService {
     }
 
     private Mono<IPTVResponse> mergeResponses(List<IPTVResponse> responses) {
-        return Mono.fromCallable(() -> {
-            final IPTVResponse response = new IPTVResponse();
-            responses.forEach(r -> {
-                if (response.getChannels() == null) {
-                    response.setChannels(r.getChannels());
-                } else {
-                    response.getChannels().addAll(r.getChannels());
-                }
-                if (response.getPrograms() == null) {
-                    response.setPrograms(r.getPrograms());
-                } else {
-                    response.getPrograms().addAll(r.getPrograms());
-                }
-            });
-            return response;
+        final IPTVResponse response = new IPTVResponse();
+        response.setTv(new TVResponse());
+        responses.forEach(r -> {
+            if (response.getTv().getChannels() == null) {
+                response.getTv().setChannels(r.getTv().getChannels());
+            } else {
+                response.getTv().getChannels().addAll(r.getTv().getChannels());
+            }
+            if (response.getTv().getPrograms() == null) {
+                response.getTv().setPrograms(r.getTv().getPrograms());
+            } else {
+                response.getTv().getPrograms().addAll(r.getTv().getPrograms());
+            }
         });
+        return Mono.just(response);
     }
 }

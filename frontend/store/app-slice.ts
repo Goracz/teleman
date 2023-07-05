@@ -1,10 +1,13 @@
-/* eslint-disable no-param-reassign */
-import { createSlice } from '@reduxjs/toolkit';
 import EventSource from 'eventsource';
 import moment from 'moment';
+
+/* eslint-disable no-param-reassign */
+import { createSlice } from '@reduxjs/toolkit';
+
 import { AutomationRule } from '../models/automation-rule';
 import { Channel } from '../models/channel';
 import { ChannelHistory } from '../models/channel-history';
+import { IPTVResponse } from '../models/iptv-response';
 import { PowerState } from '../models/power-state-change';
 import { UptimeLog } from '../models/uptime-log';
 import { User } from '../models/user';
@@ -29,7 +32,7 @@ export interface AppSliceState {
   uptime: UptimeLog;
   channelHistory: ChannelHistory[];
   channelHistoryRaw: ChannelHistory[];
-  egpData: any;
+  egpData: IPTVResponse;
   volume: number | Volume;
   softwareInfo: {};
   tvIp: string | { ip: string };
@@ -46,7 +49,7 @@ const initialState: AppSliceState = {
   connectionStatus: 0,
   powerState: undefined as any,
   volume: -1,
-  egpData: {},
+  egpData: {} as IPTVResponse,
   uptime: undefined as any,
   channelHistory: [],
   channelHistoryRaw: [],

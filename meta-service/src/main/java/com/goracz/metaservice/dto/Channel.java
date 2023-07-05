@@ -11,9 +11,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Channel {
     private String id;
-    private String name;
-    private String site;
-    private String lang;
-    private String logo;
+    private String displayName;
     private String url;
 }

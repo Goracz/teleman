@@ -21,7 +21,7 @@ import {
   IconSearch,
   IconSettings,
   IconTrash,
-} from '@tabler/icons';
+} from '@tabler/icons-react';
 
 import { useLogout } from '../hooks/auth';
 import { AppSliceState } from '../store/app-slice';

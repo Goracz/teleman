@@ -6,10 +6,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Collection;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class IPTVResponse {
-    @JsonProperty("tv")
-    private TVResponse tv;
+public class TVResponse {
+    private String date;
+    @JsonProperty("channel")
+    private Collection<Channel> channels;
+    @JsonProperty("programme")
+    private Collection<Program> programs;
 }
