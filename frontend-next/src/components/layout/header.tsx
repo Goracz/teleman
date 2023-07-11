@@ -1,5 +1,8 @@
 import { memo, useEffect, useRef } from 'react';
 
+import { Constants } from '../../constants/constants';
+import { useSystemPower } from '../../hooks';
+import { useConnectionStateText } from '../../hooks/header';
 import Button, { ButtonProps } from './MenuButton/MenuButton';
 
 interface HeaderProps {
@@ -9,6 +12,8 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = memo(({ menuItems, onHeightChange }) => {
     const ref = useRef<HTMLDivElement | null>(null);
+    const systemPower = useSystemPower();
+    const connectionStateText = useConnectionStateText(systemPower.data);
 
     useEffect(() => {
         if (ref.current) {
@@ -28,7 +33,7 @@ const Header: React.FC<HeaderProps> = memo(({ menuItems, onHeightChange }) => {
                     </div>
                     <div>
                         <div className="flex items-center gap-5">
-                            <Button title="Connected" link="#" active />
+                            <Button title={connectionStateText ?? Constants.UNKNOWN_VALUE_TEXT} link="#" active />
                         </div>
                     </div>
                 </div>

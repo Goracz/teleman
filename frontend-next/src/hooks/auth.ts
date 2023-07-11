@@ -2,9 +2,9 @@ import { useNavigate } from 'react-router-dom';
 
 import { useQuery } from '@tanstack/react-query';
 
-import { LoginCredentials } from '../models/login-credentials';
-import { LoginResponse } from '../models/login-response';
-import { RegistrationCredentials } from '../models/registration-credentials';
+import { LoginCredentials } from '../models/teleman/auth/login-credentials';
+import { LoginResponse } from '../models/teleman/auth/login-response';
+import { RegistrationCredentials } from '../models/teleman/auth/registration-credentials';
 import { fetcher } from '../utils/hooks';
 
 const AUTH_SERVICE_BASE_URL: string = import.meta.env.VITE_AUTH_SERVICE_BASE_URL;

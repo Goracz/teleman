@@ -2,7 +2,7 @@ import { cva } from 'class-variance-authority';
 import React, { memo } from 'react';
 
 interface HeadingProps {
-    title: string;
+    title: string | number;
     decoration?: string;
     extraDecorationPath?: string;
     size?: 'sm' | 'md';

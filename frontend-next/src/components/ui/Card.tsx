@@ -78,7 +78,9 @@ interface CardProps {
     children?: React.ReactNode;
     size?: 'md' | 'lg' | 'full';
     decorationColor?: string;
+    stickyDecoration?: boolean;
     active?: boolean;
+    onClick?: () => void;
     [key: string]: any;
 }
 
@@ -107,7 +109,7 @@ const cardStyles = cva(
     },
 );
 
-const UnstyledCard: React.FC<CardProps> = ({ children, size, className, ...props }) => {
+const UnstyledCard: React.FC<CardProps> = ({ children, size, className, onClick, ...props }) => {
     const upperLeft = useUpperLeft(children);
     const upperRight = useUpperRight(children);
     const lowerLeft = useLowerLeft(children);
@@ -115,7 +117,7 @@ const UnstyledCard: React.FC<CardProps> = ({ children, size, className, ...props
 
     return (
         <>
-            <div className={`card__wrapper ${className}`}>
+            <div className={`card__wrapper ${className}`} onClick={onClick}>
                 <div className="card flex flex-grow" id='card1'>
                     <div className={cardStyles({ size })} {...props}>
                         <div className="h-full flex flex-col justify-between">
@@ -134,6 +136,20 @@ const UnstyledCard: React.FC<CardProps> = ({ children, size, className, ...props
                                 {lowerRight}
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+};
+
+const UnstyledRawCard: React.FC<CardProps> = ({ children, size, className, onClick, ...props }) => {
+    return (
+        <>
+            <div className={`card__wrapper ${className}`} onClick={onClick}>
+                <div className="card flex flex-grow" id='card1'>
+                    <div className={cardStyles({ size })} {...props}>
+                        {children}
                     </div>
                 </div>
             </div>
@@ -187,26 +203,91 @@ const StyledCard = styled(UnstyledCard)`
             transform: ${props => props.active ? 'rotate(45deg) scale(1)' : 'rotate(45deg) scale(0)'};
         }
 
-        &:hover {
-            &:after {
-                transform: ${props => props.active ? 'rotate(-45deg) scale(0)' : 'rotate(-45deg) scale(1)'};
-            }
+        ${props => !props.stickyDecoration && `
+            &:hover {
+                &:after {
+                    transform: ${props.active ? 'rotate(-45deg) scale(0)' : 'rotate(-45deg) scale(1)'};
+                }
 
-            &:before {
-                transform: ${props => props.active ? 'rotate(45deg) scale(0)' : 'rotate(45deg) scale(1)'};
-            }
+                &:before {
+                    transform: ${props.active ? 'rotate(45deg) scale(0)' : 'rotate(45deg) scale(1)'};
+                }
 
-            .card__thumbnail {
-                transform: ${props => props.active ? 'translate(0, 0)' : 'translate(15px, -15px)'};
-                border: ${props => props.active ? 'none' : '4px solid black'};
+                .card__thumbnail {
+                    transform: ${props.active ? 'translate(0, 0)' : 'translate(15px, -15px)'};
+                    border: ${props.active ? 'none' : '4px solid black'};
+                }
             }
-        }
+        `}
     }
 `;
 
+const StyledRawCard = styled(UnstyledRawCard)`
+    #card1 {
+        background-color: ${props => props.decorationColor || 'black'};
 
+        &:after,
+        &:before {
+            background-color: ${props => props.decorationColor || 'black'};
+        }
+    }
+
+    .card {
+        position: relative;
+
+        .card__thumbnail {
+            aspect-ratio: 4 / 3;
+            transition: all .15s ease;
+            position: relative;
+            z-index: 10;
+            transform: ${props => props.active ? 'translate(15px, -15px)' : 'none'};
+            border: ${props => props.active ? '4px solid black' : 'none'};
+        }
+
+        &:after,
+        &:before {
+            position: absolute;
+            content: '';
+            height: 0px;
+            width: 0px;
+            transition: all .15s ease;
+        }
+
+        &:after {
+            top: 0;
+            left: 0;
+            transform-origin: top left;
+            transform: ${props => props.active ? 'rotate(-45deg) scale(1)' : 'rotate(-45deg) scale(0)'};
+        }
+
+        &:before {
+            right: 0;
+            bottom: 0;
+            transform-origin: bottom right;
+            transform: ${props => props.active ? 'rotate(45deg) scale(1)' : 'rotate(45deg) scale(0)'};
+        }
+
+        ${props => !props.stickyDecoration && `
+            &:hover {
+                &:after {
+                    transform: ${props.active ? 'rotate(-45deg) scale(0)' : 'rotate(-45deg) scale(1)'};
+                }
+
+                &:before {
+                    transform: ${props.active ? 'rotate(45deg) scale(0)' : 'rotate(45deg) scale(1)'};
+                }
+
+                .card__thumbnail {
+                    transform: ${props.active ? 'translate(0, 0)' : 'translate(15px, -15px)'};
+                    border: ${props.active ? 'none' : '4px solid black'};
+                }
+            }
+        `}
+    }
+`;
 
 const Card: React.FC<CardProps> & StaticCardProps = ({ ...props }) => <StyledCard {...props} />;
+export const RawCard: React.FC<CardProps> = ({ ...props }) => <StyledRawCard {...props} />;
 
 Card.UpperLeft = UpperLeft;
 Card.UpperRight = UpperRight;

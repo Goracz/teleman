@@ -4,60 +4,57 @@ import moment from 'moment';
 /* eslint-disable no-param-reassign */
 import { createSlice } from '@reduxjs/toolkit';
 
-import { AutomationRule } from '../models/automation-rule';
-import { Channel } from '../models/channel';
-import { ChannelHistory } from '../models/channel-history';
-import { LaunchPoint } from '../models/launch-point';
-import { PowerState } from '../models/power-state-change';
-import { UptimeLog } from '../models/uptime-log';
-import { User } from '../models/user';
-import { Volume } from '../models/volume';
+import { User } from '../models/teleman/auth/user';
+import { UptimeLog } from '../models/teleman/uptime-log/uptime-log';
+import { AutomationRule } from '../models/tv/automation/automation-rule';
+import { Channel } from '../models/tv/channel/channel';
+import { ChannelHistory } from '../models/tv/channel/channel-history';
+import {
+    ElectronicProgramGuide
+} from '../models/tv/electronic-program-guide/electronic-program-guide';
+import { Volume } from '../models/tv/media/volume';
+import { PowerStateOption } from '../models/tv/power-state/power-state-option';
+import { LaunchPoint } from '../models/tv/system/launch-point';
+import { SoftwareInformation } from '../models/tv/system/software-information';
 
 export interface AppSliceState {
-    user: User;
-    channelList: { channelList: Channel[] };
-    currentChannel: Channel;
+    user?: User;
+    channelList?: { channelList: Channel[] };
+    currentChannel?: Channel;
     digitalTvChannelCount: number;
     analogueTvChannelCount: number;
     digitalRadioChannelCount: number;
     connectionStatus: EventSource.ReadyState;
-    powerState: {
-        returnValue: boolean;
-        subscribed: boolean;
-        reason: string;
-        onOff: string;
-        processing: string;
-        state: keyof typeof PowerState;
-    };
-    uptime: UptimeLog;
+    powerState?: PowerStateOption;
+    uptime?: UptimeLog;
     channelHistory: ChannelHistory[];
     channelHistoryRaw: ChannelHistory[];
-    egpData: any;
-    volume: number | Volume;
-    softwareInfo: {};
+    egpData?: ElectronicProgramGuide;
+    volume?: Volume;
+    softwareInfo?: SoftwareInformation;
     tvIp: string | { ip: string };
-    automationRules: AutomationRule[];
-    launchPoints: { launchPoints: LaunchPoint[] };
+    automationRules?: AutomationRule[];
+    launchPoints?: { launchPoints: LaunchPoint[] };
 }
 
 const initialState: AppSliceState = {
-    user: undefined as any,
-    channelList: [] as any,
-    currentChannel: {} as Channel,
+    user: undefined,
+    channelList: undefined,
+    currentChannel: undefined,
     digitalTvChannelCount: 0,
     analogueTvChannelCount: 0,
     digitalRadioChannelCount: 0,
     connectionStatus: 0,
-    powerState: undefined as any,
-    volume: -1,
-    egpData: {},
-    uptime: undefined as any,
+    powerState: undefined,
+    volume: undefined,
+    egpData: undefined,
+    uptime: undefined,
     channelHistory: [],
     channelHistoryRaw: [],
-    softwareInfo: undefined as any,
-    automationRules: undefined as any,
+    softwareInfo: undefined,
+    automationRules: undefined,
     tvIp: '',
-    launchPoints: undefined as any,
+    launchPoints: undefined,
 };
 
 const appSlice = createSlice({
@@ -122,15 +119,23 @@ const appSlice = createSlice({
             state.automationRules = action.payload;
         },
         addAutomationRule(state, action) {
-            state.automationRules = [...state.automationRules, action.payload];
+            state.automationRules = [...state.automationRules ?? [], action.payload];
         },
         updateAutomationRule(state, action) {
+            if (!state.automationRules) throw new Error(
+                `Could not update automation rule with ID ${action.payload.id} as it is not in the store.`
+            );
+
             const ruleIndex = state.automationRules.findIndex(
                 (rule: AutomationRule) => rule.id === action.payload.id
             );
             state.automationRules[ruleIndex] = action.payload;
         },
         removeAutomationRule(state, action) {
+            if (!state.automationRules) throw new Error(
+                `Could not remove automation rule with ID ${action.payload.id} as there are no automation rules in the store.`
+            );
+
             const ruleIndex = state.automationRules.findIndex(
                 (rule: AutomationRule) => rule.id === action.payload.id
             );
