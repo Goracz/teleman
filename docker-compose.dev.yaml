@@ -211,22 +211,22 @@ services:
       - "8083:8083"
     logging: *default-logging
 
-  #  authentication-service:
-  #    build: ./authentication-service/
-  #    depends_on:
-  #      - interface
-  #      - kafka
-  #      - zookeeper
-  #      - postgres
-  #    environment:
-  #      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-  #      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
-  #      - OTEL_RESOURCE_ATTRIBUTES=service.name=authentication-service,compose_service=authentication-service
-  #      - OTEL_METRICS_EXPORTER=none
-  #      - MANAGEMENT_METRICS_TAGS_APPLICATION=authentication-service
-  #    ports:
-  #      - "8084:8084"
-  #    logging: *default-logging
+  authentication-service:
+    build: ./authentication-service/
+    depends_on:
+      - interface
+      - kafka
+      - zookeeper
+      - postgres
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=authentication-service,compose_service=authentication-service
+      - OTEL_METRICS_EXPORTER=none
+      - MANAGEMENT_METRICS_TAGS_APPLICATION=authentication-service
+    ports:
+      - "8084:8084"
+    logging: *default-logging
 
   frontend:
     build: ./frontend/
