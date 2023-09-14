@@ -214,7 +214,7 @@ services:
   authentication-service:
     build: ./authentication-service/
     depends_on:
-      - interface
+      - app-interface
       - kafka
       - zookeeper
       - postgres
